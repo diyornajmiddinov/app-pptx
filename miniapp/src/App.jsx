@@ -30,7 +30,13 @@ export default function App() {
   const [account, setAccount] = useState(null); // { balance, prices: { generate, restyle } }
   const loadAccount = useCallback(() => {
     if (!isTelegram) return Promise.resolve(null);
-    return getMe({ initData }).then((r) => { if (r) setAccount({ balance: r.balance, prices: r.prices }); return r; });
+    return getMe({ initData }).then((r) => {
+      if (r) setAccount({ balance: r.balance, prices: r.prices, user: r.user });
+      // opened from the bottom keyboard: the name comes from the server, not from Telegram
+      const name = [r?.user?.first_name, r?.user?.last_name].filter(Boolean).join(' ');
+      if (name) setDetails((d) => (d.author ? d : { ...d, author: name }));
+      return r;
+    });
   }, [isTelegram, initData]);
   // language chosen in the bot (saved on the server) wins over the Telegram app language
   useEffect(() => {
@@ -132,7 +138,7 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-screen max-w-2xl bg-tg-bg px-4 pb-8 text-tg-text">
-      <Header user={user} onLangChange={handleUiLang} />
+      <Header user={user?.first_name ? user : { ...user, ...account?.user }} onLangChange={handleUiLang} />
       {account && (
         <p className="-mt-3 mb-5 text-[13px] text-tg-hint">
           <span className="font-semibold text-tg-text">{t('balance', { balance: money(account.balance, lang) })}</span> · {t('topupHint')}

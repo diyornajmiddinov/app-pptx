@@ -119,7 +119,7 @@ async def lifespan(_: FastAPI):
 app = FastAPI(title="SlideAI", docs_url=None if not settings.demo else "/docs", lifespan=lifespan)  # no public /docs in production
 app.include_router(admin.router)
 app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_methods=["GET", "POST", "PUT"],
-                   allow_headers=["Content-Type", "X-Telegram-Init-Data", "X-Admin-Token"])
+                   allow_headers=["Content-Type", "X-Telegram-Init-Data", "X-App-Token", "X-Admin-Token"])
 
 
 DATA = Path(__file__).resolve().parent / "data"
@@ -263,7 +263,9 @@ class LangRequest(BaseModel):
 async def me(tg_user: dict = Depends(telegram_user)):
     await touch(tg_user)  # the Mini App asks this first: it counts as a visit
     cfg = await appconfig.get()
-    return {"lang": await lang_of(tg_user["id"], tg_user.get("language_code")), "balance": await billing.balance(tg_user["id"]),
+    u = await db.pool().fetchrow("SELECT first_name, last_name FROM users WHERE id = $1", tg_user["id"])
+    return {"user": {"id": tg_user["id"], **(dict(u) if u else {})},  # the keyboard-opened app knows only the id
+            "lang": await lang_of(tg_user["id"], tg_user.get("language_code")), "balance": await billing.balance(tg_user["id"]),
             "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"]}}
 
 

@@ -33,7 +33,7 @@ from config import settings
 from prefs import has_choice, lang_of, set_lang, touch
 from texts import CHOOSE, LANG_NAMES, LANGS, T, som, t
 from telegram_api import answer_callback, download_file, edit_caption, send_document, send_file_id, send_message, set_menu_button
-from telegram_auth import make_admin_token, make_editor_token
+from telegram_auth import make_admin_token, make_app_token, make_editor_token
 
 log = logging.getLogger("bot")
 
@@ -60,10 +60,12 @@ def open_keyboard(lang: str) -> dict:
     return {"inline_keyboard": rows}
 
 
-def main_keyboard(lang: str) -> dict:
-    """The bottom menu that stays under the input field."""
+def main_keyboard(lang: str, user_id: int) -> dict:
+    """The bottom menu that stays under the input field. Its first button opens the Mini App itself; the app gets
+    no initData that way, so the URL carries this user's signed token (telegram_auth.make_app_token)."""
     b = lambda k: {"text": t(lang, k)}
-    return {"keyboard": [[b("kb_create")], [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
+    create = {**b("kb_create"), "web_app": {"url": f"{app_url(lang)}&t={make_app_token(user_id)}"}} if has_webapp() else b("kb_create")
+    return {"keyboard": [[create], [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 
@@ -95,7 +97,7 @@ async def welcome(chat_id: int, lang: str):
     if has_webapp():
         await set_menu_button(chat_id, t(lang, "open"), app_url(lang))  # the menu button follows the language too
     # no inline buttons here: the app opens from the menu button by the input field, the rest is in the bottom menu
-    await send_message(chat_id, t(lang, "welcome"), main_keyboard(lang))
+    await send_message(chat_id, t(lang, "welcome"), main_keyboard(lang, chat_id))
 
 
 async def show_balance(chat_id: int, user_id: int, lang: str):
@@ -115,7 +117,7 @@ async def send_pay_link(chat_id: int, user_id: int, amount: int, lang: str, prov
     """New order for this amount, and a URL button that opens the provider's payment page."""
     order_id = await payments.create_order(user_id, amount, provider)
     if provider == "card" and await pdfs.cancel(user_id):  # the screenshot must not land in an unfinished PDF
-        await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang))
+        await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang, chat_id))
     if provider == "card":
         await send_card_details(chat_id, order_id, amount, lang)
         return
@@ -203,7 +205,7 @@ async def pdf_make(chat_id: int, user_id: int, lang: str, name: str):
         await pdfs.start(user_id)
         await send_message(chat_id, t(lang, "pdf_empty"), pdf_keyboard(lang))
         return
-    await send_message(chat_id, t(lang, "pdf_wait"), main_keyboard(lang))
+    await send_message(chat_id, t(lang, "pdf_wait"), main_keyboard(lang, chat_id))
     skipped = 0
     try:
         with tempfile.TemporaryDirectory() as tmp:
@@ -349,7 +351,7 @@ async def handle(update: dict):
     if stage := await pdfs.stage(uid):
         if key == "kb_pdf_cancel":
             await pdfs.cancel(uid)
-            await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang)); return
+            await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang, chat_id)); return
         if stage == "name" and text and not text.startswith("/") and not key:  # the file name
             name = pdfs.clean_name(text)
             if not re.search(r"\w", name):
@@ -370,7 +372,7 @@ async def handle(update: dict):
                                t(lang, "pdf_added", n=n) if n else t(lang, "pdf_empty"),
                                pdf_name_keyboard(lang) if stage == "name" else pdf_keyboard(lang)); return
         await pdfs.cancel(uid)  # another command or menu button: leave the PDF section
-        await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang))
+        await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang, chat_id))
 
     # a presentation to edit
     if str(doc.get("file_name", "")).lower().endswith(editor.IMPORTABLE):
@@ -389,7 +391,7 @@ async def handle(update: dict):
         else:
             await send_message(chat_id, CHOOSE, lang_keyboard())
     elif key == "kb_create":
-        # a reply-keyboard web_app button would open the app without initData (no user, no balance): send the inline one
+        # an old keyboard (plain text button) or no HTTPS address yet: answer with the inline button
         if has_webapp():
             await send_message(chat_id, t(lang, "create_open"), {"inline_keyboard": [[{"text": t(lang, "open"), "web_app": {"url": app_url(lang)}}]]})
         else:
@@ -397,7 +399,7 @@ async def handle(update: dict):
     elif text.startswith("/pdf") or key == "kb_pdf":
         await pdf_start(chat_id, uid, lang)
     elif key in ("kb_pdf_make", "kb_pdf_cancel"):  # an old PDF keyboard after the section was closed
-        await send_message(chat_id, t(lang, "menu"), main_keyboard(lang))
+        await send_message(chat_id, t(lang, "menu"), main_keyboard(lang, chat_id))
     elif text.startswith("/language") or text.startswith("/til") or key == "kb_lang":
         await send_message(chat_id, CHOOSE, lang_keyboard())
     elif text.startswith("/balance") or text.startswith("/balans") or key == "kb_balance":

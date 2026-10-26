@@ -1,4 +1,6 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? '';
+/** Opened from the bot's bottom keyboard: no initData, the URL carries a signed token for this user instead. */
+export const APP_TOKEN = new URLSearchParams(window.location.search).get('t') || '';
 const TIMEOUT_MS = 20_000;
 
 /** key = message key in i18n/messages.js; the UI translates it */
@@ -16,7 +18,7 @@ async function request(method, path, { initData, payload } = {}) {
   try {
     res = await fetch(`${API_BASE}${path}`, {
       method,
-      headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData || '' },
+      headers: { 'Content-Type': 'application/json', 'X-Telegram-Init-Data': initData || '', ...(APP_TOKEN ? { 'X-App-Token': APP_TOKEN } : {}) },
       body: payload ? JSON.stringify(payload) : undefined,
       signal: controller.signal,
     });

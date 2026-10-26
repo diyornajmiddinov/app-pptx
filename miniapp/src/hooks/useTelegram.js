@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { APP_TOKEN } from '../api/client.js';
 
 /**
  * window.Telegram.WebApp is injected by telegram-web-app.js (see index.html).
@@ -6,6 +7,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  * EMPTY initData — that is how we detect "running outside Telegram".
  */
 const tg = typeof window !== 'undefined' ? window.Telegram?.WebApp : undefined;
+// Inside Telegram: signed initData, or opened from the bot's bottom keyboard (no initData, our token in the URL;
+// the SDK reports platform 'unknown' only in a plain browser).
+const IN_TG = Boolean(tg?.initData) || Boolean(APP_TOKEN && tg?.platform && tg.platform !== 'unknown');
 
 // tg.themeParams key -> CSS variable consumed by tailwind.config.js
 const THEME_MAP = {
@@ -101,24 +105,24 @@ export function useTelegram() {
 
   /** Native alert inside Telegram (6.2+), window.alert in a browser. */
   const showAlert = useCallback((message) => {
-    if (tg?.initData && tg.isVersionAtLeast('6.2')) tg.showAlert(message);
+    if (IN_TG && tg.isVersionAtLeast('6.2')) tg.showAlert(message);
     else window.alert(message);
   }, []);
 
   /** Yes / no question: native popup inside Telegram (6.2+), window.confirm in a browser. Resolves to true / false. */
   const askConfirm = useCallback((message) => new Promise((resolve) => {
-    if (tg?.initData && tg.isVersionAtLeast('6.2')) tg.showConfirm(message, (ok) => resolve(Boolean(ok)));
+    if (IN_TG && tg.isVersionAtLeast('6.2')) tg.showConfirm(message, (ok) => resolve(Boolean(ok)));
     else resolve(window.confirm(message));
   }), []);
 
   /** Light haptic tick on selection (no-op outside Telegram / old clients). */
   const hapticSelect = useCallback(() => {
-    if (tg?.initData && tg.isVersionAtLeast('6.1')) tg.HapticFeedback.selectionChanged();
+    if (IN_TG && tg.isVersionAtLeast('6.1')) tg.HapticFeedback.selectionChanged();
   }, []);
 
   /** 'success' | 'error' | 'warning' notification haptic. */
   const hapticNotify = useCallback((type) => {
-    if (tg?.initData && tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred(type);
+    if (IN_TG && tg.isVersionAtLeast('6.1')) tg.HapticFeedback.notificationOccurred(type);
   }, []);
 
   return useMemo(
@@ -126,11 +130,12 @@ export function useTelegram() {
       tg,
       // initDataUnsafe is NOT verified: fine for display (name, avatar),
       // never trust it on the server. Send `initData` for that instead.
-      user: tg?.initDataUnsafe?.user,
+      // opened from the bottom keyboard: Telegram gives no user, the signed token (<id>.<exp>.<sig>) names them
+      user: tg?.initDataUnsafe?.user || (APP_TOKEN ? { id: Number(APP_TOKEN.split('.')[0]) } : undefined),
       // Raw signed query string. The backend validates its HMAC with the
       // bot token to prove the request really came from this Telegram user.
       initData: tg?.initData ?? '',
-      isTelegram: Boolean(tg?.initData),
+      isTelegram: IN_TG,
       colorScheme,
       showAlert,
       askConfirm,

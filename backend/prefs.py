@@ -9,8 +9,9 @@ async def touch(user: dict):
         return
     await db.pool().execute(
         """INSERT INTO users (id, first_name, last_name, username, language_code) VALUES ($1, $2, $3, $4, $5)
-           ON CONFLICT (id) DO UPDATE SET first_name = excluded.first_name, last_name = excluded.last_name,
-               username = excluded.username, language_code = excluded.language_code, last_seen = now()""",
+           ON CONFLICT (id) DO UPDATE SET first_name = coalesce(excluded.first_name, users.first_name),
+               last_name = coalesce(excluded.last_name, users.last_name), username = coalesce(excluded.username, users.username),
+               language_code = coalesce(excluded.language_code, users.language_code), last_seen = now()""",
         user["id"], user.get("first_name"), user.get("last_name"), user.get("username"), user.get("language_code"))
 
 

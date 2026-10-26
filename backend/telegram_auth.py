@@ -29,8 +29,39 @@ def verify_init_data(init_data: str, bot_token: str) -> dict:
     return json.loads(fields["user"])
 
 
-def telegram_user(x_telegram_init_data: str = Header(...)) -> dict:
-    return verify_init_data(x_telegram_init_data, settings.bot_token)
+# ---------------------------------------------------------------- Mini App opened from the bottom keyboard
+# Telegram gives a Mini App opened by a reply-keyboard button NO initData. So that button's URL carries a signed
+# token made for that one user (?t=<user_id>.<expires>.<hmac>); the bot puts a fresh one in every keyboard it sends.
+APP_TTL = 60 * 24 * 60 * 60
+
+
+def _app_key() -> bytes:
+    return hmac.new(b"SlideAI-app", settings.bot_token.encode(), hashlib.sha256).digest()
+
+
+def make_app_token(user_id: int, ttl: int = APP_TTL) -> str:
+    body = f"{int(user_id)}.{int(time.time()) + ttl}"
+    return f"{body}.{hmac.new(_app_key(), body.encode(), hashlib.sha256).hexdigest()[:40]}"
+
+
+def check_app_token(token: str) -> int | None:
+    try:
+        uid, exp, sig = token.split(".")
+        good = hmac.new(_app_key(), f"{uid}.{exp}".encode(), hashlib.sha256).hexdigest()[:40]
+        if hmac.compare_digest(sig, good) and int(exp) > time.time():
+            return int(uid)
+    except (ValueError, AttributeError):
+        pass
+    return None
+
+
+def telegram_user(x_telegram_init_data: str | None = Header(None), x_app_token: str | None = Header(None)) -> dict:
+    """The Mini App's user: from Telegram's signed initData, or from the bottom-keyboard token."""
+    if x_telegram_init_data:
+        return verify_init_data(x_telegram_init_data, settings.bot_token)
+    if uid := check_app_token(x_app_token or ""):
+        return {"id": uid}
+    raise HTTPException(401, "Missing initData")
 
 
 # ---------------------------------------------------------------- editor links
