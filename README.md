@@ -5,13 +5,14 @@ tanlaydi. Server AI orqali kontent yozadi, Pexels'dan rasmlar oladi va tayyor `.
 bot chatga yuboradi.
 
 ```
-miniapp/  (React + Tailwind, Telegram Mini App)
-   │  POST /api/generate  {topic, author, org, loc, year, template_id, slide_count, language}
-   ▼
-backend/  (FastAPI)  ── initData tekshiruvi ── kredit ── fon vazifasi
-   │  content_ai.py: Claude → kontent JSON → tekshiruv → Pexels rasmlari
-   ▼
-engine/   (Node.js)  fill.js → templates/NN.js → .pptx  ── bot sendDocument bilan chatga
+miniapp/ (React, Telegram Mini App) ── POST /api/generate ──▶ backend API (FastAPI)
+                                                              │ imzo tekshiruvi → balansdan yechish → jobs navbati
+bot (app.bot.polling) ◀── Telegram                            ▼
+                                                   worker (app.worker, bir vaqtda 2 ta)
+                                                              │ Gemini → kontent JSON → tekshiruv → Pexels rasmlari
+                                                              ▼
+                                       engine/ (Node.js) fill.js → templates/NN.js → .pptx ──▶ bot chatga yuboradi
+                    PostgreSQL: foydalanuvchilar, balans, to'lovlar, taqdimotlar, navbat, AI sarfi
 ```
 
 ## 40 ta shablon
@@ -24,8 +25,15 @@ engine/   (Node.js)  fill.js → templates/NN.js → .pptx  ── bot sendDocum
 | Papka | Ichida |
 |---|---|
 | `engine/` | `fill.js` (to'ldiruvchi), `templates/01…40.js` (40 ta shablon, har biri alohida dizayn), `lib.js` (matn o'lchash, rasm kesish), `content/soliq.json` (namuna) |
-| `backend/` | `main.py` (API), `bot.py` (bot: til tanlash, /start, /help), `texts.py` (3 tildagi xabarlar), `prefs.py`, `content_ai.py` (AI matn + rasmlar), `telegram_auth.py`, `telegram_api.py`, `bot_setup.py` |
-| `miniapp/` | Telegram Mini App: mavzu va muallif formasi, 6–30 slayd tanlash, til, 40 ta shablon galereyasi |
+| `backend/app/core/` | `config` (sozlamalar, ishga tushishda tekshiriladi), `db` (asyncpg + migratsiyalar), `auth` (Telegram imzosi, imzolangan havolalar), `telegram` (Bot API), `alerts` (log kanali) |
+| `backend/app/services/` | `billing` (balans, ledger), `payments` (karta, Payme, Click), `jobs` (navbat), `content_ai` (AI matn + rasmlar), `decks`, `users`, `app_settings` (narxlar), `images_pdf`, `editor` + `pptx_model` |
+| `backend/app/api/` | `main` (ilova) va `routes/`: `miniapp`, `payments` (+ Telegram webhook), `editor`, `admin` |
+| `backend/app/bot/` | `handlers` (yo'naltirish, buyruqlar jadvali), `keyboards`, `money` (balans, to'lov), `pdf` (rasmdan PDF), `polling`, `setup` |
+| `backend/app/worker.py` | pullik ishlarni navbatdan bajaradi; qayta ishga tushsa ish yo'qolmaydi |
+| `backend/migrations/` | `NNNN_*.sql` — har biri bir marta, tartib bilan qo'llanadi (`schema_migrations`) |
+| `backend/tests/` | pytest: pul, to'lovlar, navbat, bot, API, admin, 40 ta shablon |
+| `miniapp/` | Telegram Mini App, kompyuter uchun muharrir (`editor.html`) va admin panel (`admin.html`) |
+| `ops/` | systemd xizmatlari, kunlik backup, vaqtinchalik tunnel, xato ogohlantirishlari |
 
 ## Barcha 40 shablon uchun umumiy qoidalar
 - Har bir slaydda: **mavzu, muallif, tashkilot, shahar, yil** (har bir shablon o'z uslubida joylaydi).
@@ -57,7 +65,7 @@ Har 40 ta shablon faylida `STYLE` bor (`engine/templates/NN-*.js` oxirida):
 - `generate_content()` — birinchi yozishda reja, ohang va chegaralar tanlangan shablondan olinadi;
 - `restyle()` / `switch_template()` — foydalanuvchi shablonni almashtirsa, bitta qisqa so'rov bilan faqat ohang va uzunlik moslashtiriladi; faktlar, raqamlar, manbalar va rasmlar o'zgarmaydi (manbalar va rasmlar kod bilan qayta tiklanadi).
 
-API: `POST /api/restyle {user_id, template_id}` foydalanuvchining oxirgi taqdimotini yangi shablonda yuboradi, `GET /api/last` Mini App'ga oxirgi taqdimotni ko'rsatadi. Mini App'da "Yangi taqdimot / Oldingisini boshqa shablonda" tanlovi bor.
+API: `POST /api/restyle {user_id, template_id, deck_id}` foydalanuvchining istalgan taqdimotini yangi shablonda yuboradi, `GET /api/decks` uning barcha taqdimotlarini ko'rsatadi. Mini App'da "Yangi taqdimot / Mening taqdimotlarim / Muharrir" bo'limlari bor.
 
 ## O'rnatish
 ```bash
@@ -67,33 +75,49 @@ sudo apt-get install fonts-liberation fonts-crosextra-carlito fonts-crosextra-ca
 npm install
 node fill.js 25 content/soliq.json        # sinov: out/25-rasmiy-soliq-islohotlari.pptx
 
-# 2) Backend (Python 3.11+)
+# 2) Backend (Python 3.12, PostgreSQL 16)
 cd ../backend
-pip install -r requirements.txt
-cp .env.example .env                       # BOT_TOKEN, ANTHROPIC_API_KEY, PEXELS_API_KEY, WEBAPP_URL, PUBLIC_URL, WEBHOOK_SECRET
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+cp .env.example .env                       # BOT_TOKEN, DATABASE_URL, GEMINI_API_KEY, PEXELS_API_KEY, WEBAPP_URL, ADMIN_IDS ...
 set -a; . ./.env; set +a
-uvicorn main:app --host 0.0.0.0 --port 8000
+.venv/bin/uvicorn app.api.main:app --host 127.0.0.1 --port 8000   # API (migratsiyalar shu yerda qo'llanadi)
+.venv/bin/python -m app.worker                                     # navbatdagi taqdimotlarni chizadi
+.venv/bin/python -m app.bot.polling                                # bot
+# production: ops/systemd/*.service (slideai-backend, -worker, -bot, -miniapp, -tunnel, -backup.timer)
 
 # 3) Mini App
 cd ../miniapp
 npm install
 cp .env.example .env                       # VITE_API_URL=https://api.sizning-domen.uz
 npm run build                              # dist/ ni HTTPS hostingga joylang
-cd ../backend && python bot_setup.py       # webhook, /start /language /help buyruqlari (3 tilda), menyu tugmasi
+cd ../backend && .venv/bin/python -m app.bot.setup   # webhook rejimi uchun: webhook, buyruqlar (3 tilda), menyu tugmasi
 ```
 `SLIDEAI_DEMO=1` bilan backend AI va Pexels'siz ishlaydi (namuna kontent bilan): integratsiyani
 tekshirish uchun qulay.
 
+## Ishlab chiqish
+```bash
+cd backend
+.venv/bin/pip install -r requirements-dev.txt
+sudo -u postgres createdb -O slideai slideai_test        # testlar uchun alohida baza
+export TEST_DATABASE_URL=postgresql://slideai:PAROL@127.0.0.1:5432/slideai_test
+.venv/bin/ruff check app tests && .venv/bin/mypy app && .venv/bin/pytest -q    # -m "not slow": shablonlarsiz, 10 soniya
+```
+Har push'da GitHub Actions xuddi shularni bajaradi (`.github/workflows/ci.yml`).
+Baza o'zgarishi: `backend/migrations/` ga keyingi raqamli `.sql` faylni qo'shing — u keyingi ishga tushishda qo'llanadi.
+
 ## Muhim joylar kodda
-- AI so'rovi: `backend/content_ai.py` → `build_prompt()` (matn), `claude()` (yuborish), `generate_content()` (tekshiruv va qayta so'rash).
+- AI so'rovi: `app/services/content_ai.py` → `build_prompt()` (matn), `gemini()` (yuborish, band bo'lsa 5 martagacha), `generate_content()` (tekshiruv va qayta so'rash).
 - Slaydlar rejasi: `content_ai.plan_for(n, template_id)`.
 - Rasmlar: `content_ai.pexels_search()`; AI faqat inglizcha qidiruv so'zini yozadi.
-- Kredit: `backend/main.py` → `charge_credit()` (Payme/Click balansingizga ulang; restyle uchun alohida, arzonroq narx belgilash mumkin).
+- Pul: `app/services/billing.py` (har harakat `ledger` da, balans qatori qulflanadi), to'lov kelishi `app/services/payments.py`, narxlar admin paneldan (`app_settings`).
+- Navbat: `app/services/jobs.py` (`enqueue` → worker `claim` → `run`; xato bo'lsa `fail` pulni qaytaradi).
 - Uslub pasporti: shablon faylidagi `STYLE`. Uni o'zgartirsangiz, `templates.json` ni qayta yarating (buyruq README oxirida).
 - Yangi shablon qo'shish: `engine/templates/41-nomi.js` yarating (`id`, `name`, `category`, `build`) — `fill.js` uni avtomatik topadi; keyin `engine/templates.json` va Mini App rasmini yangilang.
 
 ## Xavfsizlik
-- `/api/generate` faqat Telegram imzosi to'g'ri bo'lgan so'rovni qabul qiladi; `user_id` imzolangan foydalanuvchi bilan solishtiriladi.
+- `/api/generate` faqat Telegram imzosi (yoki botning pastki menyusidagi imzolangan kalit) to'g'ri bo'lgan so'rovni qabul qiladi; `user_id` imzolangan foydalanuvchi bilan solishtiriladi.
+- Admin panel: faqat `ADMIN_IDS`, botdagi `/admin` havolasi 12 soat; har amal `admin_log` da. Loglarda token `?t=***` bo'lib yoziladi.
 - Production'da `/docs` o'chirilgan; `ALLOWED_ORIGINS` ga faqat Mini App domenini yozing.
 
 ## Eslatma
