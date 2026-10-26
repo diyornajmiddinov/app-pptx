@@ -89,7 +89,7 @@ async def _housekeeping_loop():
         try:
             await run_in_threadpool(housekeeping)
         except Exception:
-            log.exception("housekeeping failed")
+            log.exception("Vaqtinchalik fayllarni tozalash ishlamadi")
         await asyncio.sleep(3600)
 
 
@@ -191,7 +191,7 @@ async def job(req: GenerateRequest, chat_id: int, price: int):
         await decks.save(chat_id, content, req.model_dump(), deck_id)
         await deliver(chat_id, path, req.topic, t(await lang_of(chat_id), "slides", n=len(content["slides"])))
     except Exception:  # never leave the user waiting silently
-        log.exception("generation failed")
+        log.exception("Taqdimot yaratilmadi · foydalanuvchi %s · shablon %s · %s slayd · «%s»", chat_id, req.template_id, req.slide_count, req.topic[:80])
         await send_message(chat_id, t(await lang_of(chat_id), "err_gen"))
         await refund(chat_id, price, "generate")
 
@@ -210,7 +210,7 @@ async def restyle_job(deck_id: str, template_id: int, chat_id: int, price: int):
         await decks.save(chat_id, content, {**deck["request"], "template_id": template_id}, deck_id)  # the deck now uses the new template
         await deliver(chat_id, path, content["meta"]["topic"], t(await lang_of(chat_id), "new_template"))
     except Exception:
-        log.exception("restyle failed")
+        log.exception("Shablon almashtirilmadi · foydalanuvchi %s · taqdimot %s · yangi shablon %s", chat_id, deck_id, template_id)
         await send_message(chat_id, t(await lang_of(chat_id), "err_restyle"))
         await refund(chat_id, price, "restyle")
 
@@ -287,7 +287,7 @@ async def _notify_paid(paid: dict | None):
         try:
             await bot.notify_paid(paid)
         except Exception:  # the provider must still get its answer
-            log.exception("payment notification failed")
+            log.exception("To'lov haqida xabar yuborilmadi · foydalanuvchi %s · %s so'm", paid.get("user_id"), paid.get("amount"))
 
 
 @app.post("/api/pay/payme")

@@ -22,11 +22,21 @@ log = logging.getLogger("polling")
 UPDATES = ["message", "callback_query", "my_chat_member"]  # my_chat_member: the bot added to the log channel
 
 
+def what(u: dict) -> str:
+    """Which user did what, for the error report."""
+    if q := u.get("callback_query"):
+        return f"tugma «{q.get('data', '')}» · foydalanuvchi {q['from']['id']}"
+    if m := u.get("message"):
+        kind = "rasm" if m.get("photo") else f"fayl {m['document'].get('file_name', '')}" if m.get("document") else f"«{(m.get('text') or '')[:60]}»"
+        return f"xabar {kind} · foydalanuvchi {m.get('from', {}).get('id')}"
+    return ", ".join(k for k in u if k != "update_id")
+
+
 async def handle(u: dict):
     try:
         await bot.handle(u)
     except Exception:
-        log.exception("update %s failed", u["update_id"])
+        log.exception("Bot xabarni qayta ishlay olmadi · %s", what(u))
 
 
 async def refresh_menu_buttons():

@@ -208,7 +208,7 @@ async def pdf_make(chat_id: int, user_id: int, lang: str):
         if skipped:
             await send_message(chat_id, t(lang, "pdf_skipped", n=skipped))
     except Exception:
-        log.exception("images -> PDF failed")
+        log.exception("PDF yaratilmadi · foydalanuvchi %s · %s ta rasm", user_id, len(files))
         await send_message(chat_id, t(lang, "pdf_error"))
 
 
