@@ -1,0 +1,62 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Fallback values for when the page is opened in a normal browser during
+  development. Inside Telegram, useTelegram() overwrites these with the
+  user's real theme on mount and on every `themeChanged` event.
+*/
+:root {
+  --tg-bg: #ffffff;
+  --tg-secondary-bg: #f2f2f7;
+  --tg-text: #000000;
+  --tg-hint: #8e8e93;
+  --tg-link: #007aff;
+  --tg-button: #007aff;
+  --tg-button-text: #ffffff;
+  --tg-separator: #e5e5ea;
+  --tg-destructive: #ff3b30;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --tg-bg: #1c1c1e;
+    --tg-secondary-bg: #2c2c2e;
+    --tg-text: #ffffff;
+    --tg-hint: #98989f;
+    --tg-link: #0a84ff;
+    --tg-button: #0a84ff;
+    --tg-button-text: #ffffff;
+    --tg-separator: #38383a;
+    --tg-destructive: #ff453a;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    background-color: var(--tg-bg);
+    color: var(--tg-text);
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: none;
+  }
+
+  /* Hide horizontal scrollbar on the category tabs */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

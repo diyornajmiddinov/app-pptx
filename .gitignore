@@ -1,0 +1,20 @@
+# dependencies and builds
+node_modules
+dist
+.venv
+__pycache__
+*.pyc
+
+# generated decks / previews
+out
+
+# secrets: only .env.example goes into git
+.env
+.env.*
+!.env.example
+
+# user data: PostgreSQL holds the records; photos, editor files and old SQLite here
+backend/data/*
+!backend/data/.gitkeep
+*.db
+*.db.bak*

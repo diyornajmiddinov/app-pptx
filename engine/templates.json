@@ -1,0 +1,440 @@
+[
+ {
+  "id": 1,
+  "name": "Aurora",
+  "category": "creative",
+  "style": {
+   "tone": "zamonaviy, texnologik va ilhomlantiruvchi; qisqa, aniq jumlalar",
+   "limits": {}
+  }
+ },
+ {
+  "id": 2,
+  "name": "Editorial",
+  "category": "academic",
+  "style": {
+   "tone": "jurnalistik: qiziqarli sarlavhalar, tahliliy va ravon matn",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 3,
+  "name": "Korporativ",
+  "category": "business",
+  "style": {
+   "tone": "biznes-konsalting: har bir sarlavha xulosa bo'lsin (action title), raqam va faktlarga tayan",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 4,
+  "name": "Samarqand",
+  "category": "creative",
+  "style": {
+   "tone": "salobatli, madaniy-tarixiy ohang; hurmatli va biroz badiiy ifoda",
+   "limits": {}
+  }
+ },
+ {
+  "id": 5,
+  "name": "Gradient",
+  "category": "creative",
+  "style": {
+   "tone": "ijodiy va energiyali; qisqa, jozibali iboralar",
+   "limits": {
+    "card_t4": 65
+   }
+  }
+ },
+ {
+  "id": 6,
+  "name": "Shveytsar",
+  "category": "minimalist",
+  "style": {
+   "tone": "minimal: imkon qadar qisqa, bitta so'z ham ortiqcha bo'lmasin",
+   "limits": {
+    "card_t3": 70,
+    "card_t4": 60,
+    "stmt": 60
+   }
+  }
+ },
+ {
+  "id": 7,
+  "name": "Tabiat",
+  "category": "academic",
+  "style": {
+   "tone": "sokin, tushunarli, ta'limiy ohang",
+   "limits": {}
+  }
+ },
+ {
+  "id": 8,
+  "name": "Akademik",
+  "category": "academic",
+  "style": {
+   "tone": "akademik ma'ruza: ta'riflar, atamalar va ilmiy aniqlik",
+   "limits": {
+    "intro": 360
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 9,
+  "name": "Lyuks",
+  "category": "business",
+  "style": {
+   "tone": "nafis, premium ohang: kam so'z, salmoqli iboralar",
+   "limits": {
+    "stmt": 60
+   }
+  }
+ },
+ {
+  "id": 10,
+  "name": "Dashboard",
+  "category": "business",
+  "style": {
+   "tone": "analitik: ko'rsatkichlar, raqamlar, natijaga yo'naltirilgan",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 11,
+  "name": "Bauhaus",
+  "category": "creative",
+  "style": {
+   "tone": "dadil va sodda: qisqa, aniq gaplar",
+   "limits": {
+    "card_t4": 60
+   }
+  }
+ },
+ {
+  "id": 12,
+  "name": "Brutalist",
+  "category": "creative",
+  "style": {
+   "tone": "o'tkir va to'g'ridan-to'g'ri: shiorga o'xshash qisqa iboralar",
+   "limits": {
+    "card_h": 18,
+    "card_t4": 60
+   }
+  }
+ },
+ {
+  "id": 13,
+  "name": "Chizma",
+  "category": "academic",
+  "style": {
+   "tone": "muhandislik-texnik: aniq, bosqichma-bosqich, atamalar bilan",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 14,
+  "name": "Klinika",
+  "category": "minimalist",
+  "style": {
+   "tone": "xotirjam, ishonchli; sodda va tushunarli tushuntirish",
+   "limits": {}
+  }
+ },
+ {
+  "id": 15,
+  "name": "Retro",
+  "category": "creative",
+  "style": {
+   "tone": "iliq, do'stona, hikoya qiluvchi ohang",
+   "limits": {}
+  }
+ },
+ {
+  "id": 16,
+  "name": "Terminal",
+  "category": "minimalist",
+  "style": {
+   "tone": "texnik va lo'nda: dasturchi uslubida aniq",
+   "limits": {
+    "card_t4": 60,
+    "step_t": 70
+   }
+  }
+ },
+ {
+  "id": 17,
+  "name": "Zen",
+  "category": "minimalist",
+  "style": {
+   "tone": "sokin va minimal: har bir gapda bitta fikr",
+   "limits": {
+    "stmt": 60,
+    "quote": 110
+   }
+  }
+ },
+ {
+  "id": 18,
+  "name": "Bento",
+  "category": "business",
+  "style": {
+   "tone": "zamonaviy mahsulot taqdimoti: juda qisqa, ta'sirchan",
+   "limits": {
+    "card_t3": 70,
+    "card_t4": 55
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 19,
+  "name": "Doira",
+  "category": "business",
+  "style": {
+   "tone": "tizimli: o'zaro bog'liqlik, sabab-oqibat va sikllarni ko'rsat",
+   "limits": {}
+  }
+ },
+ {
+  "id": 20,
+  "name": "Xarita",
+  "category": "academic",
+  "style": {
+   "tone": "tadqiqot yo'li ohangi: bosqich, yo'nalish va natija; metaforani me'yorida ishlat",
+   "limits": {}
+  }
+ },
+ {
+  "id": 21,
+  "name": "Fotojurnal",
+  "category": "creative",
+  "style": {
+   "tone": "fotoreportaj: jonli, aniq, kuchli sarlavhalar",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 22,
+  "name": "Galereya",
+  "category": "academic",
+  "style": {
+   "tone": "muzey yorlig'i uslubi: qisqa, nafis izohlar",
+   "limits": {
+    "image_text": 220
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 23,
+  "name": "Ikki qism",
+  "category": "business",
+  "style": {
+   "tone": "muvozanatli, tushuntiruvchi biznes uslubi",
+   "limits": {}
+  }
+ },
+ {
+  "id": 24,
+  "name": "Duotone",
+  "category": "creative",
+  "style": {
+   "tone": "dadil, zamonaviy va qisqa",
+   "limits": {
+    "image_text": 220
+   }
+  }
+ },
+ {
+  "id": 25,
+  "name": "Rasmiy",
+  "category": "academic",
+  "style": {
+   "tone": "rasmiy-akademik (OTM taqdimoti): to'liq gaplar, atamalar aniq, rasmiy til",
+   "limits": {
+    "intro": 360
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 26,
+  "name": "Kino",
+  "category": "creative",
+  "style": {
+   "tone": "dramatik, hikoya kabi; sarlavhalar qisqa va ta'sirli",
+   "limits": {
+    "card_t4": 60
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 27,
+  "name": "Kitob",
+  "category": "academic",
+  "style": {
+   "tone": "kitob uslubi: ravon, bir-biriga bog'langan, to'liqroq gaplar",
+   "limits": {
+    "intro": 380,
+    "image_text": 300
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 28,
+  "name": "Qog'oz",
+  "category": "creative",
+  "style": {
+   "tone": "yumshoq, do'stona va tushunarli",
+   "limits": {}
+  }
+ },
+ {
+  "id": 29,
+  "name": "Dinamika",
+  "category": "business",
+  "style": {
+   "tone": "harakatli, motivatsion: fe'l bilan boshlanuvchi qisqa iboralar",
+   "limits": {}
+  }
+ },
+ {
+  "id": 30,
+  "name": "Asalari",
+  "category": "business",
+  "style": {
+   "tone": "tizimli; mehnat va hamkorlik ohangi, aniq",
+   "limits": {}
+  }
+ },
+ {
+  "id": 31,
+  "name": "Izometrik",
+  "category": "business",
+  "style": {
+   "tone": "tizimli va konstruktiv: har bir g'oya bosqichma-bosqich 'qurilgandek' bayon qilinsin",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 32,
+  "name": "Komiks",
+  "category": "creative",
+  "style": {
+   "tone": "jonli va qiziqarli: qisqa, dialogga o'xshash iboralar, undov va savollarni me'yorida ishlat",
+   "limits": {
+    "card_t3": 80,
+    "card_t4": 65,
+    "stmt": 60,
+    "quote": 110
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 33,
+  "name": "Doska",
+  "category": "academic",
+  "style": {
+   "tone": "o'qituvchi tushuntirgandek: sodda, aniq, misollar bilan; qisqa ta'riflar",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 34,
+  "name": "Daftar",
+  "category": "academic",
+  "style": {
+   "tone": "talaba konspekti uslubi: qisqa, aniq punktlar, eng muhim fikrlar ajratilgan",
+   "limits": {
+    "card_t4": 60
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 35,
+  "name": "Art Deco",
+  "category": "creative",
+  "style": {
+   "tone": "tantanali va nafis: sarlavhalar qisqa va salmoqli, matn muloyim, rasmiy-badiiy",
+   "limits": {
+    "title": 40,
+    "card_h": 18,
+    "step_h": 18,
+    "event_h": 14
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 36,
+  "name": "Piksel",
+  "category": "creative",
+  "style": {
+   "tone": "o'yin tilida qiziqarli: qisqa, harakatga undovchi iboralar; mavzu jiddiyligini saqla",
+   "limits": {
+    "title": 40,
+    "card_h": 16,
+    "step_h": 16,
+    "card_t3": 75,
+    "card_t4": 55,
+    "event_h": 14,
+    "stmt": 55
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 37,
+  "name": "Neumorf",
+  "category": "minimalist",
+  "style": {
+   "tone": "sokin va zamonaviy: sodda, do'stona, foydalanuvchiga yo'naltirilgan tushuntirish",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 38,
+  "name": "Element",
+  "category": "academic",
+  "style": {
+   "tone": "ilmiy-ommabop: tushunchalarni element kabi aniq ta'riflab ber, qisqa va lo'nda",
+   "limits": {
+    "agenda_item": 26
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 39,
+  "name": "Metro",
+  "category": "business",
+  "style": {
+   "tone": "yo'l xaritasi kabi: aniq bosqichlar va keyingi qadamlar, qisqa ko'rsatkichli iboralar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 40,
+  "name": "Pochta",
+  "category": "creative",
+  "style": {
+   "tone": "maktubdek samimiy, lekin aniq: tinglovchiga murojaat qilgandek, qisqa xabarlar",
+   "limits": {},
+   "prefer": null
+  }
+ }
+]

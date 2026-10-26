@@ -1,0 +1,42 @@
+{ "language": "uz", "file": "soliq-islohotlari",
+  "meta": { "topic": "Soliq islohotlari va iqtisodiy o'sish", "author": "Diyorbek Toshmatov", "org": "TDIU", "loc": "Toshkent", "year": "2024" },
+  "slides": [
+  { "type": "cover", "title": "Soliq islohotlari va iqtisodiy o'sish", "subtitle": "O'zbekistonda 2018–2023 yillardagi soliq islohotlari va ularning iqtisodiyotga ta'siri", "image": "demo/img/skyline.jpg" },
+  { "type": "intro", "title": "Kirish", "text": "2018-yilda qabul qilingan soliq siyosatini takomillashtirish konsepsiyasi soliq yukini kamaytirish, soliq solishni soddalashtirish va ma'muriyatchilikni yaxshilashni maqsad qildi. Taqdimotda islohot bosqichlari, stavkalardagi o'zgarishlar va iqtisodiy o'sish ko'rsatkichlari ko'rib chiqiladi.", "image": "demo/img/document.jpg" },
+  { "type": "agenda", "title": "Reja", "items": ["Islohot konsepsiyasi", "Asosiy o'zgarishlar", "Stavkalar dinamikasi", "Ta'sir mexanizmi", "Soliq tushumlari", "YaIM o'sishi"] },
+  { "type": "image", "title": "Islohot konsepsiyasi", "text": "Prezidentning 2018-yil 29-iyundagi PF-5468-son Farmoni bilan soliq siyosatini takomillashtirish konsepsiyasi qabul qilindi. Asosiy maqsad: soliq yukini izchil kamaytirish, soliq solishni soddalashtirish va soliq ma'muriyatchiligini takomillashtirish.", "image": "demo/img/calculator.jpg" },
+  { "type": "cards", "title": "Asosiy o'zgarishlar", "items": [
+    { "icon": "FiUser", "h": "Daromad solig'i", "t": "Progressiv shkala (22,5% gacha) o'rniga 2019-yildan yagona 12%." },
+    { "icon": "FiPercent", "h": "QQS", "t": "Stavka 20% dan 15% ga, 2023-yildan esa 12% ga tushirildi." },
+    { "icon": "FiUsers", "h": "Ijtimoiy to'lov", "t": "Yagona ijtimoiy to'lov 25% dan 12% ga kamaytirildi." },
+    { "icon": "FiShoppingBag", "h": "Kichik biznes", "t": "Aylanmasi 1 mlrd so'mgacha bo'lganlar uchun aylanmadan 4% soliq." } ] },
+  { "type": "stats", "title": "Stavkalar dinamikasi", "stats": [
+    { "value": "12%", "label": "QQS stavkasi 2023-yildan (2018-yilda 20%)" },
+    { "value": "12%", "label": "Jismoniy shaxslar daromad solig'i, 2019-yildan" },
+    { "value": "5%", "label": "Dividendlar bo'yicha soliq (avval 10%)" } ],
+    "note": "Manba: PF-5468-son Farmon, O'zbekiston Respublikasi Soliq kodeksi" },
+  { "type": "process", "title": "Ta'sir mexanizmi", "steps": [
+    { "h": "Soliq yuki kamayadi", "t": "Korxona va xodimlar ixtiyorida ko'proq mablag' qoladi." },
+    { "h": "Legallashuv", "t": "Past stavkada yashirin faoliyatdan chiqish foydaliroq bo'ladi." },
+    { "h": "Investitsiya", "t": "Qo'shimcha mablag' ishlab chiqarish va ish o'rinlariga yo'naltiriladi." },
+    { "h": "Baza kengayadi", "t": "Soliq to'lovchilar ko'payib, tushumlar barqarorlashadi." } ] },
+  { "type": "compare", "title": "Islohotgacha va islohotdan keyin",
+    "left": { "h": "2018-yilgacha", "items": ["Daromad solig'i 22,5% gacha", "QQS 20%", "Yagona ijtimoiy to'lov 25%", "Dividendlarga 10% soliq"] },
+    "right": { "h": "Islohotdan keyin", "items": ["Yagona daromad solig'i 12%", "QQS 12% (2023-yildan)", "Ijtimoiy to'lov 12%", "Dividendlarga 5% soliq"] } },
+  { "type": "image", "title": "Soliq tushumlari", "text": "Stavkalar pasaytirilganiga qaramay, 2023-yilda soliq organlari davlat budjetiga 165,9 trln so'm tushum ta'minladi. Onlayn nazorat-kassa mashinalari orqali o'tgan savdo hajmi 2022-yilga nisbatan 40% ga oshdi.", "image": "demo/img/chart.jpg" },
+  { "type": "timeline", "title": "Islohot bosqichlari", "items": [
+    { "year": "2018", "h": "Konsepsiya", "t": "PF-5468 farmoni bilan soliq siyosati konsepsiyasi qabul qilindi." },
+    { "year": "2019", "h": "Yangi stavkalar", "t": "Daromad solig'i va ijtimoiy to'lov 12%, QQS 15% ga tushdi." },
+    { "year": "2020", "h": "Soliq kodeksi", "t": "Yangi tahrirdagi Soliq kodeksi kuchga kirdi." },
+    { "year": "2023", "h": "QQS 12%", "t": "QQS stavkasi 15% dan 12% ga pasaytirildi." } ] },
+  { "type": "statement", "title": "YaIM o'sishi", "text": "2021–2023 yillarda YaIM yiliga 5,7–7,4% o'sdi", "caption": "Real YaIM o'sishi: 2020-yil 2,0%, 2021-yil 7,4%, 2022-yil 5,7%, 2023-yil 6,0%. Soliq islohoti o'sishga ta'sir qilgan omillardan biri." },
+  { "type": "quote", "text": "Bu dunyoda o'lim va soliqlardan boshqa hech narsa aniq emas.", "author": "Benjamin Franklin, 1789" },
+  { "type": "sources", "title": "Foydalanilgan manbalar", "items": [
+    "O'zbekiston Respublikasi Prezidentining 29.06.2018 yildagi PF-5468-son Farmoni.",
+    "O'zbekiston Respublikasining Soliq kodeksi (yangi tahrir), 2020-yil 1-yanvardan amalda.",
+    "Kun.uz. 2023-yildan soliq qonunchiligida nimalar o'zgardi, 05.01.2023.",
+    "UzA. Davlat budjetiga soliq tushumlari to'g'risida, 2024.",
+    "SQB. Kapital bozori tahlili, 2024.",
+    "O'zbekiston Respublikasi Statistika agentligi, stat.uz." ] },
+  { "type": "closing", "title": "E'tiboringiz uchun rahmat!", "subtitle": "Savollaringiz bo'lsa, marhamat.", "image": "demo/img/road.jpg" }
+]}
