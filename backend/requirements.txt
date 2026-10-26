@@ -1,6 +1,10 @@
-fastapi>=0.110
-uvicorn[standard]>=0.29
-pydantic>=2.6
-httpx>=0.27
-asyncpg>=0.30
-anthropic>=0.40
+# Runtime dependencies, pinned (tested together). Update deliberately: bump, run the tests, commit.
+fastapi==0.162.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.16.1
+httpx==0.28.1
+asyncpg==0.32.0
+python-pptx==1.0.2
+pillow==13.0.0
+anthropic==2.3.0

@@ -1,0 +1,35 @@
+[project]
+name = "slideai-backend"
+version = "1.0.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+markers = ["slow: renders real .pptx files with node (engine)"]
+filterwarnings = ["ignore::DeprecationWarning"]
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+extend-exclude = [".venv", "data"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "ASYNC", "SIM", "RUF"]
+ignore = [
+  "E501",    # long lines: the formatter's limit is the guide, SQL and texts may run over
+  "E701", "E702",  # a short `if x: return` on one line is the house style
+  "SIM108",  # ternaries are not always clearer
+  "RUF001", "RUF002", "RUF003",  # Uzbek / Russian text uses ʻ ’ « » and Cyrillic on purpose
+  "B008",    # FastAPI Depends() in defaults is the framework's idiom
+]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+check_untyped_defs = false
+warn_unused_ignores = true
+no_implicit_optional = true
+exclude = ["tests/", ".venv/"]
