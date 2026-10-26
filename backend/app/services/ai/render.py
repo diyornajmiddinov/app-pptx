@@ -1,0 +1,47 @@
+"""Draw a .pptx from content JSON with the Node engine (engine/fill.js)."""
+import asyncio
+import json
+import os
+import subprocess
+import tempfile
+from pathlib import Path
+
+from app.core.config import ENGINE_DIR
+
+TIMEOUT = 180  # s
+
+
+def _content_file(content: dict) -> str:
+    with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False)
+    return f.name
+
+
+async def render(content: dict, template_id: int, out_path: Path | str) -> Path:
+    """Async: a cancelled job (time limit) kills node instead of leaving it running."""
+    src = _content_file(content)
+    cmd = ["node", "fill.js", str(template_id), src, str(out_path)]
+    proc = await asyncio.create_subprocess_exec(*cmd, cwd=ENGINE_DIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+    try:
+        out, err = await asyncio.wait_for(proc.communicate(), TIMEOUT)
+    except BaseException:  # timeout or cancelled
+        if proc.returncode is None:
+            proc.kill()
+            await proc.wait()
+        raise
+    finally:
+        os.unlink(src)
+    if proc.returncode:  # the same error type as subprocess.run(check=True): alerts.why explains it
+        raise subprocess.CalledProcessError(proc.returncode, cmd, out.decode(errors="replace"), err.decode(errors="replace"))
+    return Path(out_path)
+
+
+def render_sync(content: dict, template_id: int, out_path: Path | str) -> Path:
+    """For code that already runs in a thread (the editor's import)."""
+    src = _content_file(content)
+    try:
+        subprocess.run(["node", "fill.js", str(template_id), src, str(out_path)], cwd=ENGINE_DIR, check=True, timeout=TIMEOUT,
+                       capture_output=True, text=True)
+    finally:
+        os.unlink(src)
+    return Path(out_path)

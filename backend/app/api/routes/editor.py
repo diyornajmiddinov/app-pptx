@@ -16,7 +16,8 @@ from starlette.concurrency import run_in_threadpool
 from app.bot.keyboards import editor_url
 from app.core.auth import editor_user, telegram_user
 from app.core.telegram import send_document
-from app.services import content_ai, decks, editor
+from app.services import decks, editor
+from app.services.ai.render import render_sync
 from app.services.users import lang_of
 from app.texts import t
 
@@ -60,7 +61,7 @@ class DeckImport(BaseModel):
 
 def _import_deck(uid: int, deck: dict) -> str:
     with tempfile.TemporaryDirectory(prefix="slideai-") as tmp:
-        path = content_ai.render(deck["content"], deck["request"]["template_id"], Path(tmp) / "deck.pptx")
+        path = render_sync(deck["content"], deck["request"]["template_id"], Path(tmp) / "deck.pptx")
         return editor.import_file(uid, path.read_bytes(), deck["content"]["meta"]["topic"] + ".pptx", "deck")
 
 

@@ -15,7 +15,6 @@ Every change is written to admin_log.
 """
 import asyncio
 import contextlib
-import json
 import logging
 import os
 import shutil
@@ -37,7 +36,10 @@ from app.core import db
 from app.core.auth import admin_user
 from app.core.config import DATA_DIR, settings
 from app.core.telegram import download_file, send_message
-from app.services import app_settings, billing, content_ai, payments
+from app.services import app_settings, billing, payments
+from app.services.ai import models
+from app.services.ai.catalog import TEMPLATE_NAMES
+from app.services.ai.render import render
 from app.services.users import lang_of
 from app.texts import som, t
 
@@ -46,7 +48,6 @@ router = APIRouter(prefix="/api/admin")
 TZ = "Asia/Tashkent"
 STARTED = time.time()
 DATA = DATA_DIR
-TEMPLATE_NAMES = {t_["id"]: t_["name"] for t_ in json.loads((content_ai.PRO_DIR / "templates.json").read_text(encoding="utf-8"))}
 PAID_KINDS = "kind LIKE 'topup:%'"  # real money in (admin corrections are not revenue)
 
 
@@ -320,7 +321,7 @@ async def deck_download(deck_id: str, background: BackgroundTasks, uid: int = De
         raise HTTPException(404, "Taqdimot topilmadi")
     tmp = tempfile.mkdtemp()
     background.add_task(shutil.rmtree, tmp, True)
-    path = await run_in_threadpool(content_ai.render, d["content"], d["request"]["template_id"], Path(tmp) / "deck.pptx")
+    path = await render(d["content"], d["request"]["template_id"], Path(tmp) / "deck.pptx")
     name = "".join(ch if ch.isalnum() or ch in " -_" else "_" for ch in d["content"]["meta"].get("topic", "deck"))[:60].strip() or "deck"
     return FileResponse(path, filename=f"{name}.pptx",
                         media_type="application/vnd.openxmlformats-officedocument.presentationml.presentation")
@@ -422,7 +423,7 @@ async def get_settings(uid: int = Depends(admin_user)):
         "providers": {"payme": "payme" in payments.providers(), "click": "click" in payments.providers(),
                       "card": "card" in payments.providers(), "payme_test": settings.payme_test},
         "admins": sorted(settings.admin_ids), "webapp_url": settings.webapp_url,
-        "ai": {"model": content_ai.GEMINI_MODEL if os.getenv("GEMINI_API_KEY") else "Claude", "photos": "Pexels" if os.getenv("PEXELS_API_KEY") else "Gemini"},
+        "ai": {"model": models.GEMINI_MODEL if os.getenv("GEMINI_API_KEY") else "Claude", "photos": "Pexels" if os.getenv("PEXELS_API_KEY") else "Gemini"},
         "system": {"uptime": int(time.time() - STARTED), "disk_total": disk.total, "disk_free": disk.free,
                    "data_size": await run_in_threadpool(_dir_size, DATA), "ram": ram, "load": os.getloadavg(),
                    "db_size": counts["db_size"], "postgres": " ".join(counts["pg"].split()[:2]),

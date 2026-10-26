@@ -15,9 +15,11 @@ import tempfile
 from pathlib import Path
 
 from app.core import db
-from app.core.config import settings
+from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_document, send_message
-from app.services import billing, content_ai, decks
+from app.services import billing, decks
+from app.services.ai import models, pipeline
+from app.services.ai.render import render
 from app.services.users import lang_of
 from app.texts import som, t
 
@@ -74,33 +76,33 @@ def _drop_tmp(path: Path):
 
 
 def demo_content(topic: str, meta: dict) -> dict:
-    content = json.loads((content_ai.PRO_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))
+    content = json.loads((ENGINE_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))
     content["meta"] = {"topic": topic, **meta}
     for s in content["slides"]:
         if isinstance(s.get("image"), str) and not s["image"].startswith("/"):
-            s["image"] = str(content_ai.PRO_DIR / s["image"])
+            s["image"] = str(ENGINE_DIR / s["image"])
     return content
 
 
-def build(req: dict, deck_id: str, user_id: int) -> tuple[Path, dict]:
-    """New deck: AI text, photos, drawing (blocking: runs in a worker thread)."""
-    content_ai.usage_context.set({"user_id": user_id, "purpose": "generate", "job": deck_id})
+async def build(req: dict, deck_id: str, user_id: int) -> tuple[Path, dict]:
+    """New deck: AI text, photos, drawing."""
+    models.usage_context.set({"user_id": user_id, "purpose": "generate", "job": deck_id})
     meta = {k: req.get(k, "") for k in ("author", "org", "loc", "year")}
     if settings.demo:  # offline demo: ready content instead of AI + Pexels
         content = demo_content(req["topic"], meta)
-        path = content_ai.render(content, req["template_id"], Path(tempfile.mkdtemp(prefix="slideai-")) / "demo.pptx")
+        path = await render(content, req["template_id"], pipeline.workdir() / "demo.pptx")
     else:
-        path, content = content_ai.build_presentation(req["topic"], req["template_id"], req["slide_count"], req.get("language", "uz"), meta=meta)
-    decks.keep_images(user_id, deck_id, content)
+        path, content = await pipeline.build_presentation(req["topic"], req["template_id"], req["slide_count"], req.get("language", "uz"), meta=meta)
+    await asyncio.to_thread(decks.keep_images, user_id, deck_id, content)
     return path, content
 
 
-def redraw(content: dict, template_id: int, user_id: int, deck_id: str) -> tuple[Path, dict]:
-    """The same deck in another template (one short AI call adapts the tone; blocking)."""
-    content_ai.usage_context.set({"user_id": user_id, "purpose": "restyle", "job": deck_id})
+async def redraw(content: dict, template_id: int, user_id: int, deck_id: str) -> tuple[Path, dict]:
+    """The same deck in another template (one short AI call adapts the tone)."""
+    models.usage_context.set({"user_id": user_id, "purpose": "restyle", "job": deck_id})
     if settings.demo:
-        return content_ai.render(content, template_id, Path(tempfile.mkdtemp(prefix="slideai-")) / "demo.pptx"), content
-    return content_ai.switch_template(content, template_id)
+        return await render(content, template_id, pipeline.workdir() / "demo.pptx"), content
+    return await pipeline.switch_template(content, template_id)
 
 
 async def deliver(chat_id: int, path: Path, topic: str, note: str):  # note is already localized
@@ -117,7 +119,7 @@ async def run(job: dict):
     try:
         if job["kind"] == "generate":
             req, deck_id = job["payload"], decks.new_id()
-            path, content = await asyncio.wait_for(asyncio.to_thread(build, req, deck_id, job["user_id"]), JOB_TIMEOUT)
+            path, content = await asyncio.wait_for(build(req, deck_id, job["user_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, req, deck_id)
             await deliver(job["user_id"], path, req["topic"], t(await lang_of(job["user_id"]), "slides", n=len(content["slides"])))
         elif job["kind"] == "restyle":
@@ -125,13 +127,12 @@ async def run(job: dict):
             deck = await decks.load(job["user_id"], p["deck_id"])
             if not deck:
                 raise LookupError(f"taqdimot {p['deck_id']} topilmadi")
-            path, content = await asyncio.wait_for(asyncio.to_thread(redraw, deck["content"], p["template_id"], job["user_id"], p["deck_id"]),
-                                                   JOB_TIMEOUT)
+            path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"]}, p["deck_id"])
             await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"))
         else:
             raise ValueError(f"unknown job kind {job['kind']}")
-    except TimeoutError:  # the drawing thread may still finish: it is no longer awaited, so nothing is sent
+    except TimeoutError:  # wait_for cancelled the work (node is killed): nothing is sent
         log.error("Ish %s daqiqada tugamadi · ish %s · foydalanuvchi %s", JOB_TIMEOUT // 60, job["id"], job["user_id"])
         await fail(job, f"timeout {JOB_TIMEOUT}s")
         return
@@ -165,7 +166,7 @@ async def run_pending():
         await run(job)
 
 
-# ---------------------------------------------------------------- AI usage rows (content_ai.on_usage)
+# ---------------------------------------------------------------- AI usage rows (ai.models.on_usage)
 
 async def save_usage(rec: dict):
     await db.pool().execute(

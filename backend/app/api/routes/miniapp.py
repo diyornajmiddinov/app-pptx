@@ -18,15 +18,15 @@ from pydantic import BaseModel, Field
 from app.bot.money import send_low_balance
 from app.core import db
 from app.core.auth import telegram_user
-from app.core.config import settings
+from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_message
-from app.services import app_settings, billing, content_ai, decks, jobs
+from app.services import app_settings, billing, decks, jobs
 from app.services.users import lang_of, set_lang, touch
 from app.texts import t
 
 log = logging.getLogger("api")
 router = APIRouter()
-TEMPLATES = json.loads((content_ai.PRO_DIR / "templates.json").read_text(encoding="utf-8"))
+TEMPLATES = json.loads((ENGINE_DIR / "templates.json").read_text(encoding="utf-8"))
 
 
 class GenerateRequest(BaseModel):

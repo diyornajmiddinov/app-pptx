@@ -1,12 +1,13 @@
 """Error reports: where, what and why."""
-import io
+import asyncio
 import logging
 import subprocess
 import sys
-import urllib.error
+
+import httpx
 
 from app.core import alerts
-from app.services import content_ai
+from app.services.ai import content, models
 
 
 def report(fn, msg="Amal"):
@@ -19,16 +20,15 @@ def report(fn, msg="Amal"):
 
 
 def test_code_error_points_at_our_line():
-    text = report(lambda: content_ai.parse_json("not json"))
-    assert "content_ai.py:" in text and "parse_json()" in text and "JSONDecodeError" in text
+    text = report(lambda: content.parse_json("not json"))
+    assert "content.py:" in text and "parse_json()" in text and "JSONDecodeError" in text
 
 
 def test_gemini_overload_is_explained(monkeypatch):
-    monkeypatch.setattr(content_ai, "RETRY_WAIT", ())
-    def busy(*a, **k):
-        raise urllib.error.HTTPError("https://generativelanguage.googleapis.com/x", 503, "busy", {}, io.BytesIO(b""))
-    monkeypatch.setattr(content_ai.urllib.request, "urlopen", busy)
-    text = report(lambda: content_ai.gemini([{"role": "user", "content": "x"}]))
+    monkeypatch.setattr(models, "RETRY_WAIT", ())
+    monkeypatch.setenv("GEMINI_API_KEY", "k")
+    monkeypatch.setattr(models, "TRANSPORT", httpx.MockTransport(lambda r: httpx.Response(503, json={"error": "busy"})))
+    text = report(lambda: asyncio.run(models.gemini([{"role": "user", "content": "x"}])))
     assert "Tashqi xizmat" in text and "503" in text
 
 

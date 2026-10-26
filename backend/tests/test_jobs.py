@@ -46,7 +46,9 @@ async def test_restart_requeues_once_then_refunds(tg):
 async def test_failure_refunds_exactly_once(tg, monkeypatch):
     await add_user(1, balance=5000)
     await paid_job()
-    monkeypatch.setattr(jobs, "build", lambda *a: (_ for _ in ()).throw(RuntimeError("AI band")))
+    async def busy(*a):
+        raise RuntimeError("AI band")
+    monkeypatch.setattr(jobs, "build", busy)
     await jobs.run_pending()
     job = dict(await db.pool().fetchrow("SELECT * FROM jobs"))
     await jobs.fail(job, "again")            # a second report of the same failure
@@ -58,7 +60,7 @@ async def test_restyle_redraws_the_same_deck(tg, monkeypatch, tmp_path):
     await add_user(1, balance=5000)
     content = {"meta": {"topic": "T"}, "slides": [{"type": "cover"}]}
     did = await decks.save(1, content, {"template_id": 3}, "55")
-    def fake_redraw(c, template_id, user_id, deck_id):
+    async def fake_redraw(c, template_id, user_id, deck_id):
         p = tmp_path / "x.pptx"; p.write_bytes(b"x"); return p, c
     monkeypatch.setattr(jobs, "redraw", fake_redraw)
     await jobs.enqueue("restyle", 1, {"deck_id": did, "template_id": 9}, 2000)
@@ -76,16 +78,16 @@ async def test_migrations_are_recorded():
 
 
 async def test_too_slow_job_is_refunded_and_never_delivered(tg, monkeypatch, tmp_path):
-    import time
     await add_user(1, balance=5000)
     await paid_job()
-    def slow(*a):
-        time.sleep(0.6)
+
+    async def slow(*a):
+        await asyncio.sleep(0.6)
         p = tmp_path / "late.pptx"; p.write_bytes(b"x"); return p, {"meta": {"topic": "T"}, "slides": []}
     monkeypatch.setattr(jobs, "build", slow)
     monkeypatch.setattr(jobs, "JOB_TIMEOUT", 0.2)
     await jobs.run_pending()
-    await asyncio.sleep(0.8)  # the drawing thread finishes after the timeout ...
+    await asyncio.sleep(0.8)  # long enough for the slow job to have finished, had it not been cancelled ...
     assert await db.pool().fetchval("SELECT state FROM jobs") == "failed"
     assert await billing.balance(1) == 5000
     assert not tg.sent("sendDocument")  # ... and its file is not sent

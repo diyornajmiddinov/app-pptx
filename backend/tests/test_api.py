@@ -52,7 +52,7 @@ async def test_generate_for_someone_else_is_403(client):
 
 async def test_failed_generation_is_refunded(client, tg, monkeypatch):
     await add_user(U, balance=10000)
-    def broken(*a, **k):
+    async def broken(*a, **k):
         raise RuntimeError("AI kontenti tekshiruvdan o'tmadi: test")
     monkeypatch.setattr(jobs, "build", broken)
     body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}
@@ -65,7 +65,7 @@ async def test_failed_generation_is_refunded(client, tg, monkeypatch):
 async def test_successful_generation_saves_the_deck_and_sends_the_file(client, tg, monkeypatch, tmp_path):
     await add_user(U, balance=10000)
     content = {"meta": {"topic": "Mavzu"}, "slides": [{"type": "cover", "title": "Mavzu"}, {"type": "closing", "title": "Rahmat"}]}
-    def fake_build(req, deck_id, user_id):
+    async def fake_build(req, deck_id, user_id):
         p = tmp_path / "slideai-x.pptx"; p.write_bytes(b"pptx"); return p, content
     monkeypatch.setattr(jobs, "build", fake_build)
     body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}

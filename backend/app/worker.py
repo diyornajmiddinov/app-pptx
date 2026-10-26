@@ -12,7 +12,8 @@ import signal
 
 from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
-from app.services import billing, content_ai, housekeeping, jobs
+from app.services import billing, housekeeping, jobs
+from app.services.ai import models
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
@@ -40,7 +41,7 @@ async def main(stopping: asyncio.Event | None = None):
     alerts.install("worker")
     await db.connect(max_size=settings.worker_concurrency + 3)
     loop = asyncio.get_running_loop()
-    content_ai.on_usage = lambda rec: asyncio.run_coroutine_threadsafe(jobs.save_usage(rec), loop)  # from job threads
+    models.on_usage = jobs.save_usage  # every Gemini request -> ai_usage
     await jobs.recover()
 
     wake = asyncio.Event()
