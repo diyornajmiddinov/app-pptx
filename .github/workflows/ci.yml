@@ -60,5 +60,7 @@ jobs:
           cache: npm
           cache-dependency-path: miniapp/package-lock.json
       - run: npm ci
+      - name: Lint
+        run: npm run lint -- --max-warnings 0
       - name: Build (Mini App, editor, admin panel)
         run: npm run build

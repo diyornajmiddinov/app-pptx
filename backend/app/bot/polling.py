@@ -12,7 +12,7 @@ from app.bot import handlers as bot
 from app.bot.keyboards import app_url, has_webapp
 from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
-from app.texts import T
+from app.texts import T, t
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
@@ -49,7 +49,7 @@ async def refresh_menu_buttons():
     rows = await db.pool().fetch("SELECT id, coalesce(lang, 'uz') AS lang FROM users")
     for r in rows:
         try:
-            await telegram.set_menu_button(r["id"], T[r["lang"]]["open"], app_url(r["lang"]))
+            await telegram.set_menu_button(r["id"], t(r["lang"], "open"), app_url(r["lang"]))
         except Exception:  # blocked the bot etc.
             pass
         await asyncio.sleep(0.05)

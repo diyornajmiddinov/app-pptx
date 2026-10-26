@@ -286,7 +286,7 @@ def text_model(ctx, tx_body, lst_sources, body_sources, font_ref_color=None, fal
     """Paragraphs with resolved formatting, and the text body's box settings."""
     bodies = [tx_body.find(qn("a:bodyPr")), *body_sources]
     ins = {k: int(_pick_attr(bodies, k) or d) for k, d in (("lIns", 91440), ("tIns", 45720), ("rIns", 91440), ("bIns", 45720))}
-    scale = spacing_cut = 0
+    scale = spacing_cut = 0.0
     fit = "none"
     for b in bodies:
         if b is None:
@@ -471,7 +471,7 @@ def _table(ctx, el):
     rows_xml = tbl.findall(qn("a:tr"))
     rows = []
     for ri, tr in enumerate(rows_xml):
-        cells = []
+        cells: list[dict | None] = []  # None: covered by a merged neighbour
         for ci, tc in enumerate(tr.findall(qn("a:tc"))):
             if tc.get("hMerge") == "1" or tc.get("vMerge") == "1":
                 cells.append(None); continue

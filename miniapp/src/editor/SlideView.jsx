@@ -32,8 +32,9 @@ const ANCHOR = { t: 'flex-start', ctr: 'center', b: 'flex-end', just: 'flex-star
 const TextRoot = memo(function TextRoot({ paragraphs, body, s, editing, rootKey, roots }) {
   const ref = useRef(null);
   useLayoutEffect(() => {
-    if (roots) roots.set(rootKey, ref.current);
-    return () => { if (roots && roots.get(rootKey) === ref.current) roots.delete(rootKey); };
+    const el = ref.current; // the node this registration is for, even if the ref moves on
+    if (roots) roots.set(rootKey, el);
+    return () => { if (roots && roots.get(rootKey) === el) roots.delete(rootKey); };
   }, [roots, rootKey]);
   useLayoutEffect(() => {
     if (!editing && ref.current) ref.current.innerHTML = toHTML(paragraphs, s, body);

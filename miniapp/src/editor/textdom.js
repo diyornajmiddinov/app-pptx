@@ -130,7 +130,7 @@ export function fromDOM(root, s, fit = 1) {
     const runs = [];
     const walk = (n) => {
       if (n.nodeType === 3) {
-        const text = n.textContent.replace(/​/g, '');
+        const text = n.textContent.replace(/\u200B/g, ''); // zero-width space: the caret placeholder in empty runs
         if (!text) return;
         const st = styleOf(n.parentElement, root, s, fit);
         const prev = runs.at(-1);
