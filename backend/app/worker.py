@@ -10,9 +10,9 @@ import asyncio
 import logging
 import signal
 
-from app.core import alerts, db, telegram
+from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
-from app.services import content_ai, housekeeping, jobs
+from app.services import billing, content_ai, housekeeping, jobs
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
@@ -20,12 +20,18 @@ log = logging.getLogger("worker")
 POLL = 5  # s: look for jobs even without a NOTIFY
 
 
-async def _housekeeping():
+async def _hourly():
+    """Cleanup, and the money check: every cached balance must equal its ledger."""
     while True:
         try:
             await asyncio.to_thread(housekeeping.sweep)
         except Exception:
             log.exception("Vaqtinchalik fayllarni tozalash ishlamadi")
+        try:
+            if diff := await billing.reconcile():
+                log.error("Balans va ledger mos emas: %s", diff[:10])
+        except Exception:
+            log.exception("Balanslarni tekshirib bo'lmadi")
         await asyncio.sleep(3600)
 
 
@@ -47,7 +53,7 @@ async def main(stopping: asyncio.Event | None = None):
     listener = await db.pool().acquire()
     await listener.add_listener("jobs", on_notify)
     slots = asyncio.Semaphore(settings.worker_concurrency)
-    sweeper = asyncio.create_task(_housekeeping())
+    background = [asyncio.create_task(_hourly()), asyncio.create_task(systemd.watchdog())]
     running: set[asyncio.Task] = set()
 
     async def work(job):
@@ -74,7 +80,8 @@ async def main(stopping: asyncio.Event | None = None):
         running.add(task); task.add_done_callback(running.discard)
 
     log.info("stopping: waiting for %d running jobs", len(running))
-    sweeper.cancel()
+    for task in background:
+        task.cancel()
     await asyncio.gather(*running, return_exceptions=True)
     await listener.remove_listener("jobs", on_notify)
     await db.pool().release(listener)

@@ -7,6 +7,7 @@ routes/editor.py    the desktop presentation editor (editor.html)
 routes/admin.py     the admin panel (admin.html, opened from the bot's /admin link)
 Paid work is not done here: it is queued in `jobs` and drawn by the worker (app/worker.py).
 """
+import asyncio
 import logging
 from contextlib import asynccontextmanager
 
@@ -14,7 +15,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, editor, miniapp, payments
-from app.core import alerts, db, telegram
+from app.core import alerts, db, systemd, telegram
 from app.core.config import DATA_DIR, settings
 from app.services.editor import EditorError
 
@@ -38,7 +39,9 @@ async def lifespan(_: FastAPI):
     await db.connect(max_size=10)
     await admin.mark_interrupted()
     alerts.started("backend")
+    dog = asyncio.create_task(systemd.watchdog())
     yield
+    dog.cancel()
     await telegram.close()
     await db.close()
 

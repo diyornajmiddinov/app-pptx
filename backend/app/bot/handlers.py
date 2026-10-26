@@ -136,7 +136,8 @@ async def cmd_addbalance(m: Msg):
     if len(parts) == 3 and parts[1].isdigit() and parts[2].lstrip("-").isdigit():
         target, amount = int(parts[1]), int(parts[2])
         new = await billing.top_up(target, amount, ref=f"admin:{m.chat_id}:{m.message_id}", kind="admin")
-        if new is None:  # this very message was already counted (Telegram delivered it twice)
+        if new is None:  # more taken than there is (or Telegram delivered this message twice)
+            await send_message(m.chat_id, t(m.lang, "admin_refused"))
             return
         await send_message(m.chat_id, t(m.lang, "admin_added", user=target, amount=som(amount, m.lang), balance=som(new, m.lang)))
     else:

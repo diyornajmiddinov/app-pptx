@@ -78,7 +78,6 @@ async def stats(uid: int = Depends(admin_user), days: int = Query(30, ge=7, le=1
     p = db.pool()
     today = f"(now() AT TIME ZONE '{TZ}')::date"
     local = lambda col: f"({col} AT TIME ZONE '{TZ}')::date"
-    epoch = lambda col: f"(to_timestamp({col}) AT TIME ZONE '{TZ}')::date"
     k = await p.fetchrow(f"""SELECT
         (SELECT count(*) FROM users) users,
         (SELECT count(*) FROM users WHERE {local('created')} = {today}) users_today,
@@ -86,11 +85,11 @@ async def stats(uid: int = Depends(admin_user), days: int = Query(30, ge=7, le=1
         (SELECT count(*) FROM users WHERE last_seen > now() - interval '1 day') active_1d,
         (SELECT count(*) FROM users WHERE last_seen > now() - interval '7 days') active_7d,
         (SELECT count(*) FROM decks) decks,
-        (SELECT count(*) FROM decks WHERE {epoch('created')} = {today}) decks_today,
-        (SELECT count(*) FROM decks WHERE {epoch('created')} > {today} - 30) decks_30d,
+        (SELECT count(*) FROM decks WHERE {local('created')} = {today}) decks_today,
+        (SELECT count(*) FROM decks WHERE {local('created')} > {today} - 30) decks_30d,
         (SELECT coalesce(sum(delta), 0) FROM ledger WHERE {PAID_KINDS}) revenue,
-        (SELECT coalesce(sum(delta), 0) FROM ledger WHERE {PAID_KINDS} AND {epoch('created')} = {today}) revenue_today,
-        (SELECT coalesce(sum(delta), 0) FROM ledger WHERE {PAID_KINDS} AND {epoch('created')} > {today} - 30) revenue_30d,
+        (SELECT coalesce(sum(delta), 0) FROM ledger WHERE {PAID_KINDS} AND {local('created')} = {today}) revenue_today,
+        (SELECT coalesce(sum(delta), 0) FROM ledger WHERE {PAID_KINDS} AND {local('created')} > {today} - 30) revenue_30d,
         (SELECT coalesce(-sum(delta), 0) FROM ledger WHERE kind IN ('generate', 'restyle')) spent,
         (SELECT coalesce(sum(delta), 0) FROM ledger WHERE kind LIKE 'refund:%' AND delta > 0) refunded,
         (SELECT count(*) FROM ledger WHERE kind = 'generate') generations,
@@ -112,8 +111,8 @@ async def stats(uid: int = Depends(admin_user), days: int = Query(30, ge=7, le=1
         WITH d AS (SELECT generate_series({today} - $1::int + 1, {today}, interval '1 day')::date AS day)
         SELECT d.day,
           (SELECT count(*) FROM users u WHERE {local('u.created')} = d.day) AS users,
-          (SELECT count(*) FROM decks x WHERE {epoch('x.created')} = d.day) AS decks,
-          (SELECT coalesce(sum(delta), 0) FROM ledger l WHERE l.{PAID_KINDS} AND {epoch('l.created')} = d.day) AS revenue,
+          (SELECT count(*) FROM decks x WHERE {local('x.created')} = d.day) AS decks,
+          (SELECT coalesce(sum(delta), 0) FROM ledger l WHERE l.{PAID_KINDS} AND {local('l.created')} = d.day) AS revenue,
           (SELECT coalesce(sum(total_tokens), 0) FROM ai_usage a WHERE {local('a.created')} = d.day) AS ai_tokens
         FROM d ORDER BY d.day""", days)
     tpl = await p.fetch("SELECT (request->>'template_id')::int AS id, count(*) AS n FROM decks GROUP BY 1 ORDER BY 2 DESC, 1 LIMIT 10")

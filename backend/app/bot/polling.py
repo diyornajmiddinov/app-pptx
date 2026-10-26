@@ -10,7 +10,7 @@ import logging
 
 from app.bot import handlers as bot
 from app.bot.keyboards import app_url, has_webapp
-from app.core import alerts, db, telegram
+from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
 from app.texts import T
 
@@ -67,7 +67,7 @@ async def main():
     me = (await telegram.call("getMe"))["result"]
     log.info("bot @%s started (polling)", me["username"])
     alerts.started("bot")
-    offset, running = None, {asyncio.create_task(refresh_menu_buttons())}
+    offset, running = None, {asyncio.create_task(refresh_menu_buttons()), asyncio.create_task(systemd.watchdog())}
     try:
         while True:
             try:

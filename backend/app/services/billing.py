@@ -6,8 +6,6 @@ same transaction, so a charge can never take the balance below zero even with pa
 (the user's balance row is locked with FOR UPDATE until the transaction ends).
 Top-ups are idempotent on the payment's ref: a repeated callback does not credit twice.
 """
-import time
-
 from app.core import db
 
 
@@ -17,6 +15,7 @@ async def balance(user_id: int) -> int:
 
 async def apply_in(con, user_id: int, delta: int, kind: str, ref: str | None, allow_negative: bool) -> int | None:
     """Add `delta` inside an open transaction. Returns the new balance, or None if refused (low balance / duplicate ref)."""
+    await con.execute("INSERT INTO users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING", user_id)  # balances / ledger point at users
     await con.execute("INSERT INTO balances (user_id, amount) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING", user_id)
     old = await con.fetchval("SELECT amount FROM balances WHERE user_id = $1 FOR UPDATE", user_id)
     if ref and await con.fetchval("SELECT 1 FROM ledger WHERE ref = $1", ref):
@@ -25,8 +24,7 @@ async def apply_in(con, user_id: int, delta: int, kind: str, ref: str | None, al
     if new < 0 and not allow_negative:
         return None
     await con.execute("UPDATE balances SET amount = $2 WHERE user_id = $1", user_id, new)
-    await con.execute("INSERT INTO ledger (user_id, delta, kind, ref, created) VALUES ($1, $2, $3, $4, $5)",
-                      user_id, delta, kind, ref, int(time.time()))
+    await con.execute("INSERT INTO ledger (user_id, delta, kind, ref) VALUES ($1, $2, $3, $4)", user_id, delta, kind, ref)
     return new
 
 
@@ -46,5 +44,16 @@ async def refund(user_id: int, amount: int, kind: str) -> int | None:
 
 
 async def top_up(user_id: int, amount: int, ref: str, kind: str = "topup") -> int | None:
-    """Credit a payment. None = this payment (ref) was already credited."""
-    return await _apply(user_id, amount, kind, ref, allow_negative=True)
+    """Credit a payment (or an admin's correction, which may be negative). None = this ref was already
+    counted, or a negative correction is larger than the balance."""
+    return await _apply(user_id, amount, kind, ref, allow_negative=False)
+
+
+async def reconcile() -> list[dict]:
+    """Users whose cached balance is not the sum of their ledger. Must always be empty: the worker checks it
+    every hour and reports any difference to the log channel."""
+    rows = await db.pool().fetch(
+        """SELECT coalesce(b.user_id, l.user_id) AS user_id, coalesce(b.amount, 0) AS balance, coalesce(l.total, 0) AS ledger
+           FROM balances b FULL JOIN (SELECT user_id, sum(delta) AS total FROM ledger GROUP BY user_id) l ON l.user_id = b.user_id
+           WHERE coalesce(b.amount, 0) <> coalesce(l.total, 0)""")
+    return [dict(r) for r in rows]

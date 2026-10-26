@@ -32,12 +32,11 @@ def keep_images(user_id: int, deck_id: str, content: dict):
 
 async def save(user_id: int, content: dict, request: dict, deck_id: str) -> str:
     """Store a new deck or replace an existing one (after a redraw); call keep_images() first. Returns the deck id."""
-    now = int(time.time())
     await db.pool().execute(
-        """INSERT INTO decks (id, user_id, created, updated, request, content) VALUES ($1, $2, $3, $3, $4, $5)
-           ON CONFLICT (id) DO UPDATE SET updated = excluded.updated, request = excluded.request, content = excluded.content
+        """INSERT INTO decks (id, user_id, request, content) VALUES ($1, $2, $3, $4)
+           ON CONFLICT (id) DO UPDATE SET updated = now(), request = excluded.request, content = excluded.content
            WHERE decks.user_id = excluded.user_id""",
-        deck_id, user_id, now, request, content)
+        deck_id, user_id, request, content)
     return deck_id
 
 
@@ -52,6 +51,7 @@ async def list_all(user_id: int) -> list[dict]:
     """Short info for the Mini App, newest first."""
     rows = await db.pool().fetch(
         """SELECT id, content->'meta'->>'topic' AS topic, (request->>'template_id')::int AS template_id,
-                  jsonb_array_length(content->'slides') AS slides, created, updated
-           FROM decks WHERE user_id = $1 ORDER BY created DESC""", user_id)
+                  jsonb_array_length(content->'slides') AS slides,
+                  extract(epoch FROM created)::bigint AS created, extract(epoch FROM updated)::bigint AS updated  -- the Mini App wants seconds
+           FROM decks WHERE user_id = $1 ORDER BY decks.created DESC""", user_id)
     return [dict(r) for r in rows]

@@ -13,6 +13,7 @@ def _ru_slides(n: int) -> str:
 
 T = {
     "uz": {
+        "admin_refused": "Balans o'zgarmadi: ayirish summasi balansdan katta.",
         "admin_link": "🛠 Admin panel kompyuter brauzerida ochiladi. Havola 12 soat amal qiladi, uni boshqalarga bermang.", "admin_btn": "🛠 Admin panelni ochish",
         # bottom (reply) keyboard and images -> PDF
         "kb_create": "📊 Taqdimot yaratish", "create_open": "👇 Ilovani ochish uchun tugmani bosing:", "kb_pdf": "🖼 Rasmdan PDF", "kb_balance": "💰 Balans", "kb_editor": "✏️ Muharrir", "kb_lang": "🌐 Til", "kb_help": "❓ Yordam",
@@ -73,6 +74,7 @@ T = {
         "editor_wait": "⏳ Fayl ochilmoqda…",
     },
     "ru": {
+        "admin_refused": "Баланс не изменён: сумма списания больше баланса.",
         "admin_link": "🛠 Админ-панель открывается в браузере на компьютере. Ссылка действует 12 часов, никому её не передавайте.", "admin_btn": "🛠 Открыть админ-панель",
         # bottom (reply) keyboard and images -> PDF
         "kb_create": "📊 Создать презентацию", "create_open": "👇 Нажмите кнопку, чтобы открыть приложение:", "kb_pdf": "🖼 PDF из фото", "kb_balance": "💰 Баланс", "kb_editor": "✏️ Редактор", "kb_lang": "🌐 Язык", "kb_help": "❓ Помощь",
@@ -133,6 +135,7 @@ T = {
         "editor_wait": "⏳ Открываю файл…",
     },
     "en": {
+        "admin_refused": "Balance unchanged: the amount to take is more than the balance.",
         "admin_link": "🛠 The admin panel opens in a desktop browser. The link works for 12 hours — do not share it.", "admin_btn": "🛠 Open admin panel",
         # bottom (reply) keyboard and images -> PDF
         "kb_create": "📊 Create presentation", "create_open": "👇 Tap the button to open the app:", "kb_pdf": "🖼 Images to PDF", "kb_balance": "💰 Balance", "kb_editor": "✏️ Editor", "kb_lang": "🌐 Language", "kb_help": "❓ Help",

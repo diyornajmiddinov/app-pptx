@@ -33,8 +33,8 @@ def now_ms() -> int:
 
 
 async def create_order(user_id: int, amount: int, provider: str) -> int:
-    return await db.pool().fetchval("INSERT INTO orders (user_id, amount, provider, created) VALUES ($1, $2, $3, $4) RETURNING id",
-                                    user_id, amount, provider, int(time.time()))
+    return await db.pool().fetchval("INSERT INTO orders (user_id, amount, provider) VALUES ($1, $2, $3) RETURNING id",
+                                    user_id, amount, provider)
 
 
 async def _order(con, order_id) -> dict | None:
@@ -326,8 +326,8 @@ async def click_prepare(f: dict) -> dict:
         except ValueError:
             return _click_reply(f, -8, "Error in request from click")
         prepare_id = await con.fetchval("SELECT id FROM click_txns WHERE click_trans_id = $1", ctid) \
-            or await con.fetchval("INSERT INTO click_txns (click_trans_id, order_id, amount, state, created) "
-                                  "VALUES ($1, $2, $3, 'prepared', $4) RETURNING id", ctid, order["id"], order["amount"], int(time.time()))
+            or await con.fetchval("INSERT INTO click_txns (click_trans_id, order_id, amount, state) "
+                                  "VALUES ($1, $2, $3, 'prepared') RETURNING id", ctid, order["id"], order["amount"])
     return _click_reply(f, 0, "Success", merchant_prepare_id=prepare_id)
 
 

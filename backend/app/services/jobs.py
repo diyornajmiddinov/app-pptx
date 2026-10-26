@@ -24,6 +24,7 @@ from app.texts import som, t
 log = logging.getLogger("jobs")
 TMP = Path(tempfile.gettempdir())
 MAX_ATTEMPTS = 2  # a job interrupted by a restart is run once more, then refunded
+JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini busy for minutes) -> refunded
 
 
 # ---------------------------------------------------------------- queue
@@ -116,7 +117,7 @@ async def run(job: dict):
     try:
         if job["kind"] == "generate":
             req, deck_id = job["payload"], decks.new_id()
-            path, content = await asyncio.to_thread(build, req, deck_id, job["user_id"])
+            path, content = await asyncio.wait_for(asyncio.to_thread(build, req, deck_id, job["user_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, req, deck_id)
             await deliver(job["user_id"], path, req["topic"], t(await lang_of(job["user_id"]), "slides", n=len(content["slides"])))
         elif job["kind"] == "restyle":
@@ -124,11 +125,16 @@ async def run(job: dict):
             deck = await decks.load(job["user_id"], p["deck_id"])
             if not deck:
                 raise LookupError(f"taqdimot {p['deck_id']} topilmadi")
-            path, content = await asyncio.to_thread(redraw, deck["content"], p["template_id"], job["user_id"], p["deck_id"])
+            path, content = await asyncio.wait_for(asyncio.to_thread(redraw, deck["content"], p["template_id"], job["user_id"], p["deck_id"]),
+                                                   JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"]}, p["deck_id"])
             await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"))
         else:
             raise ValueError(f"unknown job kind {job['kind']}")
+    except TimeoutError:  # the drawing thread may still finish: it is no longer awaited, so nothing is sent
+        log.error("Ish %s daqiqada tugamadi · ish %s · foydalanuvchi %s", JOB_TIMEOUT // 60, job["id"], job["user_id"])
+        await fail(job, f"timeout {JOB_TIMEOUT}s")
+        return
     except Exception as e:
         what = ("Taqdimot yaratilmadi" if job["kind"] == "generate" else "Shablon almashtirilmadi")
         log.exception("%s · ish %s · foydalanuvchi %s · %s", what, job["id"], job["user_id"],

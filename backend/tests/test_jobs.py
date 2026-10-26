@@ -73,3 +73,32 @@ async def test_migrations_are_recorded():
     assert [r["version"] for r in rows][:2] == ["0001_initial", "0002_jobs"]
     async with db.pool().acquire() as con:
         assert await db.migrate(con) == []  # nothing left to apply
+
+
+async def test_too_slow_job_is_refunded_and_never_delivered(tg, monkeypatch, tmp_path):
+    import time
+    await add_user(1, balance=5000)
+    await paid_job()
+    def slow(*a):
+        time.sleep(0.6)
+        p = tmp_path / "late.pptx"; p.write_bytes(b"x"); return p, {"meta": {"topic": "T"}, "slides": []}
+    monkeypatch.setattr(jobs, "build", slow)
+    monkeypatch.setattr(jobs, "JOB_TIMEOUT", 0.2)
+    await jobs.run_pending()
+    await asyncio.sleep(0.8)  # the drawing thread finishes after the timeout ...
+    assert await db.pool().fetchval("SELECT state FROM jobs") == "failed"
+    assert await billing.balance(1) == 5000
+    assert not tg.sent("sendDocument")  # ... and its file is not sent
+
+
+def test_systemd_notify(tmp_path, monkeypatch):
+    import socket
+
+    from app.core import systemd
+    assert systemd.notify("READY=1") is False  # not under systemd: nothing to do
+    path = str(tmp_path / "notify.sock")
+    with socket.socket(socket.AF_UNIX, socket.SOCK_DGRAM) as srv:
+        srv.bind(path)
+        monkeypatch.setenv("NOTIFY_SOCKET", path)
+        assert systemd.notify("WATCHDOG=1")
+        assert srv.recv(64) == b"WATCHDOG=1"
