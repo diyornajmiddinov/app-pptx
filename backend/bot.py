@@ -94,8 +94,8 @@ def provider_keyboard(amount: int, lang: str) -> dict:
 async def welcome(chat_id: int, lang: str):
     if has_webapp():
         await set_menu_button(chat_id, t(lang, "open"), app_url(lang))  # the menu button follows the language too
-    await send_message(chat_id, t(lang, "welcome"), open_keyboard(lang))
-    await send_message(chat_id, t(lang, "menu"), main_keyboard(lang))  # one message holds one keyboard: the menu comes second
+    # no inline buttons here: the app opens from the menu button by the input field, the rest is in the bottom menu
+    await send_message(chat_id, t(lang, "welcome"), main_keyboard(lang))
 
 
 async def show_balance(chat_id: int, user_id: int, lang: str):

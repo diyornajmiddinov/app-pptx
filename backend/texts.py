@@ -30,8 +30,8 @@ T = {
         "pdf_name_ph": "PDF fayl nomi", "pdf_need_name": "Avval PDF fayl nomini yozing (yoki «❌ Bekor qilish»).",
         "pdf_cancelled": "Bekor qilindi.",
         "welcome": "Salom! Men SlideAI — mavzuingiz bo'yicha tayyor taqdimot yasab beraman.\n\n"
-                   "1. Pastdagi tugma orqali ilovani oching.\n2. Mavzu va muallifni yozing, shablonni tanlang.\n"
-                   "3. Tayyor .pptx fayl shu chatga keladi.\n\nBalans: /balance · Til: /language",
+                   "1. Yozish maydoni yonidagi «Taqdimot yaratish» tugmasi orqali ilovani oching.\n2. Mavzu va muallifni yozing, shablonni tanlang.\n"
+                   "3. Tayyor .pptx fayl shu chatga keladi.\n\nBalans, til va boshqa bo'limlar — pastdagi menyuda.",
         "open": "Taqdimot yaratish", "saved": "Til: O'zbekcha",
         "help": "Ilovani oching, mavzuni yozing va shablonni tanlang — taqdimot shu chatga keladi.\n"
                 "Oldingi taqdimotni boshqa shablonda olish ham mumkin.\n\n/balance — balans va to'ldirish\n/language — tilni o'zgartirish\n/pdf — rasmlardan PDF yaratish",
@@ -89,8 +89,8 @@ T = {
         "pdf_name_ph": "Название PDF-файла", "pdf_need_name": "Сначала напишите название PDF-файла (или «❌ Отмена»).",
         "pdf_cancelled": "Отменено.",
         "welcome": "Привет! Я SlideAI — делаю готовую презентацию по вашей теме.\n\n"
-                   "1. Откройте приложение кнопкой ниже.\n2. Укажите тему и автора, выберите шаблон.\n"
-                   "3. Готовый файл .pptx придёт в этот чат.\n\nБаланс: /balance · Язык: /language",
+                   "1. Откройте приложение кнопкой «Создать презентацию» рядом с полем ввода.\n2. Укажите тему и автора, выберите шаблон.\n"
+                   "3. Готовый файл .pptx придёт в этот чат.\n\nБаланс, язык и другие разделы — в меню внизу.",
         "open": "Создать презентацию", "saved": "Язык: Русский",
         "help": "Откройте приложение, напишите тему и выберите шаблон — презентация придёт в этот чат.\n"
                 "Прошлую презентацию можно получить и в другом шаблоне.\n\n/balance — баланс и пополнение\n/language — сменить язык\n/pdf — PDF из фотографий",
@@ -148,8 +148,8 @@ T = {
         "pdf_name_ph": "PDF file name", "pdf_need_name": "First type a name for the PDF file (or «❌ Cancel»).",
         "pdf_cancelled": "Cancelled.",
         "welcome": "Hi! I'm SlideAI — I make a ready-to-use presentation on your topic.\n\n"
-                   "1. Open the app with the button below.\n2. Enter the topic and author, pick a template.\n"
-                   "3. The finished .pptx file arrives in this chat.\n\nBalance: /balance · Language: /language",
+                   "1. Open the app with the «Create presentation» button next to the message field.\n2. Enter the topic and author, pick a template.\n"
+                   "3. The finished .pptx file arrives in this chat.\n\nBalance, language and more are in the menu below.",
         "open": "Create presentation", "saved": "Language: English",
         "help": "Open the app, enter a topic and pick a template — the presentation arrives in this chat.\n"
                 "You can also get your previous presentation in another template.\n\n/balance — balance and top-up\n/language — change language\n/pdf — images to PDF",
