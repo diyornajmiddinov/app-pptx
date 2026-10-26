@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS ai_usage (             -- every Gemini request, faile
 CREATE INDEX IF NOT EXISTS ai_usage_created ON ai_usage (created);
 CREATE TABLE IF NOT EXISTS pdf_drafts (           -- images -> PDF: what the user has sent so far (images_pdf.py)
     user_id BIGINT PRIMARY KEY, files JSONB NOT NULL DEFAULT '[]', created TIMESTAMPTZ NOT NULL DEFAULT now());
+ALTER TABLE pdf_drafts ADD COLUMN IF NOT EXISTS stage TEXT NOT NULL DEFAULT 'collect';  -- 'collect' -> 'name'
 """
 
 _pool: asyncpg.Pool | None = None

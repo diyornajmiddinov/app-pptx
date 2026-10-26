@@ -2,11 +2,12 @@
 Images -> PDF (bot section "🖼 Rasmdan PDF").
 
 While a user has a row in `pdf_drafts`, the photos / image files they send are collected there (Telegram file_ids,
-in message order); "✅ PDF yaratish" turns them into one PDF: an A4 page per image, portrait or landscape to match
+in message order); "✅ PDF yaratish" asks for the file name (stage 'name'), and the name turns them into one PDF: an A4 page per image, portrait or landscape to match
 the image, the image fitted inside a small margin. A JPEG that needs no rotation is embedded as it is (no quality
 loss); anything else is re-encoded once. Pages are written one by one, so a 50-image PDF does not fill the RAM.
 """
 import io
+import re
 import zlib
 
 from PIL import Image, ImageOps
@@ -25,11 +26,24 @@ RAW_JPEG_LIMIT = 8 * 1024 * 1024
 async def start(user_id: int):
     """Start (or restart) collecting images for a new PDF."""
     await db.pool().execute("INSERT INTO pdf_drafts (user_id) VALUES ($1) "
-                            "ON CONFLICT (user_id) DO UPDATE SET files = '[]', created = now()", user_id)
+                            "ON CONFLICT (user_id) DO UPDATE SET files = '[]', stage = 'collect', created = now()", user_id)
 
 
-async def active(user_id: int) -> bool:
-    return bool(await db.pool().fetchval("SELECT 1 FROM pdf_drafts WHERE user_id = $1", user_id))
+async def stage(user_id: int) -> str | None:
+    """None (no draft), 'collect' (images are coming) or 'name' (waiting for the file name)."""
+    return await db.pool().fetchval("SELECT stage FROM pdf_drafts WHERE user_id = $1", user_id)
+
+
+async def set_stage(user_id: int, value: str):
+    await db.pool().execute("UPDATE pdf_drafts SET stage = $2 WHERE user_id = $1", user_id, value)
+
+
+def clean_name(text: str) -> str:
+    """The user's file name, safe on every OS: no path / reserved characters, at most 60 characters, no .pdf twice."""
+    name = re.sub(r'[\\/:*?"<>|\x00-\x1f]+', " ", text or "")
+    name = re.sub(r"\s+", " ", name).strip(" .")
+    name = re.sub(r"(?i)\.pdf$", "", name).strip(" .")
+    return name[:60].strip(" .")
 
 
 async def add(user_id: int, file_id: str, message_id: int) -> int | None:

@@ -22,9 +22,12 @@ T = {
         "pdf_full": "Bitta PDF'ga ko'pi bilan {max} ta rasm. Ortiqchasi qabul qilinmadi — «✅ PDF yaratish» ni bosing.",
         "pdf_empty": "Hali birorta rasm yubormadingiz. Rasmlarni yuboring yoki «❌ Bekor qilish» ni bosing.",
         "pdf_not_image": "Bu rasm emas. JPG, PNG yoki boshqa rasm yuboring.",
-        "pdf_wait": "⏳ PDF tayyorlanmoqda…", "pdf_done": "📄 PDF tayyor: {n} sahifa.",
+        "pdf_wait": "⏳ PDF tayyorlanmoqda…", "pdf_done": "📄 «{name}» tayyor: {n} sahifa.",
         "pdf_skipped": "⚠️ {n} ta faylni rasm sifatida o'qib bo'lmadi, ular PDF'ga kirmadi.",
         "pdf_error": "PDF yaratishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
+        "pdf_ask_name": "📝 {n} ta rasm tayyor. Endi PDF fayl nomini yozing.\n\nMasalan: Kurs ishi — chizmalar",
+        "pdf_bad_name": "Nom bo'sh yoki faqat belgilardan iborat. Fayl nomini harflar bilan yozing.",
+        "pdf_name_ph": "PDF fayl nomi", "pdf_need_name": "Avval PDF fayl nomini yozing (yoki «❌ Bekor qilish»).",
         "pdf_cancelled": "Bekor qilindi.",
         "welcome": "Salom! Men SlideAI — mavzuingiz bo'yicha tayyor taqdimot yasab beraman.\n\n"
                    "1. Pastdagi tugma orqali ilovani oching.\n2. Mavzu va muallifni yozing, shablonni tanlang.\n"
@@ -78,9 +81,12 @@ T = {
         "pdf_full": "В одном PDF не больше {max} фото. Лишние не приняты — нажмите «✅ Создать PDF».",
         "pdf_empty": "Вы ещё не отправили ни одного фото. Отправьте фото или нажмите «❌ Отмена».",
         "pdf_not_image": "Это не изображение. Отправьте JPG, PNG или другое фото.",
-        "pdf_wait": "⏳ Готовлю PDF…", "pdf_done": "📄 PDF готов, страниц: {n}.",
+        "pdf_wait": "⏳ Готовлю PDF…", "pdf_done": "📄 «{name}» готов, страниц: {n}.",
         "pdf_skipped": "⚠️ Файлов не удалось прочитать как изображение: {n}. Они не вошли в PDF.",
         "pdf_error": "Не удалось создать PDF. Пожалуйста, попробуйте ещё раз.",
+        "pdf_ask_name": "📝 Фото готово: {n}. Теперь напишите название PDF-файла.\n\nНапример: Курсовая — чертежи",
+        "pdf_bad_name": "Название пустое или состоит только из знаков. Напишите название буквами.",
+        "pdf_name_ph": "Название PDF-файла", "pdf_need_name": "Сначала напишите название PDF-файла (или «❌ Отмена»).",
         "pdf_cancelled": "Отменено.",
         "welcome": "Привет! Я SlideAI — делаю готовую презентацию по вашей теме.\n\n"
                    "1. Откройте приложение кнопкой ниже.\n2. Укажите тему и автора, выберите шаблон.\n"
@@ -134,9 +140,12 @@ T = {
         "pdf_full": "One PDF holds up to {max} images. The extra ones were not added — tap «✅ Make PDF».",
         "pdf_empty": "You have not sent any images yet. Send some or tap «❌ Cancel».",
         "pdf_not_image": "This is not an image. Send a JPG, PNG or another picture.",
-        "pdf_wait": "⏳ Making the PDF…", "pdf_done": "📄 PDF ready: {n} pages.",
+        "pdf_wait": "⏳ Making the PDF…", "pdf_done": "📄 «{name}» is ready: {n} pages.",
         "pdf_skipped": "⚠️ Files that could not be read as images: {n}. They are not in the PDF.",
         "pdf_error": "Could not make the PDF. Please try again.",
+        "pdf_ask_name": "📝 {n} images ready. Now type a name for the PDF file.\n\nFor example: Coursework — drawings",
+        "pdf_bad_name": "The name is empty or only symbols. Type the file name with letters.",
+        "pdf_name_ph": "PDF file name", "pdf_need_name": "First type a name for the PDF file (or «❌ Cancel»).",
         "pdf_cancelled": "Cancelled.",
         "welcome": "Hi! I'm SlideAI — I make a ready-to-use presentation on your topic.\n\n"
                    "1. Open the app with the button below.\n2. Enter the topic and author, pick a template.\n"

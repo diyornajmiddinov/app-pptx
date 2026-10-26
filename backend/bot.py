@@ -6,7 +6,7 @@ Users, languages, balances and orders are in PostgreSQL (db.py).
 /language  choose the language again
 /help      short help
 /balance   balance, prices and top-up buttons (the only place where money is added)
-/pdf       images -> PDF: the user sends photos / image files, "✅ PDF yaratish" returns one PDF (images_pdf.py)
+/pdf       images -> PDF: the user sends photos / image files, "✅ PDF yaratish", then the file name -> one PDF (images_pdf.py)
 The bottom (reply) keyboard repeats these: 🖼 Rasmdan PDF, 💰 Balans, ✏️ Muharrir, 🌐 Til, ❓ Yordam.
 The chosen language is used everywhere: bot messages, the Mini App (?lang=), files' captions.
 
@@ -19,6 +19,7 @@ admin with the ID and card_ok:/card_no:<order> buttons -> the admin's choice cre
 import asyncio
 import html
 import logging
+import re
 import tempfile
 from pathlib import Path
 
@@ -69,6 +70,12 @@ def main_keyboard(lang: str) -> dict:
 def pdf_keyboard(lang: str) -> dict:
     return {"keyboard": [[{"text": t(lang, "kb_pdf_make")}], [{"text": t(lang, "kb_pdf_cancel")}]],
             "resize_keyboard": True, "is_persistent": True}
+
+
+def pdf_name_keyboard(lang: str) -> dict:
+    """While the name is awaited: the field is for typing; only Cancel stays as a button."""
+    return {"keyboard": [[{"text": t(lang, "kb_pdf_cancel")}]], "resize_keyboard": True, "is_persistent": True,
+            "input_field_placeholder": t(lang, "pdf_name_ph")}
 
 
 def topup_keyboard(lang: str, amounts: list[int]) -> dict:
@@ -178,9 +185,19 @@ async def pdf_receive(chat_id: int, user_id: int, file_id: str, message_id: int,
     _acks[user_id] = asyncio.create_task(_ack_later(chat_id, user_id, lang))
 
 
-async def pdf_make(chat_id: int, user_id: int, lang: str):
+async def pdf_ask_name(chat_id: int, user_id: int, lang: str):
+    """"✅ PDF yaratish": the images are in; the user names the file before it is made."""
     if task := _acks.pop(user_id, None):
         task.cancel()
+    n = await pdfs.count(user_id)
+    if not n:
+        await send_message(chat_id, t(lang, "pdf_empty"), pdf_keyboard(lang))
+        return
+    await pdfs.set_stage(user_id, "name")
+    await send_message(chat_id, t(lang, "pdf_ask_name", n=n), pdf_name_keyboard(lang))
+
+
+async def pdf_make(chat_id: int, user_id: int, lang: str, name: str):
     files = await pdfs.take(user_id)
     if not files:
         await pdfs.start(user_id)
@@ -190,7 +207,7 @@ async def pdf_make(chat_id: int, user_id: int, lang: str):
     skipped = 0
     try:
         with tempfile.TemporaryDirectory() as tmp:
-            path = Path(tmp) / f"SlideAI_{len(files)}.pdf"
+            path = Path(tmp) / f"{name}.pdf"
             with open(path, "wb") as f:
                 pdf = pdfs.PdfWriter(f)
                 for file_id in files:  # one image in memory at a time
@@ -204,7 +221,7 @@ async def pdf_make(chat_id: int, user_id: int, lang: str):
                     pdf.close()
             if not pdf.pages:
                 raise ValueError("no readable images")
-            await send_document(chat_id, str(path), caption=t(lang, "pdf_done", n=len(pdf.pages)))
+            await send_document(chat_id, str(path), caption=t(lang, "pdf_done", name=name, n=len(pdf.pages)))
         if skipped:
             await send_message(chat_id, t(lang, "pdf_skipped", n=skipped))
     except Exception:
@@ -329,19 +346,29 @@ async def handle(update: dict):
     key = BUTTONS.get(text)
 
     # images -> PDF: while a draft is open, images go into it
-    if await pdfs.active(uid):
-        if key == "kb_pdf_make":
-            await pdf_make(chat_id, uid, lang); return
+    if stage := await pdfs.stage(uid):
         if key == "kb_pdf_cancel":
             await pdfs.cancel(uid)
             await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang)); return
+        if stage == "name" and text and not text.startswith("/") and not key:  # the file name
+            name = pdfs.clean_name(text)
+            if not re.search(r"\w", name):
+                await send_message(chat_id, t(lang, "pdf_bad_name"), pdf_name_keyboard(lang)); return
+            await pdf_make(chat_id, uid, lang, name); return
+        if stage == "name" and (is_image or key == "kb_pdf_make"):  # still adding photos: take them, ask for the name again
+            if is_image:
+                await pdfs.add(uid, msg["photo"][-1]["file_id"] if msg.get("photo") else doc["file_id"], msg["message_id"])
+            await send_message(chat_id, t(lang, "pdf_need_name"), pdf_name_keyboard(lang)); return
+        if key == "kb_pdf_make":
+            await pdf_ask_name(chat_id, uid, lang); return
         if is_image:
             file_id = msg["photo"][-1]["file_id"] if msg.get("photo") else doc["file_id"]
             await pdf_receive(chat_id, uid, file_id, msg["message_id"], lang); return
         if doc or not (text.startswith("/") or key):
             n = await pdfs.count(uid)
             await send_message(chat_id, t(lang, "pdf_not_image") if doc else
-                               t(lang, "pdf_added", n=n) if n else t(lang, "pdf_empty"), pdf_keyboard(lang)); return
+                               t(lang, "pdf_added", n=n) if n else t(lang, "pdf_empty"),
+                               pdf_name_keyboard(lang) if stage == "name" else pdf_keyboard(lang)); return
         await pdfs.cancel(uid)  # another command or menu button: leave the PDF section
         await send_message(chat_id, t(lang, "pdf_cancelled"), main_keyboard(lang))
 
