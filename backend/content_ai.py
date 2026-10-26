@@ -18,11 +18,14 @@ Photos: PEXELS_API_KEY if set, otherwise generated with Gemini (GEMINI_IMAGE_MOD
 """
 from __future__ import annotations
 
+import contextvars
 import json
 import os
 import re
 import subprocess
 import tempfile
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
@@ -230,11 +233,37 @@ def claude(messages: list[dict]) -> str:
     r = anthropic.Anthropic().messages.create(model=MODEL, max_tokens=12000, messages=messages)
     return "".join(b.text for b in r.content if b.type == "text")
 
+# ---- AI usage: every Gemini request (also failed ones and retries) is reported to on_usage, which the
+# backend points at the ai_usage table. usage_context says whose job it is: {"user_id", "purpose", "job"}.
+usage_context: contextvars.ContextVar[dict] = contextvars.ContextVar("usage_context", default={})
+on_usage: Callable[[dict], None] | None = None
+
+
+def _report(model: str, op: str, status: str, started: float, data: dict | None = None):
+    if on_usage is None:
+        return
+    u = (data or {}).get("usageMetadata") or {}
+    try:
+        on_usage({**usage_context.get(), "model": model, "op": op, "status": status, "ms": int((time.time() - started) * 1000),
+                  "prompt_tokens": u.get("promptTokenCount", 0), "output_tokens": u.get("candidatesTokenCount", 0),
+                  "thinking_tokens": u.get("thoughtsTokenCount", 0), "total_tokens": u.get("totalTokenCount", 0)})
+    except Exception:  # accounting must never break a paid job
+        pass
+
+
 def _gemini_call(model: str, body: dict, timeout: int = 180) -> dict:
     req = urllib.request.Request(GEMINI_URL.format(model=model), data=json.dumps(body).encode(), method="POST",
                                  headers={"Content-Type": "application/json", "x-goog-api-key": os.environ["GEMINI_API_KEY"]})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return json.load(r)
+    op, started = ("image" if model == GEMINI_IMAGE_MODEL else "text"), time.time()
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            data = json.load(r)
+    except urllib.error.HTTPError as e:
+        _report(model, op, str(e.code), started); raise
+    except (TimeoutError, OSError):
+        _report(model, op, "timeout", started); raise
+    _report(model, op, "ok", started, data)
+    return data
 
 RETRY_WAIT = (3, 8, 15, 25)
 
@@ -386,8 +415,9 @@ def resolve_images(content: dict, workdir: Path, search: Callable | None = None)
             fb = FALLBACK_IMAGES[i % len(FALLBACK_IMAGES)] if FALLBACK_IMAGES else None
             return i, ({"src": str(fb), "credit": ""} if fb else None)
 
+    ctx = contextvars.copy_context()  # the photo threads report AI usage for the same user / job
     with ThreadPoolExecutor(max_workers=4) as pool:
-        for i, img in pool.map(one, jobs):
+        for i, img in pool.map(lambda job: ctx.copy().run(one, job), jobs):
             if img:
                 content["slides"][i]["image"] = img
             else:

@@ -15,7 +15,7 @@ import { CATEGORIES, TEMPLATES } from './data/templates.js';
 const SAVED_KEYS = ['author', 'org', 'loc'];
 
 export default function App() {
-  const { tg, user, initData, isTelegram, showAlert, hapticSelect, hapticNotify } = useTelegram();
+  const { tg, user, initData, isTelegram, showAlert, askConfirm, hapticSelect, hapticNotify } = useTelegram();
   const { t, lang, setLang } = useI18n();
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
@@ -87,6 +87,15 @@ export default function App() {
       return;
     }
     if (!user?.id) { showAlert(t('noUser')); return; }
+    if (!restyling) { // the user checks the topic's spelling: a typo makes the AI write about something else
+      const topic = details.topic.trim();
+      const price = account?.prices?.generate;
+      const text = t('confirmTopic', { topic: topic.length > 110 ? `${topic.slice(0, 110)}…` : topic, n: slideCount, price: price ? money(price, lang) : '' });
+      submittingRef.current = true; // no second tap while the question is open
+      const ok = await askConfirm(text);
+      submittingRef.current = false;
+      if (!ok) { document.getElementById('topic')?.focus(); return; }
+    }
     submittingRef.current = true; setSubmitting(true);
     tg?.MainButton.showProgress(false);
     try {
@@ -113,7 +122,7 @@ export default function App() {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);
     }
-  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, details, showAlert, hapticNotify, t, loadAccount]);
+  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
   const price = account?.prices?.[restyling ? 'restyle' : 'generate'];

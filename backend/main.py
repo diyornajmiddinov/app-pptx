@@ -93,10 +93,20 @@ async def _housekeeping_loop():
         await asyncio.sleep(3600)
 
 
+async def _save_usage(rec: dict):
+    await db.pool().execute(
+        """INSERT INTO ai_usage (user_id, purpose, job, model, op, status, ms, prompt_tokens, output_tokens, thinking_tokens, total_tokens)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)""",
+        rec.get("user_id"), rec.get("purpose"), rec.get("job"), rec["model"], rec["op"], rec["status"], rec["ms"],
+        rec["prompt_tokens"], rec["output_tokens"], rec["thinking_tokens"], rec["total_tokens"])
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     alerts.install("backend")
     await db.connect(max_size=10)
+    loop = asyncio.get_running_loop()
+    content_ai.on_usage = lambda rec: asyncio.run_coroutine_threadsafe(_save_usage(rec), loop)  # called from job threads
     await admin.mark_interrupted()
     alerts.started("backend")
     hk = asyncio.create_task(_housekeeping_loop())
@@ -163,6 +173,7 @@ async def refund(chat_id: int, price: int, kind: str):
 
 def _build(req: GenerateRequest, deck_id: str, chat_id: int):
     """The slow part (AI, photos, drawing), in a worker thread."""
+    content_ai.usage_context.set({"user_id": chat_id, "purpose": "generate", "job": deck_id})
     meta = {"author": req.author, "org": req.org, "loc": req.loc, "year": req.year}
     if settings.demo:  # offline demo: ready content instead of AI + Pexels
         content = demo_content(req.topic, meta)
@@ -185,7 +196,8 @@ async def job(req: GenerateRequest, chat_id: int, price: int):
         await refund(chat_id, price, "generate")
 
 
-def _redraw(content: dict, template_id: int):
+def _redraw(content: dict, template_id: int, chat_id: int, deck_id: str):
+    content_ai.usage_context.set({"user_id": chat_id, "purpose": "restyle", "job": deck_id})
     if settings.demo:
         return content_ai.render(content, template_id, Path(tempfile.mkdtemp(prefix="slideai-")) / "demo.pptx"), content
     return content_ai.switch_template(content, template_id)
@@ -194,7 +206,7 @@ def _redraw(content: dict, template_id: int):
 async def restyle_job(deck_id: str, template_id: int, chat_id: int, price: int):
     try:
         deck = await decks.load(chat_id, deck_id)
-        path, content = await run_in_threadpool(_redraw, deck["content"], template_id)
+        path, content = await run_in_threadpool(_redraw, deck["content"], template_id, chat_id, deck_id)
         await decks.save(chat_id, content, {**deck["request"], "template_id": template_id}, deck_id)  # the deck now uses the new template
         await deliver(chat_id, path, content["meta"]["topic"], t(await lang_of(chat_id), "new_template"))
     except Exception:

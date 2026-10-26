@@ -57,6 +57,15 @@ export default function Dashboard({ go, openUser }) {
           <div className="card-b"><ColumnChart data={data.series} valueKey="revenue" format={som} label="Kunlik tushum" /></div></div>
       </div>
 
+      <div className="grid kpis">
+        <Kpi label="AI tokenlar · 30 kun" value={num(k.ai_tokens_30d)} foot={`Bugun ${num(k.ai_tokens_today)} · jami ${num(k.ai_tokens)}`} />
+        <Kpi label="AI so'rovlari · 30 kun" value={num(k.ai_requests_30d)}
+          foot={k.ai_errors_30d ? `${num(k.ai_errors_30d)} tasi xato (503, timeout…) — takrorlangan` : 'Xatosiz'} />
+        <Kpi label="Bitta taqdimotga o'rtacha" value={`${num(k.ai_tokens_per_deck)} token`} foot="Takroriy urinishlar bilan birga" />
+        <div className="card"><div className="card-h"><h2>AI tokenlar</h2><span className="hint">kunlik</span></div>
+          <div className="card-b" style={{ paddingTop: 8 }}><ColumnChart data={data.series} valueKey="ai_tokens" format={(v) => `${num(v)} token`} label="Kunlik AI tokenlar" /></div></div>
+      </div>
+
       <div className="grid three">
         <div className="card"><div className="card-h"><h2>Mashhur shablonlar</h2><span className="hint">taqdimotlar soni</span></div>
           <div className="card-b">{data.templates.length

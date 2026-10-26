@@ -51,6 +51,12 @@ CREATE TABLE IF NOT EXISTS admin_log (            -- who did what in the admin p
     created TIMESTAMPTZ NOT NULL DEFAULT now());
 CREATE INDEX IF NOT EXISTS users_created ON users (created);
 CREATE INDEX IF NOT EXISTS ledger_created ON ledger (created);
+CREATE TABLE IF NOT EXISTS ai_usage (             -- every Gemini request, failed ones too (content_ai.on_usage)
+    id BIGSERIAL PRIMARY KEY, created TIMESTAMPTZ NOT NULL DEFAULT now(), user_id BIGINT, purpose TEXT, job TEXT,
+    model TEXT NOT NULL, op TEXT NOT NULL, status TEXT NOT NULL, ms INTEGER NOT NULL DEFAULT 0,
+    prompt_tokens INTEGER NOT NULL DEFAULT 0, output_tokens INTEGER NOT NULL DEFAULT 0,
+    thinking_tokens INTEGER NOT NULL DEFAULT 0, total_tokens INTEGER NOT NULL DEFAULT 0);
+CREATE INDEX IF NOT EXISTS ai_usage_created ON ai_usage (created);
 CREATE TABLE IF NOT EXISTS pdf_drafts (           -- images -> PDF: what the user has sent so far (images_pdf.py)
     user_id BIGINT PRIMARY KEY, files JSONB NOT NULL DEFAULT '[]', created TIMESTAMPTZ NOT NULL DEFAULT now());
 """

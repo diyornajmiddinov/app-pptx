@@ -105,6 +105,12 @@ export function useTelegram() {
     else window.alert(message);
   }, []);
 
+  /** Yes / no question: native popup inside Telegram (6.2+), window.confirm in a browser. Resolves to true / false. */
+  const askConfirm = useCallback((message) => new Promise((resolve) => {
+    if (tg?.initData && tg.isVersionAtLeast('6.2')) tg.showConfirm(message, (ok) => resolve(Boolean(ok)));
+    else resolve(window.confirm(message));
+  }), []);
+
   /** Light haptic tick on selection (no-op outside Telegram / old clients). */
   const hapticSelect = useCallback(() => {
     if (tg?.initData && tg.isVersionAtLeast('6.1')) tg.HapticFeedback.selectionChanged();
@@ -127,9 +133,10 @@ export function useTelegram() {
       isTelegram: Boolean(tg?.initData),
       colorScheme,
       showAlert,
+      askConfirm,
       hapticSelect,
       hapticNotify,
     }),
-    [colorScheme, showAlert, hapticSelect, hapticNotify],
+    [colorScheme, showAlert, askConfirm, hapticSelect, hapticNotify],
   );
 }
