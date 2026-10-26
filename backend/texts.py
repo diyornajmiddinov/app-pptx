@@ -13,7 +13,7 @@ T = {
     "uz": {
         "admin_link": "🛠 Admin panel kompyuter brauzerida ochiladi. Havola 12 soat amal qiladi, uni boshqalarga bermang.", "admin_btn": "🛠 Admin panelni ochish",
         # bottom (reply) keyboard and images -> PDF
-        "kb_pdf": "🖼 Rasmdan PDF", "kb_balance": "💰 Balans", "kb_editor": "✏️ Muharrir", "kb_lang": "🌐 Til", "kb_help": "❓ Yordam",
+        "kb_create": "📊 Taqdimot yaratish", "create_open": "👇 Ilovani ochish uchun tugmani bosing:", "kb_pdf": "🖼 Rasmdan PDF", "kb_balance": "💰 Balans", "kb_editor": "✏️ Muharrir", "kb_lang": "🌐 Til", "kb_help": "❓ Yordam",
         "kb_pdf_make": "✅ PDF yaratish", "kb_pdf_cancel": "❌ Bekor qilish", "cmd_pdf": "Rasmlardan PDF yaratish",
         "menu": "👇 Pastdagi menyudan ham foydalanishingiz mumkin.",
         "pdf_start": "🖼 Rasmlarni yuboring: bittalab, albom qilib yoki fayl sifatida (sifati saqlanadi). "
@@ -72,7 +72,7 @@ T = {
     "ru": {
         "admin_link": "🛠 Админ-панель открывается в браузере на компьютере. Ссылка действует 12 часов, никому её не передавайте.", "admin_btn": "🛠 Открыть админ-панель",
         # bottom (reply) keyboard and images -> PDF
-        "kb_pdf": "🖼 PDF из фото", "kb_balance": "💰 Баланс", "kb_editor": "✏️ Редактор", "kb_lang": "🌐 Язык", "kb_help": "❓ Помощь",
+        "kb_create": "📊 Создать презентацию", "create_open": "👇 Нажмите кнопку, чтобы открыть приложение:", "kb_pdf": "🖼 PDF из фото", "kb_balance": "💰 Баланс", "kb_editor": "✏️ Редактор", "kb_lang": "🌐 Язык", "kb_help": "❓ Помощь",
         "kb_pdf_make": "✅ Создать PDF", "kb_pdf_cancel": "❌ Отмена", "cmd_pdf": "PDF из фотографий",
         "menu": "👇 Также можно пользоваться меню внизу.",
         "pdf_start": "🖼 Отправьте фото: по одному, альбомом или файлом (без потери качества). "
@@ -131,7 +131,7 @@ T = {
     "en": {
         "admin_link": "🛠 The admin panel opens in a desktop browser. The link works for 12 hours — do not share it.", "admin_btn": "🛠 Open admin panel",
         # bottom (reply) keyboard and images -> PDF
-        "kb_pdf": "🖼 Images to PDF", "kb_balance": "💰 Balance", "kb_editor": "✏️ Editor", "kb_lang": "🌐 Language", "kb_help": "❓ Help",
+        "kb_create": "📊 Create presentation", "create_open": "👇 Tap the button to open the app:", "kb_pdf": "🖼 Images to PDF", "kb_balance": "💰 Balance", "kb_editor": "✏️ Editor", "kb_lang": "🌐 Language", "kb_help": "❓ Help",
         "kb_pdf_make": "✅ Make PDF", "kb_pdf_cancel": "❌ Cancel", "cmd_pdf": "Images to PDF",
         "menu": "👇 You can also use the menu below.",
         "pdf_start": "🖼 Send the images: one by one, as an album or as files (full quality). "

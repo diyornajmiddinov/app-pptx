@@ -7,7 +7,7 @@ Users, languages, balances and orders are in PostgreSQL (db.py).
 /help      short help
 /balance   balance, prices and top-up buttons (the only place where money is added)
 /pdf       images -> PDF: the user sends photos / image files, "✅ PDF yaratish", then the file name -> one PDF (images_pdf.py)
-The bottom (reply) keyboard repeats these: 🖼 Rasmdan PDF, 💰 Balans, ✏️ Muharrir, 🌐 Til, ❓ Yordam.
+The bottom (reply) keyboard repeats these: 📊 Taqdimot yaratish, 🖼 Rasmdan PDF, 💰 Balans, ✏️ Muharrir, 🌐 Til, ❓ Yordam.
 The chosen language is used everywhere: bot messages, the Mini App (?lang=), files' captions.
 
 Top-up goes through payment links (payments.py), not Telegram invoices:
@@ -63,7 +63,7 @@ def open_keyboard(lang: str) -> dict:
 def main_keyboard(lang: str) -> dict:
     """The bottom menu that stays under the input field."""
     b = lambda k: {"text": t(lang, k)}
-    return {"keyboard": [[b("kb_pdf")], [b("kb_balance"), b("kb_editor")], [b("kb_lang"), b("kb_help")]],
+    return {"keyboard": [[b("kb_create")], [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 
@@ -388,6 +388,12 @@ async def handle(update: dict):
             await welcome(chat_id, lang)
         else:
             await send_message(chat_id, CHOOSE, lang_keyboard())
+    elif key == "kb_create":
+        # a reply-keyboard web_app button would open the app without initData (no user, no balance): send the inline one
+        if has_webapp():
+            await send_message(chat_id, t(lang, "create_open"), {"inline_keyboard": [[{"text": t(lang, "open"), "web_app": {"url": app_url(lang)}}]]})
+        else:
+            await send_message(chat_id, t(lang, "hint"))
     elif text.startswith("/pdf") or key == "kb_pdf":
         await pdf_start(chat_id, uid, lang)
     elif key in ("kb_pdf_make", "kb_pdf_cancel"):  # an old PDF keyboard after the section was closed
