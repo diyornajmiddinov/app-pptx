@@ -1,7 +1,7 @@
 """AI content checks (no AI calls: a fake model answers)."""
 import json
 
-import content_ai
+from app.services import content_ai
 
 
 def test_plan_has_fixed_slides():

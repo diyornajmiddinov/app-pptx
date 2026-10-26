@@ -8,9 +8,10 @@ import shutil
 import time
 from pathlib import Path
 
-import db
+from app.core import db
+from app.core.config import DATA_DIR
 
-DATA = Path(__file__).resolve().parent / "data"
+DATA = DATA_DIR
 
 
 def new_id() -> str:

@@ -5,7 +5,7 @@ import shutil
 import pytest
 from pptx import Presentation
 
-import content_ai
+from app.services import content_ai
 
 pytestmark = pytest.mark.slow
 SAMPLE = json.loads((content_ai.PRO_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))

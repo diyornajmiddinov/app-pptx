@@ -8,7 +8,7 @@ Top-ups are idempotent on the payment's ref: a repeated callback does not credit
 """
 import time
 
-import db
+from app.core import db
 
 
 async def balance(user_id: int) -> int:
@@ -40,7 +40,7 @@ async def charge(user_id: int, amount: int, kind: str) -> int | None:
     return await _apply(user_id, -amount, kind, None, allow_negative=False)
 
 
-async def refund(user_id: int, amount: int, kind: str) -> int:
+async def refund(user_id: int, amount: int, kind: str) -> int | None:
     """Give the money back when a paid job failed."""
     return await _apply(user_id, amount, f"refund:{kind}", None, allow_negative=True)
 

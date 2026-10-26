@@ -18,10 +18,13 @@ import threading
 import time
 import traceback
 from pathlib import Path
+from typing import Any
 
 import httpx
 
-DATA = Path(__file__).resolve().parent / "data"
+from app.core.config import DATA_DIR, PROJECT_DIR
+
+DATA = DATA_DIR
 CHANNEL_FILE = DATA / "log_channel"
 API = "https://api.telegram.org/bot{token}/{method}"
 REPEAT_AFTER = 600   # s: the same error is reported again only after this
@@ -83,16 +86,18 @@ def post_file(path: Path, caption: str = "") -> bool:
 
 # ---------------------------------------------------------------- error reports: where, what, why
 
-ROOT = Path(__file__).resolve().parent.parent  # the project; frames outside it (libraries) are not "where"
+ROOT = PROJECT_DIR  # frames outside the project (libraries) are not "where"
 TASHKENT = 5 * 3600
 
 
 def _chain(exc: BaseException) -> list[BaseException]:
     """The exception and the ones it came from (raise ... from / during handling), outermost first."""
-    out, seen = [], set()
-    while exc is not None and id(exc) not in seen:
-        seen.add(id(exc)); out.append(exc)
-        exc = exc.__cause__ or (None if exc.__suppress_context__ else exc.__context__)
+    out: list[BaseException] = []
+    seen: set[int] = set()
+    cur: BaseException | None = exc
+    while cur is not None and id(cur) not in seen:
+        seen.add(id(cur)); out.append(cur)
+        cur = cur.__cause__ or (None if cur.__suppress_context__ else cur.__context__)
     return out
 
 
@@ -164,7 +169,7 @@ def why(exc: BaseException) -> tuple[str, str]:
             return "🗄 Baza", "Bir xil yozuv ikki marta qo'shilmoqchi bo'ldi (UNIQUE). Odatda bir vaqtda kelgan ikki so'rov — ma'lumot buzilmaydi."
         return "🐞 Kod xatosi", "Baza so'rovi xato bilan tugadi (SQL yoki ma'lumot turi noto'g'ri). Ko'rsatilgan qatordagi so'rovni tuzatish kerak."
     if "CalledProcessError" in names:
-        cpe = next(e for e in chain if type(e).__name__ == "CalledProcessError")
+        cpe: Any = next(e for e in chain if type(e).__name__ == "CalledProcessError")
         lines = [ln.strip() for ln in str(getattr(cpe, "stderr", "") or getattr(cpe, "output", "") or "").splitlines() if ln.strip()]
         prog = Path(str(cpe.cmd[1] if isinstance(cpe.cmd, (list, tuple)) and len(cpe.cmd) > 1 and cpe.cmd[0] == "node" else
                         cpe.cmd[0] if isinstance(cpe.cmd, (list, tuple)) else cpe.cmd)).name
@@ -249,7 +254,10 @@ class ChannelHandler(logging.Handler):
 
     def __init__(self, service: str):
         super().__init__(logging.ERROR)
-        self.service, self.q, self.seen, self.sent = service, queue.Queue(maxsize=200), {}, []
+        self.service = service
+        self.q: queue.Queue[str] = queue.Queue(maxsize=200)
+        self.seen: dict[tuple, float] = {}
+        self.sent: list[float] = []
         threading.Thread(target=self._worker, daemon=True, name="alerts").start()
 
     def emit(self, record: logging.LogRecord):

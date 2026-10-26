@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
-import alerts  # noqa: E402
+from app.core import alerts  # noqa: E402
 
 import asyncpg  # noqa: E402
 

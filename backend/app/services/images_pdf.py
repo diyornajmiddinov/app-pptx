@@ -12,7 +12,7 @@ import zlib
 
 from PIL import Image, ImageOps
 
-import db
+from app.core import db
 
 MAX_IMAGES = 50
 A4 = (595.28, 841.89)          # pt
@@ -74,20 +74,21 @@ def prepare(data: bytes) -> tuple[bytes, int, int, str]:
     """One image file -> (JPEG bytes, width, height, color space) ready to embed. Raises on a non-image."""
     im = Image.open(io.BytesIO(data))
     im.load()
+    img: Image.Image = im
     upright = im.getexif().get(0x0112, 1) in (0, 1)  # EXIF orientation: no rotation needed
     if im.format == "JPEG" and im.mode in ("RGB", "L") and upright and len(data) <= RAW_JPEG_LIMIT and max(im.size) <= MAX_SIDE * 2:
         return data, im.width, im.height, "DeviceRGB" if im.mode == "RGB" else "DeviceGray"
-    im = ImageOps.exif_transpose(im)
-    if im.mode in ("RGBA", "LA", "P"):  # transparency -> white paper
-        im = im.convert("RGBA")
-        bg = Image.new("RGB", im.size, "white"); bg.paste(im, mask=im.getchannel("A")); im = bg
-    elif im.mode != "L":
-        im = im.convert("RGB")
-    if max(im.size) > MAX_SIDE:
-        im.thumbnail((MAX_SIDE, MAX_SIDE), Image.LANCZOS)
+    img = ImageOps.exif_transpose(img)
+    if img.mode in ("RGBA", "LA", "P"):  # transparency -> white paper
+        img = img.convert("RGBA")
+        bg = Image.new("RGB", img.size, "white"); bg.paste(img, mask=img.getchannel("A")); img = bg
+    elif img.mode != "L":
+        img = img.convert("RGB")
+    if max(img.size) > MAX_SIDE:
+        img.thumbnail((MAX_SIDE, MAX_SIDE), Image.Resampling.LANCZOS)
     out = io.BytesIO()
-    im.save(out, "JPEG", quality=90, optimize=True)
-    return out.getvalue(), im.width, im.height, "DeviceRGB" if im.mode == "RGB" else "DeviceGray"
+    img.save(out, "JPEG", quality=90, optimize=True)
+    return out.getvalue(), img.width, img.height, "DeviceRGB" if img.mode == "RGB" else "DeviceGray"
 
 
 class PdfWriter:

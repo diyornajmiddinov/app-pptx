@@ -1,6 +1,6 @@
 """
 Admin panel API (/api/admin/...). The panel is admin.html, opened in a desktop browser with a signed link
-from the bot's /admin command (ADMIN_IDS only); every request carries it in X-Admin-Token (telegram_auth.admin_user).
+from the bot's /admin command (ADMIN_IDS only); every request carries it in X-Admin-Token (core/auth.admin_user).
 
   GET  /me, /stats                          who is signed in; dashboard numbers and 30-day series
   GET  /users, /users/{id}                  list (search, sort, pages); one user with ledger, decks, orders
@@ -9,11 +9,12 @@ from the bot's /admin command (ADMIN_IDS only); every request carries it in X-Ad
   POST /orders/{id}/decide                  approve / reject a card transfer (same rules as the bot's buttons)
   GET  /ledger, /decks, /decks/{id}/download
   GET/POST /broadcasts                      message to all users (or one language), sent in the background
-  GET/PUT /settings                         prices and top-up amounts (appconfig), payment providers, system
+  GET/PUT /settings                         prices and top-up amounts (app_settings), payment providers, system
   GET  /log                                 what the admins did
 Every change is written to admin_log.
 """
 import asyncio
+import contextlib
 import json
 import logging
 import os
@@ -27,26 +28,24 @@ from typing import Literal
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from starlette.concurrency import run_in_threadpool
 
-import appconfig
-import billing
-import bot
-import content_ai
-import db
-import payments
-from config import settings
-from prefs import lang_of
-from telegram_api import download_file, send_message
-from telegram_auth import admin_user
-from texts import som, t
+from app.bot.keyboards import open_keyboard
+from app.bot.money import notify_paid
+from app.core import db
+from app.core.auth import admin_user
+from app.core.config import DATA_DIR, settings
+from app.core.telegram import download_file, send_message
+from app.services import app_settings, billing, content_ai, payments
+from app.services.users import lang_of
+from app.texts import som, t
 
 log = logging.getLogger("admin")
 router = APIRouter(prefix="/api/admin")
 TZ = "Asia/Tashkent"
 STARTED = time.time()
-DATA = Path(__file__).resolve().parent / "data"
+DATA = DATA_DIR
 TEMPLATE_NAMES = {t_["id"]: t_["name"] for t_ in json.loads((content_ai.PRO_DIR / "templates.json").read_text(encoding="utf-8"))}
 PAID_KINDS = "kind LIKE 'topup:%'"  # real money in (admin corrections are not revenue)
 
@@ -99,6 +98,9 @@ async def stats(uid: int = Depends(admin_user), days: int = Query(30, ge=7, le=1
         (SELECT count(*) FROM ledger WHERE kind = 'refund:generate') failed_generations,
         (SELECT coalesce(sum(amount), 0) FROM balances) balances,
         (SELECT count(*) FROM orders WHERE provider = 'card' AND state = 'review') pending,
+        (SELECT count(*) FROM jobs WHERE state = 'queued') jobs_queued,
+        (SELECT count(*) FROM jobs WHERE state = 'running') jobs_running,
+        (SELECT count(*) FROM jobs WHERE state = 'failed' AND finished > now() - interval '1 day') jobs_failed_1d,
         (SELECT coalesce(sum(total_tokens), 0) FROM ai_usage) ai_tokens,
         (SELECT coalesce(sum(total_tokens), 0) FROM ai_usage WHERE {local('created')} = {today}) ai_tokens_today,
         (SELECT coalesce(sum(total_tokens), 0) FROM ai_usage WHERE {local('created')} > {today} - 30) ai_tokens_30d,
@@ -169,9 +171,16 @@ async def user(user_id: int, uid: int = Depends(admin_user)):
 
 
 class BalanceChange(BaseModel):
-    amount: int = Field(ne=0, ge=-10_000_000, le=10_000_000)
+    amount: int = Field(ge=-10_000_000, le=10_000_000)
     note: str = Field("", max_length=200)
     notify: bool = False
+
+    @field_validator("amount")
+    @classmethod
+    def _not_zero(cls, v: int) -> int:
+        if v == 0:
+            raise ValueError("summa 0 bo'lmasin")
+        return v
 
 
 @router.post("/users/{user_id}/balance")
@@ -186,7 +195,7 @@ async def change_balance(user_id: int, req: BalanceChange, uid: int = Depends(ad
     if req.notify and req.amount > 0:
         lang = await lang_of(user_id)
         try:
-            await send_message(user_id, t(lang, "paid", amount=som(req.amount, lang), balance=som(new, lang)), bot.open_keyboard(lang))
+            await send_message(user_id, t(lang, "paid", amount=som(req.amount, lang), balance=som(new, lang)), open_keyboard(lang))
         except httpx.HTTPError:
             pass  # the balance is changed either way
     return {"balance": new}
@@ -197,10 +206,12 @@ class Message(BaseModel):
 
 
 def _tg_error(e: httpx.HTTPError) -> str:
-    try:
-        return e.response.json().get("description", str(e))  # e.g. "Forbidden: bot was blocked by the user"
-    except Exception:
-        return str(e)
+    if isinstance(e, httpx.HTTPStatusError):
+        try:
+            return e.response.json().get("description", str(e))  # e.g. "Forbidden: bot was blocked by the user"
+        except ValueError:
+            pass
+    return str(e)
 
 
 @router.post("/users/{user_id}/message")
@@ -208,7 +219,7 @@ async def message_user(user_id: int, req: Message, uid: int = Depends(admin_user
     try:
         await send_message(user_id, req.text)
     except httpx.HTTPError as e:
-        raise HTTPException(400, f"Telegram: {_tg_error(e)}")
+        raise HTTPException(400, f"Telegram: {_tg_error(e)}") from e
     await audit(uid, "message", user_id, text=req.text[:200])
     return {"ok": True}
 
@@ -246,7 +257,7 @@ async def screenshot(order_id: int, uid: int = Depends(admin_user)):
     try:
         data = await download_file(file_id)
     except (httpx.HTTPError, ValueError) as e:
-        raise HTTPException(502, f"Telegram: {e}")
+        raise HTTPException(502, f"Telegram: {e}") from e
     return Response(data, media_type=_image_type(data), headers={"Cache-Control": "private, max-age=3600"})
 
 
@@ -257,14 +268,14 @@ class Decision(BaseModel):
 @router.post("/orders/{order_id}/decide")
 async def decide(order_id: int, req: Decision, uid: int = Depends(admin_user)):
     outcome, order, new = await payments.card_decide(order_id, req.approve, uid)
-    if outcome == "missing":
+    if outcome == "missing" or order is None:
         raise HTTPException(404, "Buyurtma topilmadi")
     if outcome == "done":
         raise HTTPException(409, "Bu buyurtma allaqachon ko'rib chiqilgan")
     await audit(uid, "card_" + outcome, order_id, amount=order["amount"], user=order["user_id"])
     try:  # the user hears about it exactly as with the bot's buttons
         if outcome == "paid":
-            await bot.notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new})
+            await notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new})
         else:
             lang = await lang_of(order["user_id"])
             await send_message(order["user_id"], t(lang, "card_rejected", code=payments.payment_code(order_id)))
@@ -355,7 +366,7 @@ async def broadcast(req: BroadcastReq, uid: int = Depends(admin_user)):
         try:
             await send_message(uid, req.text)
         except httpx.HTTPError as e:
-            raise HTTPException(400, f"Telegram: {_tg_error(e)}")
+            raise HTTPException(400, f"Telegram: {_tg_error(e)}") from e
         return {"ok": True, "test": True}
     if await db.pool().fetchval("SELECT 1 FROM broadcasts WHERE state = 'running'"):
         raise HTTPException(409, "Boshqa xabar yuborilmoqda, tugashini kuting")
@@ -390,10 +401,8 @@ def _dir_size(path: Path) -> int:
     total = 0
     for root, _, files in os.walk(path):
         for f in files:
-            try:
+            with contextlib.suppress(OSError):
                 total += os.path.getsize(os.path.join(root, f))
-            except OSError:
-                pass
     return total
 
 
@@ -410,7 +419,7 @@ async def get_settings(uid: int = Depends(admin_user)):
     except (OSError, KeyError, ValueError):
         ram = None
     return {
-        "values": await appconfig.get(), "defaults": appconfig.defaults(),
+        "values": await app_settings.get(), "defaults": app_settings.defaults(),
         "providers": {"payme": "payme" in payments.providers(), "click": "click" in payments.providers(),
                       "card": "card" in payments.providers(), "payme_test": settings.payme_test},
         "admins": sorted(settings.admin_ids), "webapp_url": settings.webapp_url,
@@ -427,11 +436,11 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
     amounts = sorted({a for a in req.topup_amounts})
     if any(a < 1000 or a > 10_000_000 for a in amounts):
         raise HTTPException(422, "To'ldirish summalari 1 000 – 10 000 000 so'm oralig'ida bo'lsin")
-    old = await appconfig.get()
+    old = await app_settings.get()
     new = {"price_generate": req.price_generate, "price_restyle": req.price_restyle, "topup_amounts": amounts}
-    await appconfig.set_many(new, uid)
+    await app_settings.set_many(new, uid)
     await audit(uid, "settings", None, before=old, after=new)
-    return {"values": await appconfig.get()}
+    return {"values": await app_settings.get()}
 
 
 @router.get("/log")

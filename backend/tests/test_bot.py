@@ -1,14 +1,13 @@
 """Bot conversations, end to end through bot.handle() with a fake Telegram."""
 import io
 
+from conftest import ADMIN, add_user
 from PIL import Image
 
-import alerts
-import billing
-import bot
-import db
-import images_pdf as pdfs
-from conftest import ADMIN, add_user
+from app.bot import handlers as bot
+from app.core import alerts, db
+from app.services import billing
+from app.services import images_pdf as pdfs
 
 U = 501
 

@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "backend"))
-import alerts  # noqa: E402
+from app.core import alerts  # noqa: E402
 
 unit = sys.argv[1] if len(sys.argv) > 1 else "?"
 tail = subprocess.run(["journalctl", "-u", unit, "-n", "25", "--no-pager", "-o", "cat"], capture_output=True, text=True).stdout

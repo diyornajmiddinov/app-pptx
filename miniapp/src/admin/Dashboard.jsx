@@ -31,6 +31,13 @@ export default function Dashboard({ go, openUser }) {
           <button type="button" className="btn sm primary" style={{ marginLeft: 'auto' }} onClick={() => go('payments')}>Ko'rish</button>
         </div>
       )}
+      {(k.jobs_queued > 0 || k.jobs_running > 0 || k.jobs_failed_1d > 0) && (
+        <div className="card card-b row">
+          <span className={`pill ${k.jobs_failed_1d ? 'bad' : 'info'}`}>Navbat</span>
+          <span><b>{k.jobs_running}</b> ta taqdimot chizilmoqda, <b>{k.jobs_queued}</b> ta kutmoqda
+            {k.jobs_failed_1d > 0 && <> · oxirgi 24 soatda <b>{k.jobs_failed_1d}</b> tasi xato bilan tugadi (pul qaytarilgan)</>}</span>
+        </div>
+      )}
       <div className="grid kpis">
         <Kpi label="Foydalanuvchilar" value={num(k.users)} foot={<><span className="up">+{num(k.users_today)}</span> bugun · +{num(k.users_7d)} 7 kunda</>} />
         <Kpi label="Faol foydalanuvchilar" value={num(k.active_7d)} foot={`7 kunda · bugun ${num(k.active_1d)}`} />

@@ -21,9 +21,9 @@ import re
 import time
 from urllib.parse import urlencode
 
-import billing
-import db
-from config import settings
+from app.core import db
+from app.core.config import settings
+from app.services import billing
 
 PAYME_TIMEOUT_MS = 12 * 3600 * 1000  # Payme: an unperformed transaction expires after 12 hours
 
@@ -180,6 +180,7 @@ async def _cancel_expired(con, txn: dict) -> dict:
 
 async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
     """Returns (result, paid) where paid = {"user_id", "amount", "balance"} when money was just credited."""
+    order: dict | None
     if params.get("id") is not None:  # expire first in its own transaction, so it is saved even if we answer with an error
         async with db.transaction() as con:
             txn = await _txn(con, params["id"])
@@ -216,6 +217,8 @@ async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
             if txn["state"] != 1:
                 raise _err_state()
             order = await _order(con, txn["order_id"])
+            if order is None:  # the order row is gone: nothing to credit or take back
+                raise _err_no_order()
             t = now_ms()
             await con.execute("UPDATE payme_txns SET state = 2, perform_time = $1 WHERE id = $2", t, txn["id"])
             await con.execute("UPDATE orders SET state = 'paid' WHERE id = $1", order["id"])
@@ -231,6 +234,8 @@ async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
                 return {"transaction": txn["id"], "cancel_time": txn["cancel_time"], "state": txn["state"]}, None
             t, reason = now_ms(), params.get("reason")
             order = await _order(con, txn["order_id"])
+            if order is None:  # the order row is gone: nothing to credit or take back
+                raise _err_no_order()
             if txn["state"] == 2:  # refund after payment: take the money back if it has not been spent yet
                 if await billing.apply_in(con, order["user_id"], -order["amount"], "refund:payme", f"payme-cancel:{txn['id']}", False) is None:
                     raise PaymeError(-31007, "Mablag' ishlatilgan, bekor qilib bo'lmaydi",

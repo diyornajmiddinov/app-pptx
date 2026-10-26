@@ -5,11 +5,10 @@ import hashlib
 import time
 
 import pytest
-
-import billing
-import payments
-from config import settings
 from conftest import add_user
+
+from app.core.config import settings
+from app.services import billing, payments
 
 
 async def test_card_screenshot_then_parallel_approvals_credit_once():

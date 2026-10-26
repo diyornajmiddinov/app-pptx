@@ -8,8 +8,8 @@ from urllib.parse import urlencode
 import pytest
 from fastapi import HTTPException
 
-import telegram_auth as ta
-from config import settings
+from app.core import auth as ta
+from app.core.config import settings
 
 
 def init_data(uid: int, age: int = 0) -> str:

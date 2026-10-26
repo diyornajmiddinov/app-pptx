@@ -1,7 +1,7 @@
 """Minimal Telegram Bot API calls used by the backend and the bot (async, one shared httpx client per process)."""
 import httpx
 
-from config import settings
+from app.core.config import settings
 
 API = "https://api.telegram.org/bot{token}/{method}"
 _client: httpx.AsyncClient | None = None

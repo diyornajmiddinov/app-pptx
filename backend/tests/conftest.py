@@ -18,17 +18,19 @@ os.environ.update({
     "GEMINI_API_KEY": "", "PEXELS_API_KEY": "", "ANTHROPIC_API_KEY": "", "LOG_CHANNEL_ID": "",
     "SLIDEAI_DEMO": "0",
 })
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # backend/: the `app` package
 
-import pytest  # noqa: E402
+import pytest
 
-import alerts  # noqa: E402
-import db  # noqa: E402
-import telegram_api  # noqa: E402
+from app.core import (
+    alerts,
+    db,
+    telegram,
+)
 
 ADMIN = 1000
 TABLES = ("users", "balances", "ledger", "orders", "payme_txns", "click_txns", "decks", "app_settings",
-          "broadcasts", "admin_log", "ai_usage", "pdf_drafts")
+          "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs")
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -73,10 +75,8 @@ class FakeTelegram:
 @pytest.fixture(autouse=True)
 def tg(monkeypatch):
     fake = FakeTelegram()
-    monkeypatch.setattr(telegram_api, "call", fake.call)
-    monkeypatch.setattr(telegram_api, "download_file", fake.download_file)
-    import bot
-    monkeypatch.setattr(bot, "download_file", fake.download_file)
+    monkeypatch.setattr(telegram, "call", fake.call)
+    monkeypatch.setattr(telegram, "download_file", fake.download_file)
     monkeypatch.setattr(alerts, "post", lambda *a, **k: True)  # never the real channel
     monkeypatch.setattr(alerts, "post_file", lambda *a, **k: True)
     return fake
@@ -85,5 +85,5 @@ def tg(monkeypatch):
 async def add_user(uid: int, lang: str | None = "uz", balance: int = 0, name: str = "Test"):
     await db.pool().execute("INSERT INTO users (id, first_name, lang) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING", uid, name, lang)
     if balance:
-        import billing
+        from app.services import billing
         await billing.top_up(uid, balance, ref=f"seed:{uid}:{balance}")

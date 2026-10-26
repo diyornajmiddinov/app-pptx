@@ -1,4 +1,6 @@
 """Bot and backend messages in three languages (the same languages as the Mini App)."""
+from typing import Any
+
 LANGS = ("uz", "ru", "en")
 LANG_NAMES = {"uz": "O'zbekcha", "ru": "Русский", "en": "English"}
 
@@ -38,6 +40,7 @@ T = {
         "hint": "Taqdimot yaratish uchun pastdagi tugmani bosing.",
         "queued": "«{topic}» tayyorlanmoqda. Odatda 1–2 daqiqa vaqt oladi, tayyor bo'lgach shu yerga yuboraman.",
         "restyle_queued": "«{topic}» yangi shablonda tayyorlanmoqda.",
+        "queue_ahead": "⏳ Navbatda oldingizda {n} ta taqdimot bor, biroz ko'proq kutish kerak bo'ladi.",
         "slides": lambda n: f"{n} ta slayd", "new_template": "Yangi shablonda",
         "err_gen": "Taqdimot tayyorlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         "err_restyle": "Shablonni almashtirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
@@ -97,6 +100,7 @@ T = {
         "hint": "Чтобы создать презентацию, нажмите кнопку ниже.",
         "queued": "Готовлю «{topic}». Обычно это занимает 1–2 минуты, пришлю файл сюда.",
         "restyle_queued": "Готовлю «{topic}» в новом шаблоне.",
+        "queue_ahead": "⏳ Перед вами в очереди презентаций: {n}, придётся подождать чуть дольше.",
         "slides": _ru_slides, "new_template": "В новом шаблоне",
         "err_gen": "При создании презентации произошла ошибка. Пожалуйста, попробуйте ещё раз.",
         "err_restyle": "При смене шаблона произошла ошибка. Пожалуйста, попробуйте ещё раз.",
@@ -156,6 +160,7 @@ T = {
         "hint": "Tap the button below to create a presentation.",
         "queued": "Preparing “{topic}”. It usually takes 1–2 minutes; I'll send the file here.",
         "restyle_queued": "Preparing “{topic}” in the new template.",
+        "queue_ahead": "⏳ {n} presentations are ahead of you in the queue, so it will take a little longer.",
         "slides": lambda n: f"{n} slides", "new_template": "In a new template",
         "err_gen": "Something went wrong while creating the presentation. Please try again.",
         "err_restyle": "Something went wrong while changing the template. Please try again.",
@@ -199,5 +204,5 @@ def som(amount: int, lang: str = "uz") -> str:
 
 
 def t(lang: str, key: str, **kw) -> str:
-    v = T.get(lang, T["uz"]).get(key) or T["uz"][key]
-    return v(kw["n"]) if callable(v) else v.format(**kw)
+    v: Any = T.get(lang, T["uz"]).get(key) or T["uz"][key]
+    return v(kw["n"]) if callable(v) else str(v).format(**kw)

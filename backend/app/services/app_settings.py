@@ -3,8 +3,8 @@ Settings the admin panel can change while the bot runs (prices, top-up amounts),
 A key that was never changed falls back to its .env value (config.py). Read on every use, so the bot process
 and the API process always agree without a restart.
 """
-import db
-from config import settings
+from app.core import db
+from app.core.config import settings
 
 
 def defaults() -> dict:

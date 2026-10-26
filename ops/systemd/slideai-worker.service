@@ -1,0 +1,21 @@
+[Unit]
+Description=SlideAI worker (draws the paid presentations from the jobs queue)
+After=network-online.target postgresql.service
+Wants=network-online.target
+OnFailure=slideai-alert@%n.service
+StartLimitIntervalSec=300
+StartLimitBurst=10
+
+[Service]
+WorkingDirectory=/home/slideai-src/slideai/backend
+EnvironmentFile=/home/slideai-src/slideai/backend/.env
+Environment=PYTHONUNBUFFERED=1
+ExecStart=/home/slideai-src/slideai/backend/.venv/bin/python -m app.worker
+Restart=always
+RestartSec=3
+# SIGTERM to the worker only: it stops taking jobs and lets the running ones (node / LibreOffice children) finish
+KillMode=mixed
+TimeoutStopSec=180
+
+[Install]
+WantedBy=multi-user.target

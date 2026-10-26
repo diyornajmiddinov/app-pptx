@@ -5,7 +5,7 @@ import subprocess
 import pytest
 from PIL import Image
 
-import images_pdf as pdfs
+from app.services import images_pdf as pdfs
 
 
 def img(mode, size, fmt, exif_orient=None):
@@ -24,13 +24,13 @@ def test_plain_jpeg_is_embedded_unchanged():
 @pytest.mark.parametrize("mode,size,fmt,orient", [("RGBA", (500, 500), "PNG", None), ("CMYK", (400, 600), "JPEG", None),
                                                    ("L", (300, 400), "JPEG", None), ("RGB", (800, 600), "JPEG", 6)])
 def test_other_images_are_reencoded_upright(mode, size, fmt, orient):
-    jpeg, w, h, cs = pdfs.prepare(img(mode, size, fmt, orient))
+    jpeg, w, h, _cs = pdfs.prepare(img(mode, size, fmt, orient))
     assert jpeg[:2] == b"\xff\xd8"
     assert (w, h) == ((size[1], size[0]) if orient == 6 else size)
 
 
 def test_not_an_image_raises():
-    with pytest.raises(Exception):
+    with pytest.raises(OSError):  # PIL.UnidentifiedImageError
         pdfs.prepare(b"hello")
 
 

@@ -10,7 +10,7 @@ StartLimitBurst=10
 WorkingDirectory=/home/slideai-src/slideai/backend
 EnvironmentFile=/home/slideai-src/slideai/backend/.env
 Environment=PYTHONUNBUFFERED=1
-ExecStart=/home/slideai-src/slideai/backend/.venv/bin/python polling.py
+ExecStart=/home/slideai-src/slideai/backend/.venv/bin/python -m app.bot.polling
 Restart=always
 RestartSec=3
 

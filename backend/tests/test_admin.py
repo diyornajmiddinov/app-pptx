@@ -1,13 +1,12 @@
 """Admin panel API."""
 import httpx
 import pytest
-
-import billing
-import db
-import main
-import payments
 from conftest import ADMIN, add_user
-from telegram_auth import make_admin_token
+
+from app.api import main
+from app.core import db
+from app.core.auth import make_admin_token
+from app.services import billing, payments
 
 
 @pytest.fixture
@@ -28,6 +27,7 @@ async def test_dashboard_and_lists(admin):
     await billing.charge(7, 5000, "generate")
     k = (await admin.get("/api/admin/stats")).json()["kpi"]
     assert k["users"] == 1 and k["balances"] == 15000 and k["generations"] == 1
+    assert k["jobs_queued"] == 0 and k["jobs_failed_1d"] == 0
     users = (await admin.get("/api/admin/users", params={"q": "7"})).json()
     assert users["total"] == 1 and users["items"][0]["balance"] == 15000
     assert (await admin.get("/api/admin/users/7")).json()["totals"]["spent"] == 5000
@@ -39,6 +39,7 @@ async def test_balance_change_cannot_go_negative_and_is_logged(admin):
     await add_user(7)
     assert (await admin.post("/api/admin/users/7/balance", json={"amount": 3000, "note": "naqd"})).json()["balance"] == 3000
     assert (await admin.post("/api/admin/users/7/balance", json={"amount": -5000})).status_code == 422
+    assert (await admin.post("/api/admin/users/7/balance", json={"amount": 0})).status_code == 422  # Field(ne=0) never worked
     log = (await admin.get("/api/admin/log")).json()["items"]
     assert log[0]["action"] == "balance" and log[0]["details"]["note"] == "naqd"
 

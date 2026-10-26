@@ -7,7 +7,7 @@ from urllib.parse import parse_qsl
 
 from fastapi import Header, HTTPException
 
-from config import settings
+from app.core.config import settings
 
 MAX_AGE = 60 * 60 * 24  # seconds
 
@@ -15,8 +15,8 @@ MAX_AGE = 60 * 60 * 24  # seconds
 def verify_init_data(init_data: str, bot_token: str) -> dict:
     try:
         fields = dict(parse_qsl(init_data, keep_blank_values=True, strict_parsing=True))
-    except ValueError:
-        raise HTTPException(401, "Invalid initData")
+    except ValueError as e:
+        raise HTTPException(401, "Invalid initData") from e
     received = fields.pop("hash", None)
     if not received:
         raise HTTPException(401, "Missing hash")

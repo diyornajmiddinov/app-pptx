@@ -30,15 +30,14 @@ from lxml import etree
 from PIL import Image
 from pptx import Presentation
 from pptx.dml.color import RGBColor
-from pptx.enum.dml import MSO_FILL
-from pptx.enum.shapes import MSO_SHAPE_TYPE
 from pptx.enum.text import PP_ALIGN
 from pptx.oxml.ns import qn
 from pptx.util import Emu, Pt
 
-import pptx_model
+from app.core.config import DATA_DIR
+from app.services import pptx_model
 
-DATA = Path(__file__).resolve().parent / "data"
+DATA = DATA_DIR
 MAX_FILE = 40 * 1024 * 1024          # uploaded .pptx
 MAX_UNZIPPED = 300 * 1024 * 1024     # guard against zip bombs
 MAX_IMAGE = 10 * 1024 * 1024
@@ -94,8 +93,8 @@ def _check_zip(data: bytes):
         with zipfile.ZipFile(io.BytesIO(data)) as z:
             if sum(i.file_size for i in z.infolist()) > MAX_UNZIPPED:
                 raise EditorError("tooBig")
-    except zipfile.BadZipFile:
-        raise EditorError("badFile")
+    except zipfile.BadZipFile as e:
+        raise EditorError("badFile") from e
 
 
 def _soffice(args: list[str], cwd: Path, timeout: int = 120):
@@ -117,13 +116,13 @@ def import_file(user_id: int, data: bytes, filename: str, source: str = "upload"
             try:
                 _soffice(["--convert-to", "pptx", "--outdir", tmp, str(src)], Path(tmp))
                 data = (Path(tmp) / "in.pptx").read_bytes()
-            except (subprocess.SubprocessError, FileNotFoundError):
-                raise EditorError("badFile")
+            except (subprocess.SubprocessError, FileNotFoundError) as e:
+                raise EditorError("badFile") from e
     _check_zip(data)
     try:
         Presentation(io.BytesIO(data))
-    except Exception:
-        raise EditorError("badFile")
+    except Exception as e:
+        raise EditorError("badFile") from e
     doc_id = secrets.token_hex(8)
     folder = _root(user_id) / doc_id
     folder.mkdir(parents=True)
@@ -167,8 +166,8 @@ def save_upload(user_id: int, doc_id: str, data: bytes) -> str:
         with Image.open(io.BytesIO(data)) as im:
             fmt = (im.format or "").lower()
             im.verify()
-    except Exception:
-        raise EditorError("badImage")
+    except Exception as e:
+        raise EditorError("badImage") from e
     ext = {"jpeg": "jpg", "png": "png", "gif": "gif", "bmp": "bmp"}.get(fmt)
     if not ext:  # e.g. webp: convert, PowerPoint does not read it
         with Image.open(io.BytesIO(data)) as im:
@@ -179,7 +178,7 @@ def save_upload(user_id: int, doc_id: str, data: bytes) -> str:
     return uid
 
 
-def _upload_path(folder: Path, upload_id: str) -> Path:
+def _upload_path(folder: Path, upload_id: str | None) -> Path:
     if not re.fullmatch(r"[a-f0-9]{16}", str(upload_id or "")):
         raise EditorError("badImage")
     found = list((folder / "uploads").glob(f"{upload_id}.*")) if (folder / "uploads").exists() else []
@@ -193,7 +192,7 @@ def _upload_path(folder: Path, upload_id: str) -> Path:
 def describe(user_id: int, doc_id: str) -> dict:
     """The editor model: per slide, the drawable elements (pptx_model) and the key of its background picture."""
     folder = _folder(user_id, doc_id); meta = _meta(folder)
-    prs = Presentation(_file(folder, meta["cur"]))
+    prs = Presentation(str(_file(folder, meta["cur"])))
     media = folder / "media"; media.mkdir(exist_ok=True)
     slides = []
     for i, s in enumerate(prs.slides):
@@ -245,7 +244,7 @@ _layer_lock = threading.Lock()
 
 def _render_layers(folder: Path, out: Path):
     meta = _meta(folder)
-    prs = Presentation(_file(folder, meta["cur"]))
+    prs = Presentation(str(_file(folder, meta["cur"])))
     keys = []
     for s in prs.slides:
         _, ids, _ = pptx_model.slide_model(prs, s)
@@ -256,12 +255,12 @@ def _render_layers(folder: Path, out: Path):
     if all((out / f"{k}.png").exists() for k in keys):
         return
     with tempfile.TemporaryDirectory() as tmp:
-        src = Path(tmp) / "layers.pptx"; prs.save(src)
+        src = Path(tmp) / "layers.pptx"; prs.save(str(src))
         _soffice(["--convert-to", "pdf", "--outdir", tmp, str(src)], Path(tmp))
         subprocess.run(["pdftoppm", "-png", "-scale-to-x", "1600", "-scale-to-y", "-1", str(Path(tmp) / "layers.pdf"), str(Path(tmp) / "s")],
                        check=True, timeout=180, capture_output=True)
         pages = sorted(Path(tmp).glob("s-*.png"), key=lambda f: int(f.stem.split("-")[1]))
-        for k, page in zip(keys, pages):
+        for k, page in zip(keys, pages, strict=False):
             shutil.move(page, out / f"{k}.png")
 
 
@@ -270,8 +269,8 @@ def _render_layers(folder: Path, out: Path):
 def _slide(prs, n):
     try:
         n = int(n)
-    except (TypeError, ValueError):
-        raise EditorError("badOp")
+    except (TypeError, ValueError) as e:
+        raise EditorError("badOp") from e
     if not 1 <= n <= len(prs.slides):
         raise EditorError("badOp")
     return prs.slides[n - 1]
@@ -285,7 +284,7 @@ def _shape(slide, sid):
 
 
 def _emu(v) -> Emu:
-    return Emu(int(round(float(v))))
+    return Emu(round(float(v)))
 
 
 def _set_para_text(p, text: str):
@@ -323,7 +322,7 @@ def _style(tf, o: dict):
         if o.get("align") in ALIGN_SET:
             p.alignment = ALIGN_SET[o["align"]]
         for f in [r.font for r in p.runs] + [p.font]:
-            if "size" in o and o["size"]:
+            if o.get("size"):
                 f.size = Pt(max(4, min(400, float(o["size"]))))
             for k in ("bold", "italic", "underline"):
                 if k in o:
@@ -342,7 +341,7 @@ def _rpr(base, r: dict):
             if base.get(k) is not None:
                 rpr.set(k, base.get(k))
     if r.get("sz"):
-        rpr.set("sz", str(int(round(max(1, min(4000, float(r["sz"]))) * 100))))
+        rpr.set("sz", str(round(max(1, min(4000, float(r["sz"]))) * 100)))
     rpr.set("b", "1" if r.get("b") else "0")
     rpr.set("i", "1" if r.get("i") else "0")
     rpr.set("u", "sng" if r.get("u") else "none")
@@ -604,17 +603,17 @@ def apply(user_id: int, doc_id: str, ops: list[dict], version: int, full: bool =
         raise EditorError("stale")  # changed in another window: the page reloads the document
     if not ops:
         return describe(user_id, doc_id)
-    prs = Presentation(_file(folder, meta["cur"]))
+    prs = Presentation(str(_file(folder, meta["cur"])))
     try:
         for o in ops[:200]:
             _op(prs, folder, o)
     except EditorError:
         raise
-    except (KeyError, ValueError, TypeError, IndexError, AttributeError):
-        raise EditorError("badOp")
+    except (KeyError, ValueError, TypeError, IndexError, AttributeError) as e:
+        raise EditorError("badOp") from e
     nv = max(meta["versions"]) + 1
-    prs.save(_file(folder, nv))
-    vs = meta["versions"][: meta["versions"].index(meta["cur"]) + 1] + [nv]  # a new change drops the redo branch
+    prs.save(str(_file(folder, nv)))
+    vs = [*meta["versions"][: meta["versions"].index(meta["cur"]) + 1], nv]  # a new change drops the redo branch
     for old in set(meta["versions"]) - set(vs[-MAX_VERSIONS:]):
         _file(folder, old).unlink(missing_ok=True)
     meta.update(versions=vs[-MAX_VERSIONS:], cur=nv, updated=int(time.time()))

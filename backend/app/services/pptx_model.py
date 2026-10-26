@@ -284,7 +284,7 @@ def _bullet(ctx, chain):
 
 def text_model(ctx, tx_body, lst_sources, body_sources, font_ref_color=None, fallback_size=None, style_color=None):
     """Paragraphs with resolved formatting, and the text body's box settings."""
-    bodies = [tx_body.find(qn("a:bodyPr"))] + body_sources
+    bodies = [tx_body.find(qn("a:bodyPr")), *body_sources]
     ins = {k: int(_pick_attr(bodies, k) or d) for k, d in (("lIns", 91440), ("tIns", 45720), ("rIns", 91440), ("bIns", 45720))}
     scale = spacing_cut = 0
     fit = "none"
@@ -331,7 +331,7 @@ def text_model(ctx, tx_body, lst_sources, body_sources, font_ref_color=None, fal
 
 def _fill(ctx, sppr, style, inherited_sps):
     """CSS-ready fill: None (transparent), {"color", "alpha"} or {"gradient": [...], "angle"}; False = unsupported."""
-    for holder in [sppr] + inherited_sps:
+    for holder in [sppr, *inherited_sps]:
         if holder is None:
             continue
         if holder.find(qn("a:noFill")) is not None:
@@ -356,7 +356,7 @@ def _fill(ctx, sppr, style, inherited_sps):
 
 
 def _line(ctx, sppr, style, inherited_sps):
-    for holder in [sppr] + inherited_sps:
+    for holder in [sppr, *inherited_sps]:
         ln = holder.find(qn("a:ln")) if holder is not None else None
         if ln is None:
             continue
@@ -502,7 +502,7 @@ def _table(ctx, el):
                 fill = own
             color_default = (tstyle["color"], 1) if "color" in tstyle else None
             tx = tc.find(qn("a:txBody"))
-            tm = text_model(ctx, tx, [tx.find(qn("a:lstStyle"))] + lst if tx is not None and tx.find(qn("a:lstStyle")) is not None else lst,
+            tm = text_model(ctx, tx, [tx.find(qn("a:lstStyle")), *lst] if tx is not None and tx.find(qn("a:lstStyle")) is not None else lst,
                             [], None, fallback_size=18, style_color=color_default) if tx is not None else {"paragraphs": [], "body": {}}
             if tstyle.get("b"):
                 for p in tm["paragraphs"]:

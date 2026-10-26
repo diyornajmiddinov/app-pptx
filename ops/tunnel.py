@@ -15,7 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "backend"))
-import alerts  # noqa: E402
+from app.core import alerts  # noqa: E402
 
 ENV = ROOT / "backend" / ".env"
 URL = re.compile(r"https://[a-z0-9-]+\.trycloudflare\.com")

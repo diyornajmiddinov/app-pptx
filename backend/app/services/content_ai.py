@@ -8,7 +8,7 @@ All 30 templates use the same structure:
     cover (Kirish/titul) -> intro (Kirish) -> agenda (Reja) -> ... -> sources (Manbalar) -> closing
 with 3–6 photos and any slide count from 6 to 30.
 
-    from content_ai import make_presentation
+    from app.services.content_ai import make_presentation
     path = make_presentation(
         "Soliq islohotlari va iqtisodiy o'sish", template_id=25, slide_count=14, language="uz",
         meta={"author": "Diyorbek Toshmatov", "org": "TDIU", "loc": "Toshkent", "year": "2024"})
@@ -28,12 +28,15 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from collections.abc import Callable
 from pathlib import Path
-from typing import Callable, Literal
+from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
-PRO_DIR = Path(os.getenv("SLIDEAI_ENGINE_DIR", Path(__file__).resolve().parent.parent / "engine")).resolve()
+from app.core.config import ENGINE_DIR
+
+PRO_DIR = ENGINE_DIR
 MODEL = os.getenv("SLIDEAI_MODEL", "claude-sonnet-5-5")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")  # a fixed model: "*-latest" moves to the newest model, which is often overloaded (503)
 # tried in turn when the main model is overloaded (503 / 429) or too slow
@@ -95,7 +98,8 @@ def plan_for(n: int, template_id: int) -> list[str]:
         raise ValueError("slaydlar soni 6 dan 30 gacha bo'lishi kerak")
     m = n - 5
     pool = POOLS.get(style_of(template_id).get("prefer"), MIDDLE_POOL)
-    middle, k = [], 0
+    middle: list[str] = []
+    k = 0
     while len(middle) < m:
         tp = pool[k % len(pool)]; k += 1
         if tp == "image" and middle.count("image") >= 3:   # cover+intro+closing = 3 photos, max 6 in total
@@ -133,7 +137,8 @@ def limits_for(template_id: int) -> dict:
     return {**LIMITS, **style_of(template_id).get("limits", {})}
 
 def check_slide(d: dict, photos: bool, Lm: dict = LIMITS) -> list[str]:
-    e, T = [], d.get("type")
+    e: list[str] = []
+    T = d.get("type")
     if T not in ("quote",): _len(e, "title", d.get("title"), Lm["cover_title"] if T in ("cover", "closing") else Lm["title"])
     if T in ("cover", "closing"): _len(e, "subtitle", d.get("subtitle"), Lm["subtitle"])
     if photos and T in ("cover", "intro", "image", "closing"):
@@ -230,13 +235,13 @@ def parse_json(text: str) -> dict:
 
 def claude(messages: list[dict]) -> str:
     import anthropic  # pip install anthropic
-    r = anthropic.Anthropic().messages.create(model=MODEL, max_tokens=12000, messages=messages)
+    r = anthropic.Anthropic().messages.create(model=MODEL, max_tokens=12000, messages=messages)  # type: ignore[arg-type]
     return "".join(b.text for b in r.content if b.type == "text")
 
 # ---- AI usage: every Gemini request (also failed ones and retries) is reported to on_usage, which the
 # backend points at the ai_usage table. usage_context says whose job it is: {"user_id", "purpose", "job"}.
-usage_context: contextvars.ContextVar[dict] = contextvars.ContextVar("usage_context", default={})
-on_usage: Callable[[dict], None] | None = None
+usage_context: contextvars.ContextVar[dict | None] = contextvars.ContextVar("usage_context", default=None)
+on_usage: Callable[[dict], object] | None = None
 
 
 def _report(model: str, op: str, status: str, started: float, data: dict | None = None):
@@ -244,7 +249,7 @@ def _report(model: str, op: str, status: str, started: float, data: dict | None 
         return
     u = (data or {}).get("usageMetadata") or {}
     try:
-        on_usage({**usage_context.get(), "model": model, "op": op, "status": status, "ms": int((time.time() - started) * 1000),
+        on_usage({**(usage_context.get() or {}), "model": model, "op": op, "status": status, "ms": int((time.time() - started) * 1000),
                   "prompt_tokens": u.get("promptTokenCount", 0), "output_tokens": u.get("candidatesTokenCount", 0),
                   "thinking_tokens": u.get("thoughtsTokenCount", 0), "total_tokens": u.get("totalTokenCount", 0)})
     except Exception:  # accounting must never break a paid job
@@ -319,7 +324,8 @@ def _only_slightly_long(errors: list[str], slack: float = 1.25) -> bool:
     return bool(errors)
 
 def _until_valid(messages, plan, photos, Lm, ask, retries=2) -> dict:
-    errors, last = [], None
+    errors: list[str] = []
+    last = None
     for _ in range(retries + 1):
         reply = ask(messages)
         try:
@@ -328,8 +334,7 @@ def _until_valid(messages, plan, photos, Lm, ask, retries=2) -> dict:
             last = parsed
         except (json.JSONDecodeError, ValueError): data, errors = None, ["javob to'g'ri JSON emas"]
         if data: return data
-        messages = messages + [{"role": "assistant", "content": reply},
-                               {"role": "user", "content": "Xatolarni tuzat va BUTUN JSON'ni qaytadan yubor:\n- " + "\n- ".join(errors[:40])}]
+        messages = [*messages, {"role": "assistant", "content": reply}, {"role": "user", "content": "Xatolarni tuzat va BUTUN JSON'ni qaytadan yubor:\n- " + "\n- ".join(errors[:40])}]
     if last is not None and _only_slightly_long(errors):
         return last
     raise RuntimeError("AI kontenti tekshiruvdan o'tmadi: " + "; ".join(errors[:10]))
@@ -357,7 +362,7 @@ Javob: FAQAT JSON: {{"slides": [...]}}
 
 {json.dumps(body, ensure_ascii=False)}"""
     out = _until_valid([{"role": "user", "content": prompt}], plan, template_id in PHOTO_TEMPLATES, Lm, ask, retries)
-    for a, b in zip(content["slides"], out["slides"]):  # facts that must never drift
+    for a, b in zip(content["slides"], out["slides"], strict=True):  # facts that must never drift
         for k in ("image", "items") if a["type"] == "sources" else ("image",):
             if k in a: b[k] = a[k]
     return {**content, "slides": out["slides"]}

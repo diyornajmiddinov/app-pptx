@@ -5,8 +5,8 @@ import subprocess
 import sys
 import urllib.error
 
-import alerts
-import content_ai
+from app.core import alerts
+from app.services import content_ai
 
 
 def report(fn, msg="Amal"):

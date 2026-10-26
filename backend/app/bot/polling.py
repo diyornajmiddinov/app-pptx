@@ -1,6 +1,6 @@
 """
 Run the bot with long polling instead of the webhook: no HTTPS domain needed (local testing).
-    set -a; . ./.env; set +a; python polling.py
+    set -a; . ./.env; set +a; python -m app.bot.polling
 Telegram does not deliver getUpdates while a webhook is set, so it is removed at start;
 run bot_setup.py again when you move back to the webhook.
 Each update is handled in its own task, so a slow one (a file import) does not hold up the others.
@@ -8,13 +8,11 @@ Each update is handled in its own task, so a slow one (a file import) does not h
 import asyncio
 import logging
 
-import alerts
-import bot
-import db
-import telegram_api
-from config import settings
-from telegram_api import call
-from texts import T
+from app.bot import handlers as bot
+from app.bot.keyboards import app_url, has_webapp
+from app.core import alerts, db, telegram
+from app.core.config import settings
+from app.texts import T
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
@@ -46,12 +44,12 @@ async def refresh_menu_buttons():
         old = mark.read_text().strip()
     except OSError:
         old = ""
-    if old == settings.webapp_url or not bot.has_webapp():
+    if old == settings.webapp_url or not has_webapp():
         return
     rows = await db.pool().fetch("SELECT id, coalesce(lang, 'uz') AS lang FROM users")
     for r in rows:
         try:
-            await telegram_api.set_menu_button(r["id"], T[r["lang"]]["open"], bot.app_url(r["lang"]))
+            await telegram.set_menu_button(r["id"], T[r["lang"]]["open"], app_url(r["lang"]))
         except Exception:  # blocked the bot etc.
             pass
         await asyncio.sleep(0.05)
@@ -62,18 +60,18 @@ async def refresh_menu_buttons():
 async def main():
     alerts.install("bot")
     await db.connect()
-    await call("deleteWebhook", json={"drop_pending_updates": False})
+    await telegram.call("deleteWebhook", json={"drop_pending_updates": False})
     for lang in ("uz", "ru", "en"):  # same command list as bot_setup.py
         cmds = [{"command": c, "description": T[lang][f"cmd_{c}"]} for c in ("start", "balance", "pdf", "editor", "language", "help")]
-        await call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})})
-    me = (await call("getMe"))["result"]
+        await telegram.call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})})
+    me = (await telegram.call("getMe"))["result"]
     log.info("bot @%s started (polling)", me["username"])
     alerts.started("bot")
     offset, running = None, {asyncio.create_task(refresh_menu_buttons())}
     try:
         while True:
             try:
-                updates = (await call("getUpdates", json={"offset": offset, "timeout": 50, "allowed_updates": UPDATES}))["result"]
+                updates = (await telegram.call("getUpdates", json={"offset": offset, "timeout": 50, "allowed_updates": UPDATES}))["result"]
             except Exception as e:  # network hiccup: wait and retry
                 log.warning("getUpdates failed: %s", str(e).replace(settings.bot_token, "***"))  # keep the token out of logs
                 await asyncio.sleep(3)
@@ -83,7 +81,7 @@ async def main():
                 task = asyncio.create_task(handle(u))
                 running.add(task); task.add_done_callback(running.discard)
     finally:
-        await telegram_api.close()
+        await telegram.close()
         await db.close()
 
 

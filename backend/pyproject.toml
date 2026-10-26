@@ -24,6 +24,10 @@ ignore = [
   "SIM108",  # ternaries are not always clearer
   "RUF001", "RUF002", "RUF003",  # Uzbek / Russian text uses ʻ ’ « » and Cyrillic on purpose
   "B008",    # FastAPI Depends() in defaults is the framework's idiom
+  "E741",    # `l` for a line / list in short comprehensions (pptx_model, editor)
+  "E731",    # small named lambdas next to their use
+  "SIM105",  # try / except / pass with a comment saying why reads better than contextlib.suppress
+  "ASYNC230", "ASYNC240",  # small local files (a PDF page, a .pptx to upload) are opened directly
 ]
 
 [tool.mypy]

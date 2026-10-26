@@ -1,14 +1,13 @@
 """Mini App API through the ASGI app (no network)."""
 import httpx
 import pytest
-
-import billing
-import db
-import decks
-import main
 from conftest import add_user
-from telegram_auth import make_app_token
 from test_auth import init_data
+
+from app.api import main
+from app.core import db
+from app.core.auth import make_app_token
+from app.services import billing, decks, jobs
 
 U = 601
 
@@ -55,10 +54,10 @@ async def test_failed_generation_is_refunded(client, tg, monkeypatch):
     await add_user(U, balance=10000)
     def broken(*a, **k):
         raise RuntimeError("AI kontenti tekshiruvdan o'tmadi: test")
-    monkeypatch.setattr(main, "_build", broken)
+    monkeypatch.setattr(jobs, "build", broken)
     body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
-    await main.drain() if hasattr(main, "drain") else None
+    await jobs.run_pending()  # what the worker does
     assert await billing.balance(U) == 10000
     assert any("qaytarildi" in t or "refund" in t.lower() for t in tg.texts())
 
@@ -66,12 +65,12 @@ async def test_failed_generation_is_refunded(client, tg, monkeypatch):
 async def test_successful_generation_saves_the_deck_and_sends_the_file(client, tg, monkeypatch, tmp_path):
     await add_user(U, balance=10000)
     content = {"meta": {"topic": "Mavzu"}, "slides": [{"type": "cover", "title": "Mavzu"}, {"type": "closing", "title": "Rahmat"}]}
-    def fake_build(req, deck_id, chat_id):
+    def fake_build(req, deck_id, user_id):
         p = tmp_path / "slideai-x.pptx"; p.write_bytes(b"pptx"); return p, content
-    monkeypatch.setattr(main, "_build", fake_build)
+    monkeypatch.setattr(jobs, "build", fake_build)
     body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
-    await main.drain() if hasattr(main, "drain") else None
+    await jobs.run_pending()  # what the worker does
     assert await billing.balance(U) == 5000
     assert tg.sent("sendDocument")
     lst = (await client.get("/api/decks", headers=h())).json()["decks"]
@@ -87,3 +86,12 @@ async def test_restyle_rules(client):
     await add_user(U + 1)
     assert (await client.post("/api/restyle", headers=h(U + 1), json={**same, "user_id": U + 1, "template_id": 4})).status_code == 404
     assert await billing.balance(U) == 10000
+
+
+async def test_busy_worker_tells_how_many_are_ahead(client, tg, monkeypatch):
+    await add_user(U, balance=50000)
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}
+    for _ in range(3):
+        r = await client.post("/api/generate", headers=h(), json=body)
+    assert r.json()["ahead"] == 2
+    assert "Navbatda oldingizda 2 ta" in tg.texts()[-1]  # 2 workers busy -> it has to wait

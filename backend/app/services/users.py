@@ -1,6 +1,6 @@
 """Users (who opened the bot / Mini App, and when) and their interface language, in the `users` table."""
-import db
-from texts import LANGS
+from app.core import db
+from app.texts import LANGS
 
 
 async def touch(user: dict):

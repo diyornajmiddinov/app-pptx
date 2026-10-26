@@ -1,8 +1,9 @@
 """Money: a balance never goes below zero, a payment is credited once, failed jobs are refunded."""
 import asyncio
 
-import billing
 from conftest import add_user
+
+from app.services import billing
 
 
 async def test_parallel_charges_never_overdraw():
@@ -23,7 +24,7 @@ async def test_refund_and_ledger():
     await add_user(1, balance=10000)
     assert await billing.charge(1, 5000, "generate") == 5000
     assert await billing.refund(1, 5000, "generate") == 10000
-    from db import pool
+    from app.core.db import pool
     kinds = [r["kind"] for r in await pool().fetch("SELECT kind FROM ledger WHERE user_id = 1 ORDER BY id")]
     assert kinds == ["topup", "generate", "refund:generate"]
 
