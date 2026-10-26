@@ -29,6 +29,7 @@ from app.core import (
 )
 
 ADMIN = 1000
+REAL_POST = alerts.post  # the fixtures below replace it; tests of post() itself use this
 TABLES = ("users", "balances", "ledger", "orders", "payme_txns", "click_txns", "decks", "app_settings",
           "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs")
 

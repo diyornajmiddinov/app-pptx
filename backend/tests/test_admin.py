@@ -58,3 +58,52 @@ async def test_prices_change_for_bot_and_app(admin):
     assert r.json()["values"] == {"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [10000, 20000]}
     assert (await admin.put("/api/admin/settings", json={"price_generate": 1, "price_restyle": 1, "topup_amounts": [5]})).status_code == 422
     assert await db.pool().fetchval("SELECT value FROM app_settings WHERE key = 'price_generate'") == 7000
+
+
+async def test_card_screenshot_is_proxied_from_telegram(admin, tg, monkeypatch):
+    await add_user(7)
+    oid = await payments.create_order(7, 15000, "card")
+    await payments.card_submit(7, "shot-1", "photo")
+    tg.files["shot-1"] = b"\xff\xd8\xff\xe0jpeg"
+    from app.api.routes import admin as admin_routes
+    monkeypatch.setattr(admin_routes, "download_file", tg.download_file)  # imported by name in the route module
+    r = await admin.get(f"/api/admin/orders/{oid}/screenshot")
+    assert r.status_code == 200 and r.headers["content-type"] == "image/jpeg"
+
+
+async def test_broadcast_reaches_everyone_it_can(admin, tg, monkeypatch):
+    import asyncio
+    for uid in (11, 12, 13):
+        await add_user(uid, lang="uz")
+    await add_user(14, lang="ru")
+    from app.core import telegram
+    real = tg.call
+
+    async def call(method, **kw):
+        if (kw.get("json") or {}).get("chat_id") == 12:
+            raise httpx.HTTPStatusError("blocked", request=httpx.Request("POST", "x"), response=httpx.Response(403))
+        return await real(method, **kw)
+    monkeypatch.setattr(telegram, "call", call)
+    assert (await admin.post("/api/admin/broadcasts", json={"text": "Salom", "test": True})).json()["test"]
+    bid = (await admin.post("/api/admin/broadcasts", json={"text": "Yangi shablonlar!", "lang": "uz"})).json()["id"]
+    for _ in range(50):
+        b = (await admin.get("/api/admin/broadcasts")).json()["items"][0]
+        if b["state"] == "done":
+            break
+        await asyncio.sleep(0.1)
+    assert b["id"] == bid and (b["total"], b["sent"], b["failed"]) == (3, 2, 1)
+    assert (await admin.post("/api/admin/broadcasts", json={"text": "x"})).status_code == 200  # the first one finished
+
+
+async def test_deck_download_redraws_the_saved_content(admin, monkeypatch, tmp_path):
+    from app.api.routes import admin as admin_routes
+    from app.services import decks
+    await add_user(7)
+    await decks.save(7, {"meta": {"topic": "Soliq / 2026"}, "slides": [{"type": "cover"}]}, {"template_id": 4}, "99")
+
+    async def fake_render(content, template_id, out):
+        out.write_bytes(b"PK-pptx"); return out
+    monkeypatch.setattr(admin_routes, "render", fake_render)
+    r = await admin.get("/api/admin/decks/99/download")
+    assert r.content == b"PK-pptx" and "Soliq%20_%202026.pptx" in r.headers["content-disposition"]  # RFC 5987: a slash cannot reach the file name
+    assert (await admin.get("/api/admin/decks/nope/download")).status_code == 404

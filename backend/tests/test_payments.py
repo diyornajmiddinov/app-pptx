@@ -76,3 +76,20 @@ async def test_click_prepare_complete_credit_once(monkeypatch):
                                   for _ in range(5)))
     assert sum(paid is not None for _, paid in done) == 1 and await billing.balance(1) == 50000
     assert (await payments.click_prepare({**sign({**base, "action": "0"}), "sign_string": "x"}))["error"] == -1
+
+
+async def test_payme_refuses_a_second_payment_for_one_order_and_expires_old_ones(payme):
+    from app.core import db
+    await add_user(1)
+    oid = await payments.create_order(1, 30000, "payme")
+    acc = {settings.payme_account_field: str(oid)}
+    now = int(time.time() * 1000)
+    assert (await payme("CreateTransaction", {"id": "a", "time": now, "amount": 3000000, "account": acc}))[0]["result"]["state"] == 1
+    r, _ = await payme("CreateTransaction", {"id": "b", "time": now, "amount": 3000000, "account": acc})
+    assert r["error"]["code"] == -31099                       # this order already waits for transaction "a"
+    await db.pool().execute("UPDATE payme_txns SET create_time = create_time - $1 WHERE id = 'a'", payments.PAYME_TIMEOUT_MS + 1000)
+    r, _ = await payme("PerformTransaction", {"id": "a"})
+    assert r["error"]["code"] == -31008                       # older than 12 h: cancelled, cannot be performed
+    r, _ = await payme("CheckTransaction", {"id": "a"})
+    assert r["result"]["state"] == -1 and r["result"]["reason"] == 4
+    assert await billing.balance(1) == 0

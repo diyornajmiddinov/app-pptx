@@ -11,6 +11,15 @@ asyncio_default_test_loop_scope = "session"
 markers = ["slow: renders real .pptx files with node (engine)"]
 filterwarnings = ["ignore::DeprecationWarning"]
 
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/bot/setup.py"]  # a one-off command against the live Bot API
+
+[tool.coverage.report]
+fail_under = 80
+skip_covered = true
+show_missing = true
+
 [tool.ruff]
 line-length = 140
 target-version = "py312"

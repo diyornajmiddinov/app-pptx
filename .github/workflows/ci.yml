@@ -44,8 +44,8 @@ jobs:
         run: ruff check app tests
       - name: Types
         run: mypy app
-      - name: Tests (incl. all 40 templates and the worker loop)
-        run: pytest -q
+      - name: Tests (incl. all 40 templates and the worker loop), coverage at least 80%
+        run: pytest -q --cov --cov-report=term
 
   miniapp:
     runs-on: ubuntu-24.04

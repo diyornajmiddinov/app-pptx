@@ -86,3 +86,59 @@ async def test_photos_come_from_pexels_or_fall_back(net, tmp_path):
     assert deck["slides"][0]["image"]["credit"] == "Photo: Ann / Pexels"
     assert (tmp_path / "img-00.jpg").read_bytes() == b"jpegbytes"
     assert deck["slides"][1]["image"]["src"].endswith(".jpg") and deck["slides"][1]["image"]["credit"] == ""  # sample picture
+
+
+# ---------------------------------------------------------------- the whole pipeline with a fake model
+
+SAMPLE = json.loads((catalog.ENGINE_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))
+BY_TYPE = {s["type"]: s for s in SAMPLE["slides"]}
+
+
+def answer_for(plan: list[str]) -> str:
+    """What a well-behaved model answers: one slide of each requested type (from the sample deck), photos as queries."""
+    slides = []
+    for tp in plan:
+        s = json.loads(json.dumps(BY_TYPE[tp]))
+        if "image" in s:
+            s["image"] = {"query": "office documents"}
+        slides.append(s)
+    return json.dumps({"slides": slides}, ensure_ascii=False)
+
+
+def test_every_slide_type_is_checked():
+    for tp in BY_TYPE:
+        assert content.check_slide({"type": tp}, photos=True), tp          # empty slide: errors
+    _, errors = content.validate({"slides": [{"type": "nope"}]}, ["nope"], True)
+    assert any("noma'lum tur" in e for e in errors)
+
+
+async def test_build_presentation_end_to_end_with_fakes(tmp_path, monkeypatch):
+    from app.services.ai import pipeline
+
+    async def model(messages):
+        plan = json.loads(messages[0]["content"].split("tartibda: ")[1].split("\n")[0])
+        return answer_for(plan)
+
+    async def search(query, dest):
+        return {"src": str(catalog.ENGINE_DIR / "demo" / "img" / "chart.jpg"), "credit": "test"}
+
+    drawn = {}
+
+    async def fake_render(c, template_id, out):
+        drawn.update(content=c, template=template_id); out.write_bytes(b"pptx"); return out
+    monkeypatch.setattr(pipeline, "render", fake_render)
+    path, c = await pipeline.build_presentation("Soliq", 3, 10, "uz", meta={"author": "Ali"}, ask=model, search=search)
+    assert path.read_bytes() == b"pptx" and c["meta"]["author"] == "Ali" and len(c["slides"]) == 10
+    assert all(s["image"]["credit"] == "test" for s in c["slides"] if "image" in s)
+
+    async def restyler(messages):  # the model swaps the photos and rewrites the sources: both are put back
+        data = json.loads(messages[0]["content"].rsplit("\n\n", 1)[1])
+        for s in data["slides"]:
+            if "image" in s:
+                s["image"] = {"query": "something else"}
+            if s["type"] == "sources":
+                s["items"] = ["To'qima manba", "Yana bir", "Uchinchi"]
+        return json.dumps(data, ensure_ascii=False)
+    _, new = await pipeline.switch_template(c, 7, ask=restyler)
+    assert [s.get("image") for s in new["slides"]] == [s.get("image") for s in c["slides"]]
+    assert next(s for s in new["slides"] if s["type"] == "sources")["items"] == next(s for s in c["slides"] if s["type"] == "sources")["items"]

@@ -153,7 +153,7 @@ def current_file(user_id: int, doc_id: str) -> tuple[Path, str]:
 
 def rename(user_id: int, doc_id: str, name: str) -> dict:
     folder = _folder(user_id, doc_id); meta = _meta(folder)
-    meta["name"] = clean_name(name + ".pptx"); _write_meta(folder, meta)
+    meta["name"] = clean_name(re.sub(r"[/\\]", "_", name) + ".pptx"); _write_meta(folder, meta)  # a name, not a path: keep what follows a slash
     return describe(user_id, doc_id)
 
 
