@@ -14,7 +14,7 @@ from texts import T
 
 async def main():
     print(await call("setWebhook", json={"url": settings.public_url.rstrip("/") + "/telegram/webhook", "secret_token": settings.webhook_secret,
-                                         "allowed_updates": ["message", "callback_query"]}))
+                                         "allowed_updates": ["message", "callback_query", "my_chat_member"]}))
     for lang in ("uz", "ru", "en"):
         cmds = [{"command": c, "description": T[lang][f"cmd_{c}"]} for c in ("start", "balance", "pdf", "editor", "language", "help")]
         print(await call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})}))

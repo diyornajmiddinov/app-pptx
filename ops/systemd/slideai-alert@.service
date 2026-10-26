@@ -1,0 +1,7 @@
+[Unit]
+Description=SlideAI: report %i failure to the log channel
+
+[Service]
+Type=oneshot
+EnvironmentFile=/home/slideai-src/slideai/backend/.env
+ExecStart=/home/slideai-src/slideai/backend/.venv/bin/python /home/slideai-src/slideai/ops/alert.py %i

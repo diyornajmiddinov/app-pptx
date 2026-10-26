@@ -8,6 +8,7 @@ Each update is handled in its own task, so a slow one (a file import) does not h
 import asyncio
 import logging
 
+import alerts
 import bot
 import db
 import telegram_api
@@ -18,6 +19,7 @@ from texts import T
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
 log = logging.getLogger("polling")
+UPDATES = ["message", "callback_query", "my_chat_member"]  # my_chat_member: the bot added to the log channel
 
 
 async def handle(u: dict):
@@ -27,7 +29,28 @@ async def handle(u: dict):
         log.exception("update %s failed", u["update_id"])
 
 
+async def refresh_menu_buttons():
+    """The Mini App address changed (temporary tunnel): every user's menu button still opens the old one."""
+    mark = alerts.DATA / "last_webapp_url"
+    try:
+        old = mark.read_text().strip()
+    except OSError:
+        old = ""
+    if old == settings.webapp_url or not bot.has_webapp():
+        return
+    rows = await db.pool().fetch("SELECT id, coalesce(lang, 'uz') AS lang FROM users")
+    for r in rows:
+        try:
+            await telegram_api.set_menu_button(r["id"], T[r["lang"]]["open"], bot.app_url(r["lang"]))
+        except Exception:  # blocked the bot etc.
+            pass
+        await asyncio.sleep(0.05)
+    mark.write_text(settings.webapp_url)
+    log.info("menu buttons updated for %d users", len(rows))
+
+
 async def main():
+    alerts.install("bot")
     await db.connect()
     await call("deleteWebhook", json={"drop_pending_updates": False})
     for lang in ("uz", "ru", "en"):  # same command list as bot_setup.py
@@ -35,11 +58,12 @@ async def main():
         await call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})})
     me = (await call("getMe"))["result"]
     log.info("bot @%s started (polling)", me["username"])
-    offset, running = None, set()
+    alerts.started("bot")
+    offset, running = None, {asyncio.create_task(refresh_menu_buttons())}
     try:
         while True:
             try:
-                updates = (await call("getUpdates", json={"offset": offset, "timeout": 50}))["result"]
+                updates = (await call("getUpdates", json={"offset": offset, "timeout": 50, "allowed_updates": UPDATES}))["result"]
             except Exception as e:  # network hiccup: wait and retry
                 log.warning("getUpdates failed: %s", str(e).replace(settings.bot_token, "***"))  # keep the token out of logs
                 await asyncio.sleep(3)

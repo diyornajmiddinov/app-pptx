@@ -22,6 +22,7 @@ import logging
 import tempfile
 from pathlib import Path
 
+import alerts
 import appconfig
 import billing
 import editor
@@ -258,7 +259,24 @@ async def notify_paid(paid: dict):
     await send_message(uid, t(lang, "paid", amount=som(paid["amount"], lang), balance=som(paid["balance"], lang)), open_keyboard(lang))
 
 
+async def channel_joined(m: dict):
+    """The bot was made an administrator of a channel / group by an admin: that chat becomes the log channel."""
+    chat, status = m["chat"], m["new_chat_member"]["status"]
+    if chat["type"] not in ("channel", "supergroup", "group") or m["from"]["id"] not in settings.admin_ids:
+        return
+    if status == "administrator":
+        alerts.set_channel(chat["id"])
+        await send_message(chat["id"], "✅ SlideAI log kanali ulandi.\n\nBu yerga keladi:\n• har kuni bazaning zaxira nusxasi\n"
+                                       "• bot va backend xatolari\n• xizmatlar qayta ishga tushgani")
+        log.info("log channel set: %s", chat["id"])
+    elif status in ("left", "kicked") and alerts.channel_id() == str(chat["id"]):
+        alerts.CHANNEL_FILE.unlink(missing_ok=True)
+
+
 async def handle(update: dict):
+    if "my_chat_member" in update:
+        await channel_joined(update["my_chat_member"])
+        return
     if "callback_query" in update:
         q = update["callback_query"]
         data, uid = q.get("data", ""), q["from"]["id"]

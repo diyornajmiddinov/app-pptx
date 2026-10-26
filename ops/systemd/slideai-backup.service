@@ -1,0 +1,10 @@
+[Unit]
+Description=SlideAI daily database backup to the log channel
+After=postgresql.service
+OnFailure=slideai-alert@%n.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/home/slideai-src/slideai
+EnvironmentFile=/home/slideai-src/slideai/backend/.env
+ExecStart=/home/slideai-src/slideai/backend/.venv/bin/python ops/backup.py

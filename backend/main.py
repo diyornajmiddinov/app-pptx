@@ -18,11 +18,13 @@ GET  /health
 /api/admin/...       — admin panel (admin.py; admin.html opened from the bot's /admin link).
 Users, languages, balances, payments and decks are in PostgreSQL (db.py, async); photos and editor files in data/.
 """
+import asyncio
 import json
 import logging
 import re
 import shutil
 import tempfile
+import time
 from contextlib import asynccontextmanager
 from urllib.parse import parse_qsl
 from pathlib import Path
@@ -35,6 +37,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 import admin
+import alerts
 import appconfig
 import billing
 import bot
@@ -54,11 +57,51 @@ log = logging.getLogger("slideai")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
 
 
+TMP = Path(tempfile.gettempdir())
+
+
+def _drop_tmp(path: Path):
+    """Remove a job's own temp folder (/tmp/slideai-*) once its file has been sent."""
+    if path.parent == TMP and path.name.startswith("slideai-"):
+        shutil.rmtree(path, ignore_errors=True)
+
+
+def housekeeping():
+    """Hourly: temp folders of jobs that died half-way (older than 3 h), and editor background layers
+    nobody has looked at for 14 days (they are drawn again on request)."""
+    now = time.time()
+    for p in TMP.glob("slideai-*"):
+        try:
+            if now - p.stat().st_mtime > 3 * 3600:
+                shutil.rmtree(p, ignore_errors=True)
+        except OSError:
+            pass
+    for png in DATA.glob("*/edits/*/layers/*.png"):
+        try:
+            if now - png.stat().st_atime > 14 * 86400 and now - png.stat().st_mtime > 14 * 86400:
+                png.unlink()
+        except OSError:
+            pass
+
+
+async def _housekeeping_loop():
+    while True:
+        try:
+            await run_in_threadpool(housekeeping)
+        except Exception:
+            log.exception("housekeeping failed")
+        await asyncio.sleep(3600)
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    alerts.install("backend")
     await db.connect(max_size=10)
     await admin.mark_interrupted()
+    alerts.started("backend")
+    hk = asyncio.create_task(_housekeeping_loop())
     yield
+    hk.cancel()
     await telegram_api.close()
     await db.close()
 
@@ -96,7 +139,10 @@ async def charge_or_402(user_id: int, price: int, kind: str, lang: str):
 async def deliver(chat_id: int, path, topic: str, note: str):  # note is already localized
     name = re.sub(r"[^\w\-]+", "_", topic)[:60] + ".pptx"
     final = Path(path).with_name(name); Path(path).rename(final)
-    await send_document(chat_id, str(final), caption=f"{topic}\n{note}")
+    try:
+        await send_document(chat_id, str(final), caption=f"{topic}\n{note}")
+    finally:
+        _drop_tmp(final.parent)
 
 
 def demo_content(topic: str, meta: dict) -> dict:
@@ -120,7 +166,7 @@ def _build(req: GenerateRequest, deck_id: str, chat_id: int):
     meta = {"author": req.author, "org": req.org, "loc": req.loc, "year": req.year}
     if settings.demo:  # offline demo: ready content instead of AI + Pexels
         content = demo_content(req.topic, meta)
-        path = content_ai.render(content, req.template_id, Path(tempfile.mkdtemp()) / "demo.pptx")
+        path = content_ai.render(content, req.template_id, Path(tempfile.mkdtemp(prefix="slideai-")) / "demo.pptx")
     else:
         path, content = content_ai.build_presentation(req.topic, req.template_id, req.slide_count, req.language, meta=meta)
     decks.keep_images(chat_id, deck_id, content)
@@ -141,7 +187,7 @@ async def job(req: GenerateRequest, chat_id: int, price: int):
 
 def _redraw(content: dict, template_id: int):
     if settings.demo:
-        return content_ai.render(content, template_id, Path(tempfile.mkdtemp()) / "demo.pptx"), content
+        return content_ai.render(content, template_id, Path(tempfile.mkdtemp(prefix="slideai-")) / "demo.pptx"), content
     return content_ai.switch_template(content, template_id)
 
 
@@ -299,8 +345,9 @@ class DeckImport(BaseModel):
 
 
 def _import_deck(uid: int, deck: dict) -> str:
-    path = content_ai.render(deck["content"], deck["request"]["template_id"], Path(tempfile.mkdtemp()) / "deck.pptx")
-    return editor.import_file(uid, path.read_bytes(), deck["content"]["meta"]["topic"] + ".pptx", "deck")
+    with tempfile.TemporaryDirectory(prefix="slideai-") as tmp:
+        path = content_ai.render(deck["content"], deck["request"]["template_id"], Path(tmp) / "deck.pptx")
+        return editor.import_file(uid, path.read_bytes(), deck["content"]["meta"]["topic"] + ".pptx", "deck")
 
 
 @app.post("/api/editor/import-deck")
