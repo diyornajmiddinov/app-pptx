@@ -56,6 +56,7 @@ export default function App() {
   const [expired, setExpired] = useState(!TOKEN);
   const [dark, toggleTheme] = useTheme();
   const [tick, setTick] = useState(0); // the refresh button: reload the current page
+  const [menu, setMenu] = useState(false); // phones: the sidebar slides in over the page
   const me = useLoad(() => (TOKEN ? api.me() : Promise.reject(new Error('no token'))), []);
   const pending = useLoad(() => (TOKEN ? api.orders({ state: 'review', size: 1 }) : Promise.resolve({ total: 0 })), []);
 
@@ -82,14 +83,16 @@ export default function App() {
     ledger: <Ledger {...props} />, decks: <Decks {...props} />, broadcast: <Broadcast />, settings: <Settings />, log: <AdminLog />,
   }[page] || <Dashboard {...props} />;
 
+  const badge = pending.data?.total > 0 && <span className="nav-badge">{pending.data.total}</span>;
   return (
     <div className="shell">
-      <nav className="side" aria-label="Bo'limlar">
+      {menu && <div className="overlay menu-overlay" onClick={() => setMenu(false)} />}
+      <nav className={`side ${menu ? 'open' : ''}`} aria-label="Bo'limlar">
         <div className="brand"><div className="brand-mark">S</div><div>SlideAI<small>Admin panel</small></div></div>
         {PAGES.map(([key, label]) => (
-          <button key={key} type="button" className={`nav-item ${page === key ? 'active' : ''}`} onClick={() => go(key)} aria-current={page === key ? 'page' : undefined}>
+          <button key={key} type="button" className={`nav-item ${page === key ? 'active' : ''}`} onClick={() => { go(key); setMenu(false); }} aria-current={page === key ? 'page' : undefined}>
             <Icon name={key} />{label}
-            {key === 'payments' && pending.data?.total > 0 && <span className="nav-badge">{pending.data.total}</span>}
+            {key === 'payments' && badge}
           </button>
         ))}
         <div className="side-foot">
@@ -98,11 +101,14 @@ export default function App() {
       </nav>
       <main className="main">
         <header className="top">
-          <div><h1>{title}</h1><div className="sub">{sub}</div></div>
+          <button type="button" className="btn icon menu-btn" onClick={() => setMenu(true)} aria-label="Menyu" aria-expanded={menu}>
+            <Icon name="menu" />{badge && <span className="menu-dot" />}
+          </button>
+          <div className="top-title"><h1>{title}</h1><div className="sub">{sub}</div></div>
           <div className="top-actions">
             <button type="button" className="btn icon" onClick={() => { setTick((t) => t + 1); pending.reload(); }} title="Yangilash" aria-label="Yangilash"><Icon name="refresh" /></button>
             <button type="button" className="btn icon" onClick={toggleTheme} title={dark ? "Yorug' rejim" : "Qorong'i rejim"} aria-label="Mavzu"><Icon name={dark ? 'sun' : 'moon'} /></button>
-            <button type="button" className="btn" onClick={() => { logout(); setExpired(true); }}><Icon name="logout" />Chiqish</button>
+            <button type="button" className="btn logout" onClick={() => { logout(); setExpired(true); }} aria-label="Chiqish"><Icon name="logout" /><span className="hide-sm">Chiqish</span></button>
           </div>
         </header>
         <div key={`${page}-${tick}`}>{body}</div>

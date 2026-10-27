@@ -30,16 +30,16 @@ export default function Decks({ openUser }) {
       </div>
       {error && !data ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
         <>
-          <div className="table-wrap"><table>
+          <div className="table-wrap"><table className="cards">
             <thead><tr><th>Mavzu</th><th>Foydalanuvchi</th><th>Shablon</th><th className="r">Slayd</th><th>Til</th><th>Yaratilgan</th><th /></tr></thead>
             <tbody>{data.items.map((d) => (
               <tr key={d.id}>
-                <td className="ellipsis" title={d.topic}><b>{d.topic}</b></td>
-                <td><a href="#" className="who" onClick={(e) => { e.preventDefault(); openUser(d.user_id); }}>{d.first_name || '—'}<small>{d.user_id}</small></a></td>
-                <td>{d.template_id}. {d.template}</td>
-                <td className="r num">{d.slides}</td>
-                <td>{LANGS[d.language] || d.language || '—'}</td>
-                <td>{dateTime(d.created)}{d.updated !== d.created && <div style={{ color: 'var(--muted)', fontSize: 12 }}>yangilangan {dateTime(d.updated)}</div>}</td>
+                <td className="ellipsis full" title={d.topic}><b>{d.topic}</b></td>
+                <td data-label="Foydalanuvchi"><a href="#" className="who" onClick={(e) => { e.preventDefault(); openUser(d.user_id); }}>{d.first_name || '—'}<small>{d.user_id}</small></a></td>
+                <td data-label="Shablon">{d.template_id}. {d.template}</td>
+                <td className="r num" data-label="Slayd">{d.slides}</td>
+                <td data-label="Til">{LANGS[d.language] || d.language || '—'}</td>
+                <td data-label="Yaratilgan">{dateTime(d.created)}{d.updated !== d.created && <div style={{ color: 'var(--muted)', fontSize: 12 }}>yangilangan {dateTime(d.updated)}</div>}</td>
                 <td className="r"><DeckDownload id={d.id} /></td>
               </tr>))}</tbody>
           </table></div>

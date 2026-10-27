@@ -46,17 +46,17 @@ export default function Payments({ openUser, onChanged }) {
       </div>
       {error && !data ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
         <>
-          <div className="table-wrap"><table>
+          <div className="table-wrap"><table className="cards">
             <thead><tr><th>ID</th><th>Foydalanuvchi</th><th>Usul</th><th className="r">Summa</th><th>Holat</th><th>Sana</th><th /></tr></thead>
             <tbody>{data.items.map((o) => (
               <tr key={o.id}>
-                <td className="num"><b>{o.code}</b></td>
-                <td><a href="#" onClick={(e) => { e.preventDefault(); openUser(o.user_id); }} className="who">{fullName(o)}<small>{o.username ? `@${o.username} · ` : ''}{o.user_id}</small></a></td>
-                <td>{PROVIDERS[o.provider] || o.provider}</td>
-                <td className="r num">{som(o.amount)}</td>
-                <td><Pill tone={ORDER_STATES[o.state]?.[1]}>{ORDER_STATES[o.state]?.[0] || o.state}</Pill></td>
-                <td>{dateTime(o.created)}</td>
-                <td className="r"><div className="row" style={{ justifyContent: 'flex-end' }}>
+                <td className="num" data-label="ID"><b>{o.code}</b></td>
+                <td data-label="Foydalanuvchi"><a href="#" onClick={(e) => { e.preventDefault(); openUser(o.user_id); }} className="who">{fullName(o)}<small>{o.username ? `@${o.username} · ` : ''}{o.user_id}</small></a></td>
+                <td data-label="Usul">{PROVIDERS[o.provider] || o.provider}</td>
+                <td className="r num" data-label="Summa">{som(o.amount)}</td>
+                <td data-label="Holat"><Pill tone={ORDER_STATES[o.state]?.[1]}>{ORDER_STATES[o.state]?.[0] || o.state}</Pill></td>
+                <td data-label="Sana">{dateTime(o.created)}</td>
+                <td className="r full actions"><div className="row" style={{ justifyContent: 'flex-end' }}>
                   {o.has_screenshot && <button type="button" className="btn sm" onClick={() => setShot(o)}>Skrinshot</button>}
                   {o.state === 'review' && <>
                     <button type="button" className="btn sm good" disabled={busy === o.id} onClick={() => decide(o, true)}>Tasdiqlash</button>

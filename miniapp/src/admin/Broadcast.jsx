@@ -65,16 +65,16 @@ export default function Broadcast() {
       <div className="card">
         <div className="card-h"><h2>Yuborilganlar</h2></div>
         {error && !data ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : data.items.length ? (
-          <div className="table-wrap"><table><tbody>{data.items.map((b) => (
+          <div className="table-wrap"><table className="cards"><tbody>{data.items.map((b) => (
             <tr key={b.id}>
-              <td style={{ whiteSpace: 'normal' }}>
+              <td className="full" style={{ whiteSpace: 'normal' }}>
                 <div style={{ marginBottom: 6 }}>{b.text.length > 140 ? `${b.text.slice(0, 140)}…` : b.text}</div>
                 <div className="row" style={{ fontSize: 12, color: 'var(--muted)' }}>
                   <Pill tone={STATES[b.state]?.[1]}>{STATES[b.state]?.[0] || b.state}</Pill>
                   {dateTime(b.created)} · {b.lang ? LANGS[b.lang] : 'hammaga'}
                 </div>
               </td>
-              <td className="r" style={{ width: 170 }}>
+              <td className="r full" style={{ width: 170 }}>
                 <div className="num">{num(b.sent)} / {num(b.total)}{b.failed ? <span style={{ color: 'var(--bad)' }}> · {num(b.failed)} xato</span> : ''}</div>
                 <div className="progress" style={{ marginTop: 6 }}><div style={{ width: `${b.total ? ((b.sent + b.failed) / b.total) * 100 : 0}%` }} /></div>
               </td>

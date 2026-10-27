@@ -69,7 +69,7 @@ export default function Dashboard({ go, openUser }) {
         <Kpi label="AI so'rovlari · 30 kun" value={num(k.ai_requests_30d)}
           foot={k.ai_errors_30d ? `${num(k.ai_errors_30d)} tasi xato (503, timeout…) — takrorlangan` : 'Xatosiz'} />
         <Kpi label="Bitta taqdimotga o'rtacha" value={`${num(k.ai_tokens_per_deck)} token`} foot="Takroriy urinishlar bilan birga" />
-        <div className="card"><div className="card-h"><h2>AI tokenlar</h2><span className="hint">kunlik</span></div>
+        <div className="card span-all"><div className="card-h"><h2>AI tokenlar</h2><span className="hint">kunlik</span></div>
           <div className="card-b" style={{ paddingTop: 8 }}><ColumnChart data={data.series} valueKey="ai_tokens" format={(v) => `${num(v)} token`} label="Kunlik AI tokenlar" /></div></div>
       </div>
 

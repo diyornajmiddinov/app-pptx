@@ -24,7 +24,7 @@ export default function ColumnChart({ data, valueKey, format = (v) => v, label }
   const [w, setW] = useState(600);
   const [hover, setHover] = useState(null);
   useEffect(() => {
-    const ro = new ResizeObserver(([e]) => setW(Math.max(280, e.contentRect.width)));
+    const ro = new ResizeObserver(([e]) => setW(Math.max(200, e.contentRect.width)));
     if (ref.current) ro.observe(ref.current);
     return () => ro.disconnect();
   }, []);
@@ -46,7 +46,7 @@ export default function ColumnChart({ data, valueKey, format = (v) => v, label }
   };
 
   return (
-    <div className="chart" ref={ref} onMouseLeave={() => setHover(null)}>
+    <div className="chart" ref={ref} onPointerLeave={() => setHover(null)}>
       <svg height={H} role="img" aria-label={label}>
         {ticks.map((t) => (
           <g key={t}>
@@ -60,11 +60,11 @@ export default function ColumnChart({ data, valueKey, format = (v) => v, label }
         ))}
         {data.map((d, i) => (
           <rect key={d.day} x={PAD.l + i * band} y={PAD.t} width={band} height={ih} fill="transparent"
-            onMouseEnter={() => setHover(i)} />
+            onPointerEnter={() => setHover(i)} onPointerDown={() => setHover(i)} />
         ))}
       </svg>
       {hover != null && (
-        <div className="tooltip" style={{ left: PAD.l + hover * band + band / 2, top: y(values[hover]) }}>
+        <div className="tooltip" style={{ left: Math.min(w - 60, Math.max(60, PAD.l + hover * band + band / 2)), top: y(values[hover]) }}>
           {shortDay(data[hover].day)}<b className="num">{format(values[hover])}</b>
         </div>
       )}

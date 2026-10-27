@@ -32,20 +32,20 @@ export default function Ledger({ openUser }) {
             <option value="">Barcha turlar</option>
             {data?.kinds.map((k) => <option key={k.kind} value={k.kind}>{kindName(k.kind)}</option>)}
           </select>
-          <input className="input" style={{ width: 220 }} placeholder="Telegram ID bo'yicha" value={user}
+          <input className="input id-search" placeholder="Telegram ID bo'yicha" value={user}
             onChange={(e) => { setUser(e.target.value); setPage(1); }} aria-label="Foydalanuvchi ID" />
           {data && <span className="hint">{num(data.total)} ta</span>}
         </div>
         {error && !data ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
           <>
-            <div className="table-wrap"><table>
+            <div className="table-wrap"><table className="cards">
               <thead><tr><th>#</th><th>Sana</th><th>Foydalanuvchi</th><th>Turi</th><th>Manba</th><th className="r">Summa</th></tr></thead>
               <tbody>{data.items.map((l) => (
                 <tr key={l.id} className="click" onClick={() => openUser(l.user_id)}>
-                  <td className="num">{l.id}</td><td>{dateTime(l.created)}</td>
-                  <td><div className="who">{l.first_name || '—'}<small>{l.username ? `@${l.username} · ` : ''}{l.user_id}</small></div></td>
-                  <td>{kindName(l.kind)}</td><td style={{ color: 'var(--muted)' }}>{l.ref || ''}</td>
-                  <td className={`r num ${l.delta > 0 ? 'plus' : ''}`}>{signed(l.delta)}</td>
+                  <td className="num hide-sm">{l.id}</td><td data-label="Sana">{dateTime(l.created)}</td>
+                  <td data-label="Foydalanuvchi"><div className="who">{l.first_name || '—'}<small>{l.username ? `@${l.username} · ` : ''}{l.user_id}</small></div></td>
+                  <td data-label="Turi">{kindName(l.kind)}</td><td data-label="Manba" style={{ color: 'var(--muted)' }}>{l.ref || '—'}</td>
+                  <td data-label="Summa" className={`r num ${l.delta > 0 ? 'plus' : ''}`}>{signed(l.delta)}</td>
                 </tr>))}</tbody>
             </table></div>
             {!data.items.length && <div className="empty">Yozuv yo'q</div>}

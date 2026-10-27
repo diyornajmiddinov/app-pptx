@@ -104,15 +104,15 @@ export function AdminLog() {
     <div className="card">
       {error && !data ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
         <>
-          <div className="table-wrap"><table>
+          <div className="table-wrap"><table className="cards">
             <thead><tr><th>Sana</th><th>Admin</th><th>Amal</th><th>Obyekt</th><th>Tafsilot</th></tr></thead>
             <tbody>{data.items.map((a) => (
               <tr key={a.id}>
-                <td>{dateTime(a.created)}</td>
-                <td><div className="who">{a.first_name || a.admin_id}<small>{a.username ? `@${a.username}` : a.admin_id}</small></div></td>
-                <td>{ACTIONS[a.action] || a.action}</td>
-                <td className="num">{a.target || '—'}</td>
-                <td>{a.details ? <pre className="json">{JSON.stringify(a.details, null, 1)}</pre> : '—'}</td>
+                <td data-label="Sana">{dateTime(a.created)}</td>
+                <td data-label="Admin"><div className="who">{a.first_name || a.admin_id}<small>{a.username ? `@${a.username}` : a.admin_id}</small></div></td>
+                <td data-label="Amal">{ACTIONS[a.action] || a.action}</td>
+                <td className="num" data-label="Obyekt">{a.target || '—'}</td>
+                <td className="full" data-label="Tafsilot">{a.details ? <pre className="json">{JSON.stringify(a.details, null, 1)}</pre> : '—'}</td>
               </tr>))}</tbody>
           </table></div>
           {!data.items.length && <div className="empty">Hali hech narsa qilinmagan</div>}

@@ -23,11 +23,16 @@ export default function Users({ openUser }) {
       <div className="card-h">
         <input className="input search" placeholder="Ism, @username yoki Telegram ID" value={q}
           onChange={(e) => { setQ(e.target.value); setPage(1); }} aria-label="Qidirish" />
+        <select className="select show-sm" value={`${sort.key}:${sort.desc ? 'desc' : 'asc'}`} aria-label="Saralash"
+          onChange={(e) => { const [key, dir] = e.target.value.split(':'); setPage(1); setSort({ key, desc: dir === 'desc' }); }}>
+          {COLS.filter(([key]) => key !== 'lang').flatMap(([key, label]) => [
+            <option key={`${key}d`} value={`${key}:desc`}>{label} ↓</option>, <option key={`${key}a`} value={`${key}:asc`}>{label} ↑</option>])}
+        </select>
         {data && <span className="hint">{num(data.total)} ta</span>}
       </div>
       {error && !data ? <ErrorBox error={error} retry={reload} /> : !data ? <Loading /> : (
         <>
-          <div className="table-wrap"><table>
+          <div className="table-wrap"><table className="cards">
             <thead><tr>{COLS.map(([key, label, right]) => (
               <th key={key} className={`${right ? 'r' : ''} ${key !== 'lang' ? 'sortable' : ''}`} onClick={() => key !== 'lang' && by(key)}>
                 {label}{sort.key === key ? (sort.desc ? ' ↓' : ' ↑') : ''}
@@ -35,13 +40,13 @@ export default function Users({ openUser }) {
             <tbody>
               {data.items.map((u) => (
                 <tr key={u.id} className="click" onClick={() => openUser(u.id)}>
-                  <td><div className="who">{fullName(u)}<small>{u.username ? `@${u.username} · ` : ''}{u.id}</small></div></td>
-                  <td>{LANGS[u.lang] || '—'}</td>
-                  <td className="r num">{som(u.balance)}</td>
-                  <td className="r num">{som(u.paid)}</td>
-                  <td className="r num">{u.decks}</td>
-                  <td>{date(u.created)}</td>
-                  <td>{ago(u.last_seen)}</td>
+                  <td className="full"><div className="who">{fullName(u)}<small>{u.username ? `@${u.username} · ` : ''}{u.id}</small></div></td>
+                  <td className="hide-sm">{LANGS[u.lang] || '—'}</td>
+                  <td className="r num" data-label="Balans">{som(u.balance)}</td>
+                  <td className="r num" data-label="To'lagan">{som(u.paid)}</td>
+                  <td className="r num" data-label="Taqdimot">{u.decks}</td>
+                  <td className="hide-sm">{date(u.created)}</td>
+                  <td data-label="Oxirgi faollik">{ago(u.last_seen)}</td>
                 </tr>
               ))}
             </tbody>
@@ -138,13 +143,13 @@ export function UserDrawer({ id, onClose, onChanged }) {
               {tab === 'ledger' && <table><tbody>{data.ledger.map((l) => (
                 <tr key={l.id}><td>{dateTime(l.created)}</td><td>{kindName(l.kind)}</td>
                   <td className={`r num ${l.delta > 0 ? 'plus' : ''}`}>{signed(l.delta)}</td></tr>))}</tbody></table>}
-              {tab === 'decks' && <table><tbody>{data.decks.map((d) => (
-                <tr key={d.id}><td className="ellipsis" title={d.topic}>{d.topic}</td><td>{d.template_id}. {d.template}</td>
-                  <td className="r num">{d.slides} sl.</td><td>{date(d.created)}</td><td className="r"><DeckDownload id={d.id} /></td></tr>))}</tbody></table>}
-              {tab === 'orders' && <table><tbody>{data.orders.map((o) => (
-                <tr key={o.id}><td>T-{String(o.id).padStart(6, '0')}</td><td>{PROVIDERS[o.provider] || o.provider}</td>
-                  <td className="r num">{som(o.amount)}</td><td><Pill tone={ORDER_STATES[o.state]?.[1]}>{ORDER_STATES[o.state]?.[0] || o.state}</Pill></td>
-                  <td>{dateTime(o.created)}</td></tr>))}</tbody></table>}
+              {tab === 'decks' && <table className="cards"><tbody>{data.decks.map((d) => (
+                <tr key={d.id}><td className="ellipsis full" title={d.topic}>{d.topic}</td><td data-label="Shablon">{d.template_id}. {d.template}</td>
+                  <td className="r num" data-label="Slayd">{d.slides} sl.</td><td data-label="Sana">{date(d.created)}</td><td className="r"><DeckDownload id={d.id} /></td></tr>))}</tbody></table>}
+              {tab === 'orders' && <table className="cards"><tbody>{data.orders.map((o) => (
+                <tr key={o.id}><td data-label="ID">T-{String(o.id).padStart(6, '0')}</td><td data-label="Usul">{PROVIDERS[o.provider] || o.provider}</td>
+                  <td className="r num" data-label="Summa">{som(o.amount)}</td><td data-label="Holat"><Pill tone={ORDER_STATES[o.state]?.[1]}>{ORDER_STATES[o.state]?.[0] || o.state}</Pill></td>
+                  <td data-label="Sana">{dateTime(o.created)}</td></tr>))}</tbody></table>}
               {!data[tab].length && <div className="empty">Bo'sh</div>}
             </div>
           </div>

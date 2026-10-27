@@ -112,6 +112,7 @@ a { color: var(--accent); text-decoration: none; }
 .card-h .hint { color: var(--muted); font-size: 12px; }
 .card-b { padding: 16px 18px; }
 .grid { display: grid; gap: 16px; }
+.grid > * { min-width: 0; }
 .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 .two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .three { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -128,6 +129,7 @@ a { color: var(--accent); text-decoration: none; }
   display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 34px; padding: 0 14px;
   border: 1px solid var(--border); border-radius: 8px; background: var(--surface); cursor: pointer; font-weight: 500; white-space: nowrap;
 }
+.btn svg { width: 18px; height: 18px; flex: none; }
 .btn:hover { background: var(--surface-2); }
 .btn:disabled { opacity: 0.5; cursor: default; }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
@@ -238,12 +240,96 @@ pre.json { margin: 0; padding: 8px 10px; background: var(--surface-2); border-ra
   .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .two, .three { grid-template-columns: 1fr; }
 }
+/* phones: the sidebar slides in from the left, the header sticks to the top, tables turn into cards */
+.menu-btn, .show-sm { display: none; }
+.menu-btn { position: relative; }
+.menu-dot { position: absolute; top: 6px; right: 6px; width: 8px; height: 8px; border-radius: 50%; background: var(--bad); border: 2px solid var(--surface); }
+.id-search { width: 220px; }
+.top-title { min-width: 0; }
+@media (max-width: 1100px) {
+  .span-all { grid-column: 1 / -1; }
+}
 @media (max-width: 760px) {
   .shell { grid-template-columns: 1fr; }
-  .side { position: static; height: auto; flex-direction: row; overflow-x: auto; padding: 8px; border-right: 0; border-bottom: 1px solid var(--border); }
-  .brand, .side-foot { display: none; }
-  .nav-item { width: auto; white-space: nowrap; }
-  .main { padding: 16px; }
-  .search { width: 100%; }
-  .dl { grid-template-columns: 1fr 1fr; }
+  .side {
+    position: fixed; top: 0; bottom: 0; left: 0; z-index: 41; width: min(280px, 84vw); height: auto; overflow-y: auto;
+    padding-top: calc(18px + env(safe-area-inset-top)); padding-bottom: calc(12px + env(safe-area-inset-bottom));
+    transform: translateX(-100%); transition: transform 0.22s ease-out; box-shadow: none;
+  }
+  .side.open { transform: none; box-shadow: 8px 0 32px rgb(0 0 0 / 0.18); }
+  .menu-overlay { z-index: 40; }
+  .nav-item { padding: 12px 10px; }
+  .menu-btn, .show-sm { display: inline-flex; }
+  .hide-sm { display: none !important; }
+
+  .main { padding: 0 12px calc(32px + env(safe-area-inset-bottom)); }
+  .top {
+    position: sticky; top: 0; z-index: 10; margin: 0 -12px 14px; padding: calc(8px + env(safe-area-inset-top)) 12px 8px;
+    gap: 8px; background: var(--surface); border-bottom: 1px solid var(--border);
+  }
+  .top h1 { font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .top .sub { display: none; }
+  .top-actions { gap: 6px; }
+  .btn.logout { width: 38px; padding: 0; }
+
+  /* bigger touch targets; 16px text stops iOS from zooming into a focused field */
+  .btn { height: 38px; }
+  .btn.icon { width: 38px; }
+  .btn.sm { height: 32px; }
+  .input, .select { height: 40px; font-size: 16px; }
+  .textarea { font-size: 16px; }
+
+  .grid { gap: 10px; }
+  .stack { gap: 12px; }
+  .kpi { padding: 12px 14px; }
+  .kpi-value { font-size: 20px; overflow-wrap: anywhere; }
+  .card-h { flex-wrap: wrap; padding: 12px 14px; }
+  .card-b { padding: 14px; }
+  .search, .id-search { width: 100%; }
+  .card-h .select { flex: 1; min-width: 0; }
+  .seg { max-width: 100%; overflow-x: auto; scrollbar-width: none; }
+  .seg button { white-space: nowrap; padding: 7px 12px; }
+  .hbar { grid-template-columns: 110px 1fr 40px; }
+  .pager { flex-wrap: wrap; padding: 10px 14px; }
+  .pager > span:first-child { flex-basis: 100%; }
+
+  /* table.cards: one card per row; cells labelled by data-label, two to a line */
+  table.cards thead { display: none; }
+  table.cards, table.cards tbody { display: block; }
+  table.cards tr { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 14px; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+  table.cards tbody tr:last-child { border-bottom: 0; }
+  table.cards td { display: block; padding: 0; border: 0; text-align: left; white-space: normal; overflow-wrap: anywhere; width: auto !important; }
+  table.cards td.full { grid-column: 1 / -1; }
+  table.cards td[data-label]::before { content: attr(data-label); display: block; margin-bottom: 2px; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  table.cards .ellipsis { max-width: none; }
+  table.cards td.actions:empty, table.cards td.actions:has(.row:empty) { display: none; }
+  table.cards td.actions .row { justify-content: stretch !important; }
+  table.cards td.actions .btn { flex: 1; }
+  tbody tr.click:hover td { background: none; }
+  tbody tr.click:active { background: var(--surface-2); }
+  pre.json { max-width: none; }
+  .card > table td { white-space: normal; overflow-wrap: anywhere; }
+
+  .drawer { width: 100vw; border-left: 0; }
+  .drawer-h { padding: calc(12px + env(safe-area-inset-top)) 14px 12px; }
+  .drawer-b { padding: 14px 12px calc(32px + env(safe-area-inset-bottom)); gap: 12px; }
+  .dl { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .dl b { font-size: 15px; overflow-wrap: anywhere; }
+  .tabs { overflow-x: auto; scrollbar-width: none; }
+  .tabs button { white-space: nowrap; }
+
+  /* dialogs become bottom sheets */
+  .modal {
+    left: 0; right: 0; top: auto; bottom: 0; transform: none; width: 100%; max-height: 92vh; overflow-y: auto;
+    border-radius: 16px 16px 0 0; padding-bottom: env(safe-area-inset-bottom); animation: rise 0.2s ease-out;
+  }
+  .modal-f { flex-wrap: wrap; }
+  .modal-f .btn { flex: 1; }
+  .shot { max-height: 58vh; }
+  .toast-box { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .toast { max-width: none; }
 }
+@media (max-width: 360px) {
+  .kpis { grid-template-columns: 1fr; }
+}
+@keyframes rise { from { transform: translateY(40px); opacity: 0; } }
