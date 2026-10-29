@@ -1,3 +1,4 @@
+# Disabled on the server since the move to slidechi.uz (see ops/tunnel.py). Starting it rewrites backend/.env.
 [Unit]
 Description=SlideAI temporary HTTPS address (cloudflared quick tunnel)
 After=network-online.target slideai-miniapp.service

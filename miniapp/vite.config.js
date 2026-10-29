@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
+  base: '/app/', // served at https://slidechi.uz/app/ (ops/nginx/slidechi.conf): Mini App, editor.html, admin.html
   build: {
     rollupOptions: {
       // three pages: the Telegram Mini App, the desktop presentation editor and the admin panel

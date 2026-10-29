@@ -180,7 +180,7 @@ async def test_restyle_download_and_editor(client, tg, monkeypatch, tmp_path):
     assert r.status_code == 200 and r.content == b"PK-pptx" and "Tarix" in r.headers["content-disposition"]
     assert (await client.get("/api/web/decks/456/download")).status_code == 404
     assert [d["id"] for d in (await client.get("/api/web/decks")).json()["decks"]] == ["123"]
-    assert (await client.get("/api/web/editor")).json()["url"].startswith("/editor.html#t=701.")
+    assert (await client.get("/api/web/editor")).json()["url"].startswith("/app/editor.html#t=701.")
 
 
 async def test_history_lists_the_ledger(client, tg):

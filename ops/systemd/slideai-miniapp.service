@@ -1,3 +1,5 @@
+# Disabled on the server: nginx serves the built miniapp/dist at https://slidechi.uz/app/ (cd miniapp && npm run build).
+# Only for development with a tunnel.
 [Unit]
 Description=SlideAI Mini App / editor / admin pages (Vite)
 After=network-online.target

@@ -1,4 +1,8 @@
 """
+NOT USED since the bot moved to https://slidechi.uz (WEBAPP_URL=https://slidechi.uz/app/, ops/nginx/slidechi.conf);
+slideai-tunnel.service is disabled. Kept for running a copy without a domain. Do not start it on the server:
+it rewrites WEBAPP_URL / PUBLIC_URL in backend/.env.
+
 Temporary HTTPS address (cloudflared quick tunnel -> Vite on :5173) until the project has its own domain.
 
 The address changes every time cloudflared starts, so this keeps everything pointing at the current one:

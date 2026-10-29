@@ -338,7 +338,7 @@ async def download(deck_id: str, uid: int = Depends(web_user)):
 
 @router.get("/editor")
 async def editor_link(uid: int = Depends(web_user)):
-    return {"url": f"/editor.html#t={make_editor_token(uid)}&lang={await lang_of(uid)}"}
+    return {"url": f"/app/editor.html#t={make_editor_token(uid)}&lang={await lang_of(uid)}"}
 
 
 # ---------------------------------------------------------------- top-up by card transfer
