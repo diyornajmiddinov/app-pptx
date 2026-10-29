@@ -109,7 +109,7 @@ export default function Balance({ me, refreshMe }) {
   };
   const kind = (k) => {
     const p = k.split(':')[0];
-    return t(`k_${['generate', 'restyle', 'refund', 'promo', 'referral'].includes(p) ? p : 'topup'}`);
+    return t(`k_${['generate', 'restyle', 'paper', 'refund', 'promo', 'referral'].includes(p) ? p : 'topup'}`);
   };
   const card = order?.card || data?.card;
   const cardOrders = data?.orders || [];

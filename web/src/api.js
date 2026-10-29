@@ -35,7 +35,7 @@ async function send(method, path, { json, body, headers = {}, timeout = TIMEOUT_
 
 const json = async (...args) => (await send(...args)).json();
 
-/** A file answer (.pptx / .pdf) saved under the name the server gives it. */
+/** A file answer (.pptx / .docx / .pdf) saved under the name the server gives it. */
 async function saveFile(res, fallback) {
   const cd = res.headers.get('content-disposition') || '';
   const m = cd.match(/filename\*=utf-8''([^;]+)/i) || cd.match(/filename="?([^";]+)"?/i);
@@ -63,6 +63,11 @@ export const api = {
   source: (file) => json('POST', '/source', { body: file, headers: { 'X-Filename': encodeURIComponent(file.name) }, timeout: 120_000 }),
   deleteDeck: (deckId) => json('POST', `/decks/${deckId}/delete`),
   download: async (deckId) => saveFile(await send('GET', `/decks/${deckId}/download`, { timeout: 180_000 }), 'taqdimot.pptx'),
+  paperOutline: (payload) => json('POST', '/paper/outline', { json: payload, timeout: 120_000 }),
+  paper: (payload) => json('POST', '/paper', { json: payload }),
+  papers: () => json('GET', '/papers'),
+  deletePaper: (id) => json('POST', `/papers/${id}/delete`),
+  paperFile: async (id, ext) => saveFile(await send('GET', `/papers/${id}/${ext}`, { timeout: 120_000 }), `referat.${ext}`),
   orders: () => json('GET', '/topup'),
   topup: (amount, provider = 'card') => json('POST', '/topup', { json: { amount, provider } }),
   promo: (code) => json('POST', '/promo', { json: { code } }),

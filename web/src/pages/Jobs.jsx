@@ -42,14 +42,14 @@ export default function Jobs({ onDone, go }) {
           <li key={j.id} className="flex items-center justify-between gap-3 py-3">
             <div className="min-w-0">
               <p className="truncate font-medium text-slate-900 dark:text-white">{j.topic || '—'}</p>
-              <p className="text-sm text-slate-500">{t(j.kind === 'restyle' ? 'k_restyle' : 'k_generate')}</p>
+              <p className="text-sm text-slate-500">{t({ restyle: 'k_restyle', paper: 'k_paper' }[j.kind] || 'k_generate')}</p>
             </div>
             <div className="flex shrink-0 items-center gap-2 text-sm">
               {ACTIVE.has(j.state) && <Spinner className="text-brand-600" />}
               <span className={j.state === 'failed' ? 'text-red-600' : j.state === 'done' ? 'text-emerald-600' : 'text-slate-600 dark:text-slate-300'}>
                 {t(`st_${j.state}`)}{j.state === 'queued' && j.ahead > 0 ? ` · ${t('ahead', { n: j.ahead })}` : ''}
               </span>
-              {j.state === 'done' && <Button variant="secondary" className="px-3 py-1.5" onClick={() => go('decks')}>{t('tabDecks')}</Button>}
+              {j.state === 'done' && j.kind !== 'paper' && <Button variant="secondary" className="px-3 py-1.5" onClick={() => go('decks')}>{t('tabDecks')}</Button>}
             </div>
           </li>
         ))}

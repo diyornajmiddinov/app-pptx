@@ -1,5 +1,5 @@
 """
-Paid work queue: a new deck ('generate') or a redraw in another template ('restyle').
+Paid work queue: a new deck ('generate'), a redraw in another template ('restyle'), a referat ('paper', website).
 
 The API charges the user and enqueue()s; the worker (python -m app.worker) claim()s jobs one at a time per free
 slot (WORKER_CONCURRENCY), draws them and sends the file. A job is a row in `jobs`, so nothing is lost when a
@@ -17,7 +17,7 @@ from pathlib import Path
 from app.core import db
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_document, send_message
-from app.services import billing, decks
+from app.services import billing, decks, papers
 from app.services.ai import models, pipeline
 from app.services.ai.render import render
 from app.services.users import lang_of
@@ -106,8 +106,8 @@ async def redraw(content: dict, template_id: int, user_id: int, deck_id: str) ->
     return await pipeline.switch_template(content, template_id)
 
 
-async def deliver(chat_id: int, path: Path, topic: str, note: str):  # note is already localized
-    name = re.sub(r"[^\w\-]+", "_", topic)[:60] + ".pptx"
+async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".pptx"):  # note is already localized
+    name = re.sub(r"[^\w\-]+", "_", topic)[:60] + ext
     final = Path(path).with_name(name); Path(path).rename(final)
     try:
         await send_document(chat_id, str(final), caption=f"{topic}\n{note}")
@@ -131,6 +131,13 @@ async def run(job: dict):
             path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"]}, p["deck_id"])
             await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"))
+        elif job["kind"] == "paper":
+            req = job["payload"]
+            _, path, pages = await asyncio.wait_for(papers.make(job["user_id"], req), JOB_TIMEOUT)
+            copy = Path(tempfile.mkdtemp(prefix="slideai-")) / "paper.docx"  # the kept file stays; the copy is renamed and sent
+            shutil.copy(path, copy)
+            lang = await lang_of(job["user_id"])
+            await deliver(job["user_id"], copy, req["topic"], t(lang, "paper_ready", pages=pages or "—"), ".docx")
         else:
             raise ValueError(f"unknown job kind {job['kind']}")
     except TimeoutError:  # wait_for cancelled the work (node is killed): nothing is sent
@@ -138,7 +145,7 @@ async def run(job: dict):
         await fail(job, f"timeout {JOB_TIMEOUT}s")
         return
     except Exception as e:
-        what = ("Taqdimot yaratilmadi" if job["kind"] == "generate" else "Shablon almashtirilmadi")
+        what = {"generate": "Taqdimot yaratilmadi", "paper": "Referat yozilmadi"}.get(job["kind"], "Shablon almashtirilmadi")
         log.exception("%s · ish %s · foydalanuvchi %s · %s", what, job["id"], job["user_id"],
                       json.dumps(job["payload"], ensure_ascii=False)[:200])
         await fail(job, f"{type(e).__name__}: {e}"[:500])
@@ -155,7 +162,7 @@ async def fail(job: dict, error: str):
     await billing.refund(job["user_id"], job["price"], job["kind"])
     lang = await lang_of(job["user_id"])
     try:
-        await send_message(job["user_id"], t(lang, "err_gen" if job["kind"] == "generate" else "err_restyle"))
+        await send_message(job["user_id"], t(lang, {"generate": "err_gen", "paper": "err_paper"}.get(job["kind"], "err_restyle")))
         await send_message(job["user_id"], t(lang, "refunded", amount=som(job["price"], lang)))
     except Exception:  # blocked the bot: the refund stands anyway
         log.warning("could not tell user %s about failed job %s", job["user_id"], job["id"])

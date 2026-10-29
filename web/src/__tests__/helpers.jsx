@@ -21,6 +21,6 @@ export function fakeFetch(routes) {
 
 export const ME = {
   user: { id: 7, first_name: 'Vali', username: 'vali' }, lang: 'uz', balance: 12000,
-  prices: { generate: 5000, restyle: 2000, first: null, now: 5000 }, topup_amounts: [15000, 30000],
+  prices: { generate: 5000, restyle: 2000, first: null, now: 5000, paper: 7000 }, topup_amounts: [15000, 30000],
   providers: ['card'], card: true, referral_bonus: 1000, support_url: '',
 };

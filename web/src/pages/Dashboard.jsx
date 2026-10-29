@@ -6,9 +6,10 @@ import { useI18n } from '../i18n.jsx';
 import Balance from './Balance.jsx';
 import Create from './Create.jsx';
 import Decks from './Decks.jsx';
+import Paper from './Paper.jsx';
 import Pdf from './Pdf.jsx';
 
-const TABS = [['create', 'tabCreate', Create], ['decks', 'tabDecks', Decks], ['balance', 'tabBalance', Balance], ['pdf', 'tabPdf', Pdf]];
+const TABS = [['create', 'tabCreate', Create], ['decks', 'tabDecks', Decks], ['paper', 'tabPaper', Paper], ['balance', 'tabBalance', Balance], ['pdf', 'tabPdf', Pdf]];
 
 export default function Dashboard({ tab, me, refreshMe, onSignedOut }) {
   const { t, money } = useI18n();

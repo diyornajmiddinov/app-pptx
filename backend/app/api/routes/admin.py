@@ -396,6 +396,7 @@ async def mark_interrupted():
 class SettingsReq(BaseModel):
     price_generate: int = Field(ge=0, le=10_000_000)
     price_restyle: int = Field(ge=0, le=10_000_000)
+    price_paper: int | None = Field(None, ge=0, le=10_000_000)             # left out: unchanged
     topup_amounts: list[int] = Field(min_length=1, max_length=8)
     referral_bonus: int | None = Field(None, ge=0, le=1_000_000)           # left out: unchanged
     first_generate_price: int | None = Field(None, ge=0, le=10_000_000)    # sent as null: no first-deck price
@@ -444,6 +445,8 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
     new = {"price_generate": req.price_generate, "price_restyle": req.price_restyle, "topup_amounts": amounts}
     if req.referral_bonus is not None:
         new["referral_bonus"] = req.referral_bonus
+    if req.price_paper is not None:
+        new["price_paper"] = req.price_paper
     if "first_generate_price" in req.model_fields_set:
         new["first_generate_price"] = req.first_generate_price
     await app_settings.set_many(new, uid)

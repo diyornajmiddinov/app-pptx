@@ -34,7 +34,7 @@ function Outline({ slides, onChange, onReset }) {
   );
 }
 
-function Source({ source, setSource }) {
+export function Source({ source, setSource, text = 'sourceText' }) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -48,7 +48,7 @@ function Source({ source, setSource }) {
   return (
     <Card className="space-y-3">
       <h2 className="text-lg font-bold text-slate-900 dark:text-white">{t('sourceTitle')}</h2>
-      <p className="text-sm text-slate-600 dark:text-slate-400">{t('sourceText')}</p>
+      <p className="text-sm text-slate-600 dark:text-slate-400">{t(text)}</p>
       <input ref={ref} type="file" className="hidden" accept=".docx,.pdf,.pptx,.txt,.md" onChange={(e) => read(e.target.files[0])} />
       {source ? (
         <div className="flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-4 py-3 text-sm dark:bg-slate-800/60">

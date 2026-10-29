@@ -19,6 +19,8 @@ POST /api/web/decks/{id}/delete           remove a presentation (and its photos)
 POST /api/web/promo, GET /api/web/referral   promo code; the invite link and its bonus (services/growth.py)
 GET  /api/web/samples/{template}.pptx     a sample deck in that template (no sign-in; drawn once, then cached)
 POST /api/web/hit                         a page view, for the admin panel's site statistics
+POST /api/web/paper, /api/web/paper/outline   referat / mustaqil ish: charged and queued; its plan to edit first (free)
+GET  /api/web/papers, /papers/{id}/{docx|pdf}, POST /papers/{id}/delete   the user's papers (services/papers.py)
 """
 import asyncio
 import io
@@ -41,10 +43,11 @@ from app.core import db, telegram
 from app.core.auth import make_editor_token
 from app.core.config import DATA_DIR, ENGINE_DIR, settings
 from app.core.telegram import send_message
-from app.services import app_settings, billing, decks, doc_text, growth, jobs, payments, web_auth
+from app.services import app_settings, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
 from app.services import images_pdf as pdfs
 from app.services.ai import content as ai_content
 from app.services.ai import models
+from app.services.ai import paper as paper_ai
 from app.services.ai.render import render_sync
 from app.services.users import lang_of
 
@@ -162,7 +165,8 @@ async def logout(req: LogoutRequest, response: Response, sid: str | None = Cooki
 
 async def _prices() -> dict:
     cfg = await app_settings.get()
-    return {"prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"], "first": cfg["first_generate_price"]},
+    return {"prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"], "first": cfg["first_generate_price"],
+                       "paper": cfg["price_paper"]},
             "topup_amounts": cfg["topup_amounts"], "providers": payments.providers(), "card": "card" in payments.providers(),
             "referral_bonus": cfg["referral_bonus"], "support_url": settings.support_url}
 
@@ -305,6 +309,101 @@ async def list_jobs(uid: int = Depends(web_user)):
            FROM jobs j LEFT JOIN decks d ON d.id = j.payload->>'deck_id' AND d.user_id = j.user_id
            WHERE j.user_id = $1 AND j.created > now() - interval '1 day' ORDER BY j.id DESC LIMIT 20""", uid)
     return {"jobs": [dict(r) for r in rows]}
+
+
+# ---------------------------------------------------------------- referat / mustaqil ish
+
+Short = Annotated[str, Field(max_length=paper_ai.TITLE_MAX)]
+
+
+class PaperChapter(BaseModel):
+    title: Short = Field(min_length=1)
+    sections: list[Short] = Field(min_length=2, max_length=4)
+
+
+class PaperFormat(BaseModel):
+    """The teacher's layout requirements; the defaults are the usual ones (services/paper_docx.py DEFAULT_FORMAT)."""
+    font_size: Literal[12, 13, 14] = 14
+    spacing: float = Field(default=1.5, ge=1.0, le=2.0)
+    margin_left: int = Field(default=30, ge=10, le=40)
+    margin_right: int = Field(default=15, ge=10, le=30)
+    margin_top: int = Field(default=20, ge=10, le=30)
+    margin_bottom: int = Field(default=20, ge=10, le=30)
+    page_numbers: Literal["bottom_center", "bottom_right", "top_center", "top_right"] = "bottom_center"
+    toc_title: Literal["mundarija", "reja"] = "mundarija"
+
+
+class PaperOutlineRequest(BaseModel):
+    topic: str = Field(min_length=3, max_length=200)
+    subject: str = Field("", max_length=120)
+    language: Literal["uz", "uzc", "ru", "en"] = "uz"
+    pages: int = Field(15, ge=paper_ai.PAGES_MIN, le=paper_ai.PAGES_MAX)
+    wishes: str = Field("", max_length=paper_ai.WISHES_MAX)
+    source: str = Field("", max_length=ai_content.SOURCE_MAX)
+
+
+class PaperRequest(PaperOutlineRequest):
+    doc_type: Literal["referat", "mustaqil"] = "referat"
+    ministry: str = Field("", max_length=200)
+    university: str = Field("", max_length=200)
+    faculty: str = Field("", max_length=120)
+    department: str = Field("", max_length=120)
+    student: str = Field("", max_length=80)
+    group: str = Field("", max_length=80)
+    teacher: str = Field("", max_length=80)
+    city: str = Field("", max_length=60)
+    year: str = Field("", max_length=10)
+    outline: list[PaperChapter] | None = Field(None, min_length=2, max_length=4)  # the plan the user approved
+    format: PaperFormat = Field(default_factory=lambda: PaperFormat())
+
+
+@router.post("/paper/outline")
+async def paper_outline(req: PaperOutlineRequest, uid: int = Depends(web_user)):
+    if await web_auth.count("outline", user_id=uid, seconds=86400) >= OUTLINES_PER_DAY:
+        raise HTTPException(429, "outlineLimit")
+    await web_auth.note("outline", uid, None)
+    models.usage_context.set({"user_id": uid, "purpose": "outline", "job": None})
+    try:
+        p = await paper_ai.plan(req.topic, req.pages, req.language, req.subject, req.source, req.wishes)
+    except Exception as e:
+        log.warning("paper outline failed for %s: %s", uid, e)
+        raise HTTPException(503, "aiBusy") from e
+    return {"chapters": p["chapters"]}
+
+
+@router.post("/paper", status_code=202)
+async def paper(req: PaperRequest, uid: int = Depends(web_user)):
+    price = (await app_settings.get())["price_paper"]
+    await _charge(uid, price, "paper")
+    payload = {"user_id": uid, "via": "web", **req.model_dump(exclude_none=True)}
+    if not payload.get("source"):
+        payload.pop("source", None)
+    job_id, ahead = await jobs.enqueue("paper", uid, payload, price)
+    return {"job": job_id, "ahead": ahead}
+
+
+@router.get("/papers")
+async def list_papers(uid: int = Depends(web_user)):
+    return {"papers": await papers.list_all(uid)}
+
+
+DOCX = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+
+
+@router.get("/papers/{paper_id}/{ext}")
+async def paper_file(paper_id: int, ext: Literal["docx", "pdf"], uid: int = Depends(web_user)):
+    p = await papers.load(uid, paper_id)
+    path = papers.file(uid, paper_id, ext)
+    if not p or not path.exists():
+        raise HTTPException(404, "notFound")
+    return FileResponse(path, filename=f"{_safe_name(p['topic'])}.{ext}", media_type=DOCX if ext == "docx" else "application/pdf")
+
+
+@router.post("/papers/{paper_id}/delete")
+async def delete_paper(paper_id: int, uid: int = Depends(web_user)):
+    if not await papers.delete(uid, paper_id):
+        raise HTTPException(404, "notFound")
+    return {"ok": True}
 
 
 async def _read_body(request: Request, limit: int) -> bytes:

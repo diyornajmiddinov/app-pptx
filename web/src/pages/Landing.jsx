@@ -10,6 +10,8 @@ const ICONS = {
   globe: 'M12 21a9 9 0 100-18 9 9 0 000 18zm0 0c2.5-2.5 3.5-5.5 3.5-9S14.5 5.5 12 3m0 18c-2.5-2.5-3.5-5.5-3.5-9S9.5 5.5 12 3M3.5 9h17M3.5 15h17',
   edit: 'M15.2 5.2l3.6 3.6M4 20h4L19.3 8.7a2.5 2.5 0 00-3.6-3.6L4 16.4V20z',
   pdf: 'M7 21h10a2 2 0 002-2V9l-6-6H7a2 2 0 00-2 2v14a2 2 0 002 2zM13 3v6h6',
+  paper: 'M7 21h10a2 2 0 002-2V9l-6-6H7a2 2 0 00-2 2v14a2 2 0 002 2zM13 3v6h6M9 13h6M9 17h6',
+  upload: 'M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M12 4v12m0-12l-4 4m4-4l4 4',
 };
 
 function Icon({ d }) {
@@ -89,8 +91,8 @@ export default function Landing({ signedIn, cfg }) {
       </Section>
 
       <Section id="features" title={t('featuresTitle')}>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {[['f1', 'text'], ['f2', 'image'], ['f3', 'grid'], ['f4', 'globe'], ['f5', 'edit'], ['f6', 'pdf']].map(([k, icon]) => (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[['f1', 'text'], ['f2', 'image'], ['f3', 'grid'], ['f4', 'globe'], ['f7', 'paper'], ['f8', 'upload'], ['f5', 'edit'], ['f6', 'pdf']].map(([k, icon]) => (
             <div key={k} className="rounded-2xl p-6 ring-1 ring-slate-200 dark:ring-slate-800">
               <Icon d={ICONS[icon]} />
               <h3 className="mt-4 text-lg font-bold text-slate-900 dark:text-white">{t(k)}</h3>
@@ -105,8 +107,8 @@ export default function Landing({ signedIn, cfg }) {
       </Section>
 
       <Section id="pricing" title={t('pricingTitle')} text={t('pricingText')}>
-        <div className="grid gap-6 md:grid-cols-3">
-          {[['priceGenerate', cfg?.prices.generate, true], ['priceRestyle', cfg?.prices.restyle], ['pricePdf', 0]].map(([k, price, main]) => (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {[['priceGenerate', cfg?.prices.generate, true], ['pricePaper', cfg?.prices.paper], ['priceRestyle', cfg?.prices.restyle], ['pricePdf', 0]].map(([k, price, main]) => (
             <div key={k} className={`rounded-2xl p-6 ${main ? 'bg-brand-600 text-white shadow-xl shadow-brand-600/20' : 'ring-1 ring-slate-200 dark:ring-slate-800'}`}>
               <h3 className={`text-lg font-bold ${main ? '' : 'text-slate-900 dark:text-white'}`}>{t(k)}</h3>
               <p className={`mt-1 text-sm ${main ? 'text-brand-100' : 'text-slate-600 dark:text-slate-400'}`}>{t(`${k}T`)}</p>

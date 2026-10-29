@@ -72,6 +72,7 @@ API: `POST /api/restyle {user_id, template_id, deck_id}` foydalanuvchining istal
 # 1) Engine (Node 18+)
 cd engine
 sudo apt-get install fonts-liberation fonts-crosextra-carlito fonts-crosextra-caladea tex-gyre
+sudo apt-get install --no-install-recommends libreoffice-impress libreoffice-writer poppler-utils  # muharrir; referat (mundarija sahifalari, PDF)
 npm install
 node fill.js 25 content/soliq.json        # sinov: out/25-rasmiy-soliq-islohotlari.pptx
 

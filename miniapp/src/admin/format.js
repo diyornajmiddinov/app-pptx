@@ -37,9 +37,9 @@ export const fullName = (u) => [u?.first_name, u?.last_name].filter(Boolean).joi
 export const LANGS = { uz: "O'zbekcha", ru: 'Русский', en: 'English', '—': 'Tanlanmagan' };
 
 export const KINDS = {
-  generate: 'Taqdimot yaratish', restyle: 'Shablon almashtirish', admin: 'Admin tuzatishi',
+  generate: 'Taqdimot yaratish', restyle: 'Shablon almashtirish', paper: 'Referat (sayt)', admin: 'Admin tuzatishi',
   'topup:card': "Karta orqali to'lov", 'topup:payme': "Payme to'lovi", 'topup:click': "Click to'lovi",
-  'refund:generate': 'Qaytarildi (yaratish)', 'refund:restyle': 'Qaytarildi (shablon)', 'refund:payme': 'Payme bekor qilindi',
+  'refund:generate': 'Qaytarildi (yaratish)', 'refund:restyle': 'Qaytarildi (shablon)', 'refund:paper': 'Qaytarildi (referat)', 'refund:payme': 'Payme bekor qilindi',
   promo: 'Promokod (sayt)', referral: 'Taklif bonusi (sayt)',
 };
 export const kindName = (k) => KINDS[k] || k;

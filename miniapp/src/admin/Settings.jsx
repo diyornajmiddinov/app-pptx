@@ -13,7 +13,7 @@ export default function Settings() {
   const [confirm, confirmNode] = useConfirm();
 
   useEffect(() => {
-    if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, topup: data.values.topup_amounts.join(', '),
+    if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, paper: data.values.price_paper, topup: data.values.topup_amounts.join(', '),
       ref: data.values.referral_bonus ?? 0, first: data.values.first_generate_price ?? '' });
   }, [data]);
 
@@ -21,14 +21,14 @@ export default function Settings() {
   if (!data || !form) return <div className="card"><Loading rows={8} /></div>;
   const s = data.system;
   const topup = form.topup.split(/[,;]/).map(parse).filter((v) => v > 0);
-  const valid = Number.isFinite(parse(form.gen)) && parse(form.gen) >= 0 && Number.isFinite(parse(form.restyle)) && parse(form.restyle) >= 0 && topup.length > 0;
+  const valid = [form.gen, form.restyle, form.paper].every((v) => Number.isFinite(parse(v)) && parse(v) >= 0) && topup.length > 0;
 
   const save = async () => {
     const first = String(form.first).trim() === '' ? null : parse(form.first);
-    const body = { price_generate: parse(form.gen), price_restyle: parse(form.restyle), topup_amounts: topup,
+    const body = { price_generate: parse(form.gen), price_restyle: parse(form.restyle), price_paper: parse(form.paper), topup_amounts: topup,
       referral_bonus: parse(form.ref) || 0, first_generate_price: first };
     if (!await confirm({ title: 'Narxlarni saqlash', body: <>
-      Yangi taqdimot: <b>{som(body.price_generate)}</b><br />Shablon almashtirish: <b>{som(body.price_restyle)}</b><br />
+      Yangi taqdimot: <b>{som(body.price_generate)}</b><br />Shablon almashtirish: <b>{som(body.price_restyle)}</b><br />Referat (sayt): <b>{som(body.price_paper)}</b><br />
       To'ldirish: {body.topup_amounts.map(som).join(', ')}<br />
       Taklif bonusi: <b>{som(body.referral_bonus)}</b><br />Birinchi taqdimot (sayt): <b>{first === null ? "oddiy narx" : som(first)}</b>
       <br /><br />Bot, Mini App va sayt darhol yangi narxlarni ko'rsatadi.</> })) return;
@@ -53,6 +53,9 @@ export default function Settings() {
             <div className="field"><label htmlFor="p-rs">Boshqa shablonga o'tkazish</label>
               <input id="p-rs" className="input num" inputMode="numeric" value={form.restyle} onChange={(e) => setForm({ ...form, restyle: e.target.value })} />
               <span className="help">.env dagi qiymat: {som(data.defaults.price_restyle)}</span></div>
+            <div className="field"><label htmlFor="p-paper">Referat / mustaqil ish (sayt)</label>
+              <input id="p-paper" className="input num" inputMode="numeric" value={form.paper} onChange={(e) => setForm({ ...form, paper: e.target.value })} />
+              <span className="help">.env dagi qiymat: {som(data.defaults.price_paper)}</span></div>
             <div className="field"><label htmlFor="p-top">To'ldirish summalari (/balance tugmalari)</label>
               <input id="p-top" className="input num" value={form.topup} onChange={(e) => setForm({ ...form, topup: e.target.value })} />
               <span className="help">Vergul bilan, 1 000 – 10 000 000, ko'pi bilan 8 ta</span></div>
