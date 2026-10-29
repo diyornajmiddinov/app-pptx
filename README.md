@@ -7,7 +7,7 @@ bot chatga yuboradi.
 ```
 miniapp/ (React, Telegram Mini App) ── POST /api/generate ──▶ backend API (FastAPI)
                                                               │ imzo tekshiruvi → balansdan yechish → jobs navbati
-bot (app.bot.polling) ◀── Telegram                            ▼
+Telegram ── webhook ──▶ /telegram/webhook                      ▼
                                                    worker (app.worker, bir vaqtda 2 ta)
                                                               │ Gemini → kontent JSON → tekshiruv → Pexels rasmlari
                                                               ▼
@@ -28,7 +28,7 @@ bot (app.bot.polling) ◀── Telegram                            ▼
 | `backend/app/core/` | `config` (sozlamalar, ishga tushishda tekshiriladi), `db` (asyncpg + migratsiyalar), `auth` (Telegram imzosi, imzolangan havolalar), `telegram` (Bot API), `alerts` (log kanali) |
 | `backend/app/services/` | `billing` (balans, ledger), `payments` (karta, Payme, Click), `jobs` (navbat), `content_ai` (AI matn + rasmlar), `decks`, `users`, `app_settings` (narxlar), `images_pdf`, `editor` + `pptx_model` |
 | `backend/app/api/` | `main` (ilova) va `routes/`: `miniapp`, `payments` (+ Telegram webhook), `editor`, `admin` |
-| `backend/app/bot/` | `handlers` (yo'naltirish, buyruqlar jadvali), `keyboards`, `money` (balans, to'lov), `pdf` (rasmdan PDF), `polling`, `setup` |
+| `backend/app/bot/` | `handlers` (yo'naltirish, buyruqlar jadvali), `keyboards`, `money` (balans, to'lov), `pdf` (rasmdan PDF), `polling`, `webhook`, `setup` |
 | `backend/app/worker.py` | pullik ishlarni navbatdan bajaradi; qayta ishga tushsa ish yo'qolmaydi |
 | `backend/migrations/` | `NNNN_*.sql` — har biri bir marta, tartib bilan qo'llanadi (`schema_migrations`) |
 | `backend/tests/` | pytest: pul, to'lovlar, navbat, bot, API, admin, 40 ta shablon |
@@ -82,15 +82,16 @@ cp .env.example .env                       # BOT_TOKEN, DATABASE_URL, GEMINI_API
 set -a; . ./.env; set +a
 .venv/bin/uvicorn app.api.main:app --host 127.0.0.1 --port 8000   # API (migratsiyalar shu yerda qo'llanadi)
 .venv/bin/python -m app.worker                                     # navbatdagi taqdimotlarni chizadi
-.venv/bin/python -m app.bot.polling                                # bot
-# production: ops/systemd/*.service (slideai-backend, -worker, -bot, -miniapp, -tunnel, -backup.timer)
+.venv/bin/python -m app.bot.polling                                # bot (lokal: polling, domen kerak emas)
+# production: ops/systemd/*.service (slideai-backend, -worker, -bot, -backup.timer)
+#   slideai-bot = app.bot.webhook: webhook'ni o'rnatadi (PUBLIC_URL + WEBHOOK_SECRET), xabarlarni backend qabul qiladi
 
 # 3) Mini App
 cd ../miniapp
 npm install
 cp .env.example .env                       # VITE_API_URL=https://api.sizning-domen.uz
 npm run build                              # dist/ ni HTTPS hostingga joylang
-cd ../backend && .venv/bin/python -m app.bot.setup   # webhook rejimi uchun: webhook, buyruqlar (3 tilda), menyu tugmasi
+# webhook, buyruqlar (3 tilda) va menyu tugmalarini slideai-bot (app.bot.webhook) har ishga tushganda o'zi o'rnatadi
 ```
 `SLIDEAI_DEMO=1` bilan backend AI va Pexels'siz ishlaydi (namuna kontent bilan): integratsiyani
 tekshirish uchun qulay.

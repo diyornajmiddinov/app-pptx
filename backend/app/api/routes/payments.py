@@ -6,12 +6,14 @@ POST /api/pay/click/{prepare,complete}    Click SHOP API
 POST /telegram/webhook                    bot updates when the webhook is used instead of app.bot.polling
 A credited payment is announced to the user after the provider has its answer.
 """
+import hmac
 import logging
 from urllib.parse import parse_qsl
 
 from fastapi import APIRouter, BackgroundTasks, Header, HTTPException, Request
 
 from app.bot import handlers as bot
+from app.bot import polling
 from app.core.config import settings
 from app.services import payments
 
@@ -57,7 +59,8 @@ async def pay_click_complete(request: Request, background: BackgroundTasks):
 @router.post("/telegram/webhook")
 async def telegram_webhook(request: Request, background: BackgroundTasks,
                            x_telegram_bot_api_secret_token: str | None = Header(None)):
-    if settings.webhook_secret and x_telegram_bot_api_secret_token != settings.webhook_secret:
+    # no secret configured -> closed: otherwise anyone could post fake updates (fake users, fake receipts)
+    if not settings.webhook_secret or not hmac.compare_digest((x_telegram_bot_api_secret_token or "").encode(), settings.webhook_secret.encode()):
         raise HTTPException(403, "Bad secret")
-    background.add_task(bot.handle, await request.json())  # answer Telegram at once, work in the background
+    background.add_task(polling.handle, await request.json())  # answer Telegram at once, work in the background; errors are logged
     return {"ok": True}

@@ -2,7 +2,7 @@
 Run the bot with long polling instead of the webhook: no HTTPS domain needed (local testing).
     set -a; . ./.env; set +a; python -m app.bot.polling
 Telegram does not deliver getUpdates while a webhook is set, so it is removed at start;
-run bot_setup.py again when you move back to the webhook.
+start app.bot.webhook again to move back to the webhook. The helpers here are shared with it.
 Each update is handled in its own task, so a slow one (a file import) does not hold up the others.
 """
 import asyncio
@@ -57,13 +57,17 @@ async def refresh_menu_buttons():
     log.info("menu buttons updated for %d users", len(rows))
 
 
+async def set_commands():
+    for lang in ("uz", "ru", "en"):
+        cmds = [{"command": c, "description": T[lang][f"cmd_{c}"]} for c in ("start", "balance", "pdf", "editor", "language", "help")]
+        await telegram.call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})})
+
+
 async def main():
     alerts.install("bot")
     await db.connect()
     await telegram.call("deleteWebhook", json={"drop_pending_updates": False})
-    for lang in ("uz", "ru", "en"):  # same command list as bot_setup.py
-        cmds = [{"command": c, "description": T[lang][f"cmd_{c}"]} for c in ("start", "balance", "pdf", "editor", "language", "help")]
-        await telegram.call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})})
+    await set_commands()
     me = (await telegram.call("getMe"))["result"]
     log.info("bot @%s started (polling)", me["username"])
     alerts.started("bot")

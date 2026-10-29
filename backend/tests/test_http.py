@@ -58,6 +58,8 @@ async def test_webhook_checks_the_secret(client, monkeypatch):
     async def handle(update):
         seen.append(update)
     monkeypatch.setattr(handlers, "handle", handle)
+    monkeypatch.setattr(settings, "webhook_secret", "")  # not configured: closed, not open to everyone
+    assert (await client.post("/telegram/webhook", json={"update_id": 0})).status_code == 403
     monkeypatch.setattr(settings, "webhook_secret", "sekret")
     assert (await client.post("/telegram/webhook", json={"update_id": 1})).status_code == 403
     r = await client.post("/telegram/webhook", json={"update_id": 2}, headers={"X-Telegram-Bot-Api-Secret-Token": "sekret"})
