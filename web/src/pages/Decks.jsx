@@ -1,7 +1,7 @@
 /** The user's presentations (made on the site or in the bot): download, redraw in another template, edit. */
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
-import { Alert, Button, Card, Spinner, TEMPLATES, TemplateGrid } from '../components/ui.jsx';
+import { Alert, Button, Card, Spinner, TEMPLATES, TemplateGrid, inputCls } from '../components/ui.jsx';
 import { date, useI18n } from '../i18n.jsx';
 import Jobs from './Jobs.jsx';
 
@@ -44,6 +44,7 @@ export default function Decks({ me, refreshMe, go }) {
   const [busy, setBusy] = useState('');
   const [restyle, setRestyle] = useState(null);
   const [jobsKey, setJobsKey] = useState(0);
+  const [q, setQ] = useState('');
 
   const load = useCallback(() => api.decks().then((r) => setDecks(r.decks)).catch((e) => setError(t(`e_${e.key}`))), [t]);
   useEffect(() => { load(); }, [load]);
@@ -53,6 +54,11 @@ export default function Decks({ me, refreshMe, go }) {
     setBusy(key); setError('');
     try { await fn(); } catch (e) { setError(t(`e_${e.key}`)); } finally { setBusy(''); }
   };
+  const remove = (d) => {
+    if (!window.confirm(t('deleteAsk', { topic: d.topic }))) return;
+    run(`del${d.id}`, async () => { await api.deleteDeck(d.id); setInfo(t('deleted')); setDecks((cur) => cur.filter((x) => x.id !== d.id)); });
+  };
+  const shown = (decks || []).filter((d) => !q.trim() || (d.topic || '').toLowerCase().includes(q.trim().toLowerCase()));
   const openEditor = () => run('editor', async () => {
     const win = window.open('', '_blank'); // opened now, inside the click: popup blockers allow it
     const { url } = await api.editor();
@@ -64,7 +70,10 @@ export default function Decks({ me, refreshMe, go }) {
       <Jobs key={jobsKey} onDone={onDone} go={go} />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('tabDecks')}</h1>
-        <Button variant="secondary" onClick={openEditor} disabled={busy === 'editor'}>{busy === 'editor' && <Spinner />}{t('edit')}</Button>
+        <div className="flex flex-wrap gap-2">
+          {decks?.length > 3 && <input type="search" className={`${inputCls} w-56 py-2`} value={q} onChange={(e) => setQ(e.target.value)} placeholder={t('search')} aria-label={t('search')} />}
+          <Button variant="secondary" onClick={openEditor} disabled={busy === 'editor'}>{busy === 'editor' && <Spinner />}{t('edit')}</Button>
+        </div>
       </div>
       <Alert>{error}</Alert>
       <Alert kind="ok">{info}</Alert>
@@ -77,7 +86,7 @@ export default function Decks({ me, refreshMe, go }) {
         </Card>
       ) : (
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {decks.map((d) => {
+          {shown.map((d) => {
             const tpl = byId[d.template_id];
             return (
               <div key={d.id} className="flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200/80 dark:bg-slate-900 dark:ring-slate-800">
@@ -93,6 +102,7 @@ export default function Decks({ me, refreshMe, go }) {
                     </Button>
                     <Button variant="secondary" className="px-2" onClick={() => { setInfo(''); setRestyle(d); }}>{t('restyle')}</Button>
                   </div>
+                  <Button variant="danger" className="mt-2 px-2 py-1.5 text-xs" disabled={busy === `del${d.id}`} onClick={() => remove(d)}>{t('delete')}</Button>
                 </div>
               </div>
             );

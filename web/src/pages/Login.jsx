@@ -5,6 +5,7 @@ import { Alert, BOT_URL, Button, Card, Field, LangSwitch, Logo, Spinner, inputCl
 import { useI18n } from '../i18n.jsx';
 
 const RESEND_S = 60;
+const savedRef = () => { try { return localStorage.getItem('ref'); } catch { return null; } };
 
 export default function Login({ onSignedIn }) {
   const { t } = useI18n();
@@ -39,7 +40,8 @@ export default function Login({ onSignedIn }) {
     if (value.length !== 6 || busy) return;
     setBusy(true); setError('');
     try {
-      await api.verify(step.login_id, value);
+      await api.verify(step.login_id, value, savedRef());
+      try { localStorage.removeItem('ref'); } catch { /* storage blocked */ }
       onSignedIn();
     } catch (err) {
       fail(err);
@@ -71,6 +73,11 @@ export default function Login({ onSignedIn }) {
               </Field>
               <Alert>{error}</Alert>
               <Button type="submit" className="w-full py-3" disabled={busy || !login.trim()}>{busy && <Spinner />}{t('sendCode')}</Button>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {t('legalAgree').split(/(\{oferta\}|\{privacy\})/).map((part, i) => (
+                  part === '{oferta}' ? <a key={i} href="/oferta" target="_blank" className="underline">{t('oferta')}</a>
+                    : part === '{privacy}' ? <a key={i} href="/maxfiylik" target="_blank" className="underline">{t('privacy')}</a> : part))}
+              </p>
               <p className="text-sm text-slate-500 dark:text-slate-400">
                 {t('loginHint')}{' '}
                 <a href={BOT_URL} target="_blank" rel="noopener noreferrer" className="font-medium text-brand-600 hover:underline dark:text-brand-400">t.me/slidechibot</a>

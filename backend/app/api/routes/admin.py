@@ -11,6 +11,8 @@ from the bot's /admin command (ADMIN_IDS only); every request carries it in X-Ad
   GET/POST /broadcasts                      message to all users (or one language), sent in the background
   GET/PUT /settings                         prices and top-up amounts (app_settings), payment providers, system
   GET  /log                                 what the admins did
+  GET/POST /promos, POST /promos/{id}/active  promo codes for the website (services/growth.py)
+  GET  /web                                 the website: visits, sign-ins, decks, invites (last N days)
 Every change is written to admin_log.
 """
 import asyncio
@@ -36,7 +38,7 @@ from app.core import db
 from app.core.auth import admin_user
 from app.core.config import DATA_DIR, settings
 from app.core.telegram import download_file, send_message
-from app.services import app_settings, billing, payments
+from app.services import app_settings, billing, growth, payments
 from app.services.ai import models
 from app.services.ai.catalog import TEMPLATE_NAMES
 from app.services.ai.render import render
@@ -395,6 +397,8 @@ class SettingsReq(BaseModel):
     price_generate: int = Field(ge=0, le=10_000_000)
     price_restyle: int = Field(ge=0, le=10_000_000)
     topup_amounts: list[int] = Field(min_length=1, max_length=8)
+    referral_bonus: int | None = Field(None, ge=0, le=1_000_000)           # left out: unchanged
+    first_generate_price: int | None = Field(None, ge=0, le=10_000_000)    # sent as null: no first-deck price
 
 
 def _dir_size(path: Path) -> int:
@@ -438,6 +442,10 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
         raise HTTPException(422, "To'ldirish summalari 1 000 – 10 000 000 so'm oralig'ida bo'lsin")
     old = await app_settings.get()
     new = {"price_generate": req.price_generate, "price_restyle": req.price_restyle, "topup_amounts": amounts}
+    if req.referral_bonus is not None:
+        new["referral_bonus"] = req.referral_bonus
+    if "first_generate_price" in req.model_fields_set:
+        new["first_generate_price"] = req.first_generate_price
     await app_settings.set_many(new, uid)
     await audit(uid, "settings", None, before=old, after=new)
     return {"values": await app_settings.get()}
@@ -451,3 +459,56 @@ async def admin_log(uid: int = Depends(admin_user), page: int = 1, size: int = 5
     items = await p.fetch("""SELECT a.id, a.admin_id, a.action, a.target, a.details, a.created, u.first_name, u.username
                              FROM admin_log a LEFT JOIN users u ON u.id = a.admin_id ORDER BY a.id DESC LIMIT $1 OFFSET $2""", lim, off)
     return {"total": total, "items": rows(items)}
+
+
+# ---------------------------------------------------------------- website: promo codes, statistics
+
+class PromoReq(BaseModel):
+    code: str = Field(pattern=r"^[A-Za-z0-9_-]{3,32}$")
+    amount: int = Field(ge=100, le=1_000_000)
+    max_uses: int | None = Field(None, ge=1, le=1_000_000)
+    days: int | None = Field(None, ge=1, le=365)  # valid for this many days; None: no end
+
+
+class PromoActive(BaseModel):
+    active: bool
+
+
+@router.get("/promos")
+async def promos(uid: int = Depends(admin_user)):
+    items = await db.pool().fetch("SELECT id, code, amount, max_uses, uses, expires, active, created FROM promo_codes ORDER BY id DESC LIMIT 200")
+    return {"items": rows(items)}
+
+
+@router.post("/promos")
+async def create_promo(req: PromoReq, uid: int = Depends(admin_user)):
+    code = growth.clean_code(req.code)
+    pid = await db.pool().fetchval(
+        "INSERT INTO promo_codes (code, amount, max_uses, expires, created_by) "
+        "VALUES ($1, $2, $3, CASE WHEN $4::int IS NULL THEN NULL ELSE now() + make_interval(days => $4::int) END, $5) "
+        "ON CONFLICT (code) DO NOTHING RETURNING id", code, req.amount, req.max_uses, req.days, uid)
+    if not pid:
+        raise HTTPException(409, "Bu kod allaqachon bor")
+    await audit(uid, "promo_create", pid, code=code, amount=req.amount, max_uses=req.max_uses, days=req.days)
+    return {"id": pid}
+
+
+@router.post("/promos/{promo_id}/active")
+async def promo_active(promo_id: int, req: PromoActive, uid: int = Depends(admin_user)):
+    if not await db.pool().fetchval("UPDATE promo_codes SET active = $2 WHERE id = $1 RETURNING 1", promo_id, req.active):
+        raise HTTPException(404, "Topilmadi")
+    await audit(uid, "promo_on" if req.active else "promo_off", promo_id)
+    return {"ok": True}
+
+
+@router.get("/web")
+async def web_stats(uid: int = Depends(admin_user), days: int = Query(30, ge=7, le=180)):
+    p = db.pool()
+    totals = await p.fetchrow(
+        """SELECT (SELECT count(*) FROM web_sessions WHERE expires > now()) AS sessions,
+                  (SELECT count(DISTINCT user_id) FROM web_sessions WHERE last_seen > now() - interval '30 days') AS active_users,
+                  (SELECT count(*) FROM jobs WHERE payload->>'via' = 'web') AS web_jobs,
+                  (SELECT count(*) FROM referrals) AS referrals, (SELECT count(rewarded) FROM referrals) AS referrals_paid,
+                  (SELECT coalesce(sum(delta), 0) FROM ledger WHERE kind = 'promo') AS promo_sum,
+                  (SELECT coalesce(sum(delta), 0) FROM ledger WHERE kind = 'referral') AS referral_sum""")
+    return {"series": await growth.series(days), "totals": dict(totals), "days": days}

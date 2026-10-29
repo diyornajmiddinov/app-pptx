@@ -10,4 +10,5 @@ export default defineConfig({
     fs: { allow: ['..'] }, // the template list is shared with the Mini App (../miniapp/src/data)
     proxy: { '/api': 'http://localhost:8000' }, // thumbnails: `npm run dev` copies them into public/templates
   },
+  test: { environment: 'jsdom', include: ['src/**/*.test.{js,jsx}'], setupFiles: ['src/__tests__/setup.js'], restoreMocks: true },
 });

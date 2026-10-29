@@ -55,7 +55,8 @@ async def test_card_decision_from_the_panel(admin, tg):
 
 async def test_prices_change_for_bot_and_app(admin):
     r = await admin.put("/api/admin/settings", json={"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [20000, 10000]})
-    assert r.json()["values"] == {"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [10000, 20000]}
+    assert r.json()["values"] == {"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [10000, 20000],
+                                  "referral_bonus": 1000, "first_generate_price": None}  # the website's two: .env defaults
     assert (await admin.put("/api/admin/settings", json={"price_generate": 1, "price_restyle": 1, "topup_amounts": [5]})).status_code == 422
     assert await db.pool().fetchval("SELECT value FROM app_settings WHERE key = 'price_generate'") == 7000
 

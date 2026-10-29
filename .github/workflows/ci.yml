@@ -80,5 +80,7 @@ jobs:
       - run: npm ci
       - name: Lint
         run: npm run lint -- --max-warnings 0
+      - name: Tests (Vitest)
+        run: npm test
       - name: Build (slidechi.uz)
         run: npm run build

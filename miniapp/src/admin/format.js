@@ -40,6 +40,7 @@ export const KINDS = {
   generate: 'Taqdimot yaratish', restyle: 'Shablon almashtirish', admin: 'Admin tuzatishi',
   'topup:card': "Karta orqali to'lov", 'topup:payme': "Payme to'lovi", 'topup:click': "Click to'lovi",
   'refund:generate': 'Qaytarildi (yaratish)', 'refund:restyle': 'Qaytarildi (shablon)', 'refund:payme': 'Payme bekor qilindi',
+  promo: 'Promokod (sayt)', referral: 'Taklif bonusi (sayt)',
 };
 export const kindName = (k) => KINDS[k] || k;
 

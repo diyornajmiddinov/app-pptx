@@ -2,8 +2,9 @@
  * Website texts in three languages. Keys are shared; {name}-style placeholders are filled by t().
  * The chosen language is kept in this browser only: it does not change the language the bot speaks.
  */
-import { createContext, useCallback, useContext, useMemo, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { TEMPLATE_NAMES } from '../../miniapp/src/i18n/messages.js';
+import { MORE } from './i18n-more.js';
 
 export const LANGS = [
   { id: 'uz', short: 'UZ', label: "O'zbekcha" },
@@ -21,7 +22,7 @@ export const date = (sec, time = false) => {
 export const money = (n, lang) => (lang === 'en' ? `${Number(n).toLocaleString('en-US')} UZS`
   : `${Number(n).toLocaleString('en-US').replace(/,/g, ' ')} ${lang === 'ru' ? 'сум' : "so'm"}`);
 
-const MESSAGES = {
+export const MESSAGES = {
   uz: {
     navFeatures: 'Imkoniyatlar', navTemplates: 'Shablonlar', navPricing: 'Narxlar', navFaq: 'Savollar',
     signIn: 'Kirish', openApp: 'Kabinet', startNow: 'Taqdimot yaratish', openBot: 'Telegram bot',
@@ -233,19 +234,32 @@ const MESSAGES = {
   },
 };
 
+for (const l of Object.keys(MESSAGES)) Object.assign(MESSAGES[l], MORE[l]);
+
+/** The language a page path asks for: /ru/..., /en/... (the home page is prerendered once per language). */
+export const pathLang = (path) => (path.match(/^\/(ru|en)(\/|$)/) || [])[1] || null;
+
 const I18nContext = createContext(null);
 
-const initialLang = () => {
-  try {
-    const saved = localStorage.getItem('lang');
-    if (MESSAGES[saved]) return saved;
-  } catch { /* storage blocked */ }
-  const nav = (navigator.language || '').slice(0, 2);
-  return MESSAGES[nav] ? nav : 'uz';
+const saved = () => {
+  try { const l = localStorage.getItem('lang'); return MESSAGES[l] ? l : null; } catch { return null; }
 };
 
-export function I18nProvider({ children }) {
-  const [lang, setLangState] = useState(initialLang);
+/** A prerendered page starts in its own language (the HTML must match); other pages in the saved / browser one. */
+const initialLang = () => {
+  if (typeof window === 'undefined') return 'uz';
+  const pre = document.documentElement.dataset.prerendered;
+  if (pre) return pre;
+  const nav = (navigator.language || '').slice(0, 2);
+  return saved() || (MESSAGES[nav] ? nav : 'uz');
+};
+
+export function I18nProvider({ children, initial }) {
+  const [lang, setLangState] = useState(() => initial || initialLang());
+  useEffect(() => { // the uz home page for a visitor who chose another language before
+    const l = saved();
+    if (document.documentElement.dataset.prerendered && !pathLang(window.location.pathname) && l && l !== lang) setLangState(l);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const setLang = useCallback((l) => {
     setLangState(l);
     try { localStorage.setItem('lang', l); } catch { /* storage blocked */ }

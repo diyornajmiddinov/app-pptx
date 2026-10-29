@@ -13,7 +13,8 @@ export default function Settings() {
   const [confirm, confirmNode] = useConfirm();
 
   useEffect(() => {
-    if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, topup: data.values.topup_amounts.join(', ') });
+    if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, topup: data.values.topup_amounts.join(', '),
+      ref: data.values.referral_bonus ?? 0, first: data.values.first_generate_price ?? '' });
   }, [data]);
 
   if (error && !data) return <div className="card"><ErrorBox error={error} retry={reload} /></div>;
@@ -23,10 +24,14 @@ export default function Settings() {
   const valid = Number.isFinite(parse(form.gen)) && parse(form.gen) >= 0 && Number.isFinite(parse(form.restyle)) && parse(form.restyle) >= 0 && topup.length > 0;
 
   const save = async () => {
-    const body = { price_generate: parse(form.gen), price_restyle: parse(form.restyle), topup_amounts: topup };
+    const first = String(form.first).trim() === '' ? null : parse(form.first);
+    const body = { price_generate: parse(form.gen), price_restyle: parse(form.restyle), topup_amounts: topup,
+      referral_bonus: parse(form.ref) || 0, first_generate_price: first };
     if (!await confirm({ title: 'Narxlarni saqlash', body: <>
       Yangi taqdimot: <b>{som(body.price_generate)}</b><br />Shablon almashtirish: <b>{som(body.price_restyle)}</b><br />
-      To'ldirish: {body.topup_amounts.map(som).join(', ')}<br /><br />Bot va Mini App darhol yangi narxlarni ko'rsatadi.</> })) return;
+      To'ldirish: {body.topup_amounts.map(som).join(', ')}<br />
+      Taklif bonusi: <b>{som(body.referral_bonus)}</b><br />Birinchi taqdimot (sayt): <b>{first === null ? "oddiy narx" : som(first)}</b>
+      <br /><br />Bot, Mini App va sayt darhol yangi narxlarni ko'rsatadi.</> })) return;
     setBusy(true);
     try { await api.saveSettings(body); toast('Saqlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
   };
@@ -51,6 +56,12 @@ export default function Settings() {
             <div className="field"><label htmlFor="p-top">To'ldirish summalari (/balance tugmalari)</label>
               <input id="p-top" className="input num" value={form.topup} onChange={(e) => setForm({ ...form, topup: e.target.value })} />
               <span className="help">Vergul bilan, 1 000 – 10 000 000, ko'pi bilan 8 ta</span></div>
+            <div className="field"><label htmlFor="p-ref">Taklif bonusi (sayt)</label>
+              <input id="p-ref" className="input num" inputMode="numeric" value={form.ref} onChange={(e) => setForm({ ...form, ref: e.target.value })} />
+              <span className="help">Taklif qilingan do'st birinchi marta to'ldirganda taklif qilganga beriladi. 0 — o'chirilgan</span></div>
+            <div className="field"><label htmlFor="p-first">Birinchi taqdimot narxi (sayt)</label>
+              <input id="p-first" className="input num" inputMode="numeric" value={form.first} onChange={(e) => setForm({ ...form, first: e.target.value })} placeholder="bo'sh — oddiy narx" />
+              <span className="help">Foydalanuvchining eng birinchi taqdimoti saytda shu narxda. 0 — bepul</span></div>
             <div className="row"><button type="button" className="btn primary" disabled={busy || !valid} onClick={save}>Saqlash</button></div>
           </div>
         </div>

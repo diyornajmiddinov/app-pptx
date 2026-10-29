@@ -1,6 +1,5 @@
 /** The public home page: what SlideAI does, the templates, prices and questions. */
-import { useEffect, useState } from 'react';
-import { api } from '../api.js';
+import Footer from '../components/Footer.jsx';
 import { BOT_URL, LangSwitch, Logo, TemplateGrid, btnCls } from '../components/ui.jsx';
 import { useI18n } from '../i18n.jsx';
 
@@ -33,10 +32,9 @@ function Section({ id, title, text, children, className = '' }) {
   );
 }
 
-export default function Landing({ signedIn }) {
+export default function Landing({ signedIn, cfg }) {
   const { t, money } = useI18n();
-  const [cfg, setCfg] = useState(null);
-  useEffect(() => { api.config().then(setCfg).catch(() => {}); }, []);
+  const first = cfg?.prices.first;
   const start = signedIn ? '#/app' : '#/login';
   const nav = [['features', 'navFeatures'], ['templates', 'navTemplates'], ['pricing', 'navPricing'], ['faq', 'navFaq']];
 
@@ -102,8 +100,8 @@ export default function Landing({ signedIn }) {
         </div>
       </Section>
 
-      <Section id="templates" title={t('templatesTitle')} text={t('templatesText')} className="bg-slate-50 dark:bg-slate-900/50">
-        <TemplateGrid />
+      <Section id="templates" title={t('templatesTitle')} text={`${t('templatesText')} ${t('sampleHint')}`} className="bg-slate-50 dark:bg-slate-900/50">
+        <TemplateGrid sampleLinks />
       </Section>
 
       <Section id="pricing" title={t('pricingTitle')} text={t('pricingText')}>
@@ -115,6 +113,9 @@ export default function Landing({ signedIn }) {
               <p className={`mt-6 text-3xl font-extrabold ${main ? '' : 'text-slate-900 dark:text-white'}`}>
                 {price === undefined ? '…' : price === 0 ? t('free') : money(price)}
               </p>
+              {main && first != null && first < price && (
+                <p className="mt-2 inline-block rounded-full bg-white/15 px-3 py-1 text-sm font-semibold">{t('firstBadge', { price: first === 0 ? t('free') : money(first) })}</p>
+              )}
             </div>
           ))}
         </div>
@@ -135,15 +136,7 @@ export default function Landing({ signedIn }) {
         </div>
       </Section>
 
-      <footer className="border-t border-slate-200 px-4 py-10 dark:border-slate-800">
-        <div className="mx-auto flex max-w-6xl flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-          <div><Logo /><p className="mt-2 text-sm text-slate-500">{t('footer')}</p></div>
-          <div className="flex items-center gap-4 text-sm text-slate-500">
-            <a href={BOT_URL} target="_blank" rel="noopener noreferrer" className="hover:text-slate-900 dark:hover:text-white">@slidechibot</a>
-            <span>© {new Date().getFullYear()} slidechi.uz</span>
-          </div>
-        </div>
-      </footer>
+      <Footer support={cfg?.support_url} />
     </div>
   );
 }

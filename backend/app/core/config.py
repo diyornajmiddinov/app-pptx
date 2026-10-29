@@ -44,6 +44,9 @@ class Settings(BaseSettings):
     price_generate: int = Field(5000, ge=0)
     price_restyle: int = Field(2000, ge=0)
     topup_amounts: Annotated[list[int], NoDecode] = [15000, 30000, 50000, 100000]
+    referral_bonus: int = Field(1000, ge=0)            # to the inviter, after the invited user's first top-up (website)
+    first_generate_price: int | None = Field(None, ge=0)  # the first presentation on the website (None: the usual price)
+    support_url: str = ""                 # "contact us" on the website, e.g. https://t.me/<admin>
 
     # payment links (payments.py); a provider is offered only when all its fields are set
     payme_merchant_id: str = ""

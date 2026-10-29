@@ -5,14 +5,14 @@ import reactHooks from 'eslint-plugin-react-hooks';
 import globals from 'globals';
 
 export default [
-  { ignores: ['dist/', 'node_modules/'] },
+  { ignores: ['dist/', 'dist-ssr/', 'node_modules/'] },
   js.configs.recommended,
   {
-    files: ['src/**/*.{js,jsx}', '*.config.js'],
+    files: ['src/**/*.{js,jsx}', '*.config.js', 'prerender.js'],
     languageOptions: {
       ecmaVersion: 2023,
       sourceType: 'module',
-      globals: { ...globals.browser },
+      globals: { ...globals.browser, ...globals.node },
       parserOptions: { ecmaFeatures: { jsx: true } },
     },
     settings: { react: { version: '18.3' } },

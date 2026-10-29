@@ -1,7 +1,7 @@
 /** The signed-in part: header with the balance, tabs, and the section the hash points at (#/app/<tab>). */
 import { useCallback, useEffect, useState } from 'react';
 import { api } from '../api.js';
-import { Button, LangSwitch, Logo } from '../components/ui.jsx';
+import { Button, LangSwitch, Logo, btnCls } from '../components/ui.jsx';
 import { useI18n } from '../i18n.jsx';
 import Balance from './Balance.jsx';
 import Create from './Create.jsx';
@@ -50,6 +50,7 @@ export default function Dashboard({ tab, me, refreshMe, onSignedOut }) {
                       <p className="truncate font-semibold text-slate-900 dark:text-white">{name}</p>
                       {me.user.username && <p className="truncate text-sm text-slate-500">@{me.user.username}</p>}
                     </div>
+                    {me.support_url && <a href={me.support_url} target="_blank" rel="noopener noreferrer" className={btnCls('ghost', 'w-full justify-start')}>{t('support')}</a>}
                     <Button variant="ghost" className="w-full justify-start" onClick={() => signOut(false)}>{t('signOut')}</Button>
                     <Button variant="danger" className="w-full justify-start" onClick={() => signOut(true)}>{t('signOutAll')}</Button>
                   </div>

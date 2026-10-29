@@ -14,6 +14,11 @@ GET  /api/web/editor                      signed link to the editor (editor.html
 GET/POST /api/web/topup, POST /api/web/topup/{order}/receipt   card transfer: order -> receipt image -> admins
 GET  /api/web/history                     the balance's ledger
 POST /api/web/pdf                         images -> one PDF, returned at once (PDFS_PER_DAY per user)
+POST /api/web/outline, /api/web/source    proposed slide titles to edit before paying; text of the user's document
+POST /api/web/decks/{id}/delete           remove a presentation (and its photos)
+POST /api/web/promo, GET /api/web/referral   promo code; the invite link and its bonus (services/growth.py)
+GET  /api/web/samples/{template}.pptx     a sample deck in that template (no sign-in; drawn once, then cached)
+POST /api/web/hit                         a page view, for the admin panel's site statistics
 """
 import asyncio
 import io
@@ -21,7 +26,8 @@ import logging
 import shutil
 import tempfile
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
+from urllib.parse import unquote
 
 from fastapi import APIRouter, Cookie, Depends, File, Form, Header, HTTPException, Request, Response, UploadFile
 from fastapi.responses import FileResponse
@@ -33,10 +39,12 @@ from starlette.concurrency import run_in_threadpool
 from app.bot.money import card_display, receive_screenshot
 from app.core import db, telegram
 from app.core.auth import make_editor_token
-from app.core.config import settings
+from app.core.config import DATA_DIR, ENGINE_DIR, settings
 from app.core.telegram import send_message
-from app.services import app_settings, billing, decks, jobs, payments, web_auth
+from app.services import app_settings, billing, decks, doc_text, growth, jobs, payments, web_auth
 from app.services import images_pdf as pdfs
+from app.services.ai import content as ai_content
+from app.services.ai import models
 from app.services.ai.render import render_sync
 from app.services.users import lang_of
 
@@ -55,6 +63,8 @@ PPTX = "application/vnd.openxmlformats-officedocument.presentationml.presentatio
 MAX_RECEIPT = 10 * 1024 * 1024
 MAX_PDF_IMAGE = 20 * 1024 * 1024
 PDFS_PER_DAY = 20
+OUTLINES_PER_DAY = 30  # free AI calls: limited so that nobody drains the Gemini quota
+SAMPLES = DATA_DIR / "samples"
 _drawing = asyncio.Semaphore(1)  # downloads are drawn by node one at a time: the server has 2 CPUs and 2 GB
 
 # what the bot writes to the user's chat on behalf of the site
@@ -104,6 +114,7 @@ class LoginRequest(BaseModel):
 class VerifyRequest(BaseModel):
     login_id: str = Field(min_length=10, max_length=40)
     code: str = Field(min_length=6, max_length=8)
+    ref: str | None = Field(None, max_length=20)  # the invite code the visitor came with (?ref=)
 
 
 class LogoutRequest(BaseModel):
@@ -134,6 +145,8 @@ async def verify(req: VerifyRequest, request: Request, response: Response, user_
         await send_message(uid, TEXTS[await lang_of(uid)]["signed_in"].format(device=_device(user_agent)))
     except Exception:
         pass  # signing in must not fail because of the notice
+    await growth.attach(uid, req.ref)
+    await growth.count("signins")
     response.set_cookie(COOKIE, token, max_age=web_auth.SESSION_DAYS * 86400, path="/", secure=True, httponly=True, samesite="strict")
     return {"ok": True}
 
@@ -149,8 +162,19 @@ async def logout(req: LogoutRequest, response: Response, sid: str | None = Cooki
 
 async def _prices() -> dict:
     cfg = await app_settings.get()
-    return {"prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"]},
-            "topup_amounts": cfg["topup_amounts"], "card": "card" in payments.providers()}
+    return {"prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"], "first": cfg["first_generate_price"]},
+            "topup_amounts": cfg["topup_amounts"], "providers": payments.providers(), "card": "card" in payments.providers(),
+            "referral_bonus": cfg["referral_bonus"], "support_url": settings.support_url}
+
+
+async def _generate_price(uid: int) -> int:
+    """The first presentation ever (bot or site) may cost less: app_settings first_generate_price."""
+    cfg = await app_settings.get()
+    first = cfg["first_generate_price"]
+    if first is not None and first < cfg["price_generate"] and not await db.pool().fetchval(
+            "SELECT 1 FROM jobs WHERE user_id = $1 AND kind = 'generate' AND state <> 'failed' LIMIT 1", uid):
+        return first
+    return cfg["price_generate"]
 
 
 @router.get("/config")
@@ -158,10 +182,18 @@ async def config():
     return await _prices()
 
 
+@router.post("/hit", status_code=204)
+async def hit(request: Request, user_agent: str | None = Header(None)):
+    if user_agent and "bot" not in user_agent.lower():  # search engine crawlers are not visitors
+        await growth.visit(_ip(request), user_agent)
+
+
 @router.get("/me")
 async def me(uid: int = Depends(web_user)):
     u = await db.pool().fetchrow("SELECT first_name, last_name, username, lang FROM users WHERE id = $1", uid)
-    return {"user": {"id": uid, **dict(u)}, "lang": u["lang"] or "uz", "balance": await billing.balance(uid), **await _prices()}
+    out = {"user": {"id": uid, **dict(u)}, "lang": u["lang"] or "uz", "balance": await billing.balance(uid), **await _prices()}
+    out["prices"]["now"] = await _generate_price(uid)  # what "create" costs this user right now
+    return out
 
 
 @router.get("/history")
@@ -173,15 +205,21 @@ async def history(uid: int = Depends(web_user)):
 
 # ---------------------------------------------------------------- presentations
 
-class GenerateRequest(BaseModel):
+class OutlineRequest(BaseModel):
     template_id: int = Field(ge=1, le=40)
     slide_count: int = Field(ge=6, le=30)
     language: Literal["uz", "ru", "en"] = "uz"
     topic: str = Field(min_length=3, max_length=200)
+    source: str = Field("", max_length=ai_content.SOURCE_MAX)
+
+
+class GenerateRequest(OutlineRequest):
     author: str = Field("", max_length=80)
     org: str = Field("", max_length=120)
     loc: str = Field("", max_length=60)
     year: str = Field("", max_length=10)
+    outline: list[Annotated[str, Field(max_length=80)]] | None = Field(None, max_length=30)  # approved titles, one per slide
+    notes: bool = False                                                                       # speaker notes
 
 
 class RestyleRequest(BaseModel):
@@ -196,10 +234,40 @@ async def _charge(uid: int, price: int, kind: str):
 
 @router.post("/generate", status_code=202)
 async def generate(req: GenerateRequest, uid: int = Depends(web_user)):
-    price = (await app_settings.get())["price_generate"]  # fixed at payment: a later price change does not alter the refund
+    if req.outline is not None and len(req.outline) != req.slide_count:
+        raise HTTPException(422, "outlineStale")  # the slide count changed after the outline was made
+    price = await _generate_price(uid)  # fixed at payment: a later price change does not alter the refund
     await _charge(uid, price, "generate")
-    job_id, ahead = await jobs.enqueue("generate", uid, {"user_id": uid, **req.model_dump()}, price)
+    payload = {"user_id": uid, "via": "web", **req.model_dump(exclude_none=True)}
+    if not payload.get("source"):
+        payload.pop("source", None)
+    job_id, ahead = await jobs.enqueue("generate", uid, payload, price)
+    await growth.count("generates")
     return {"job": job_id, "ahead": ahead}
+
+
+@router.post("/outline")
+async def outline(req: OutlineRequest, uid: int = Depends(web_user)):
+    if await web_auth.count("outline", user_id=uid, seconds=86400) >= OUTLINES_PER_DAY:
+        raise HTTPException(429, "outlineLimit")
+    await web_auth.note("outline", uid, None)
+    models.usage_context.set({"user_id": uid, "purpose": "outline", "job": None})
+    try:
+        slides = await ai_content.generate_outline(req.topic, req.slide_count, req.language, req.template_id, req.source)
+    except Exception as e:
+        log.warning("outline failed for %s: %s", uid, e)
+        raise HTTPException(503, "aiBusy") from e
+    return {"slides": slides}
+
+
+@router.post("/source")
+async def source(request: Request, uid: int = Depends(web_user), x_filename: str = Header("document.txt")):
+    data = await _read_body(request, doc_text.MAX_FILE)
+    try:
+        text = await run_in_threadpool(doc_text.extract, data, unquote(x_filename))
+    except doc_text.DocError as e:
+        raise HTTPException(422, str(e)) from e
+    return {"text": text[:ai_content.SOURCE_MAX], "chars": len(text), "cut": len(text) > ai_content.SOURCE_MAX}
 
 
 @router.post("/restyle", status_code=202)
@@ -220,6 +288,13 @@ async def list_decks(uid: int = Depends(web_user)):
     return {"decks": await decks.list_all(uid)}
 
 
+@router.post("/decks/{deck_id}/delete")
+async def delete_deck(deck_id: str, uid: int = Depends(web_user)):
+    if not deck_id.isdigit() or not await decks.delete(uid, deck_id):
+        raise HTTPException(404, "notFound")
+    return {"ok": True}
+
+
 @router.get("/jobs")
 async def list_jobs(uid: int = Depends(web_user)):
     """Work from the last day: what is still queued / drawing, and what just finished or failed (refunded)."""
@@ -230,6 +305,15 @@ async def list_jobs(uid: int = Depends(web_user)):
            FROM jobs j LEFT JOIN decks d ON d.id = j.payload->>'deck_id' AND d.user_id = j.user_id
            WHERE j.user_id = $1 AND j.created > now() - interval '1 day' ORDER BY j.id DESC LIMIT 20""", uid)
     return {"jobs": [dict(r) for r in rows]}
+
+
+async def _read_body(request: Request, limit: int) -> bytes:
+    data = bytearray()
+    async for chunk in request.stream():
+        data += chunk
+        if len(data) > limit:
+            raise HTTPException(413, "tooBig")
+    return bytes(data)
 
 
 def _safe_name(text: str) -> str:
@@ -261,6 +345,11 @@ async def editor_link(uid: int = Depends(web_user)):
 
 class TopupRequest(BaseModel):
     amount: int = Field(gt=0)
+    provider: Literal["card", "payme", "click"] = "card"
+
+
+class PromoRequest(BaseModel):
+    code: str = Field(min_length=3, max_length=40)
 
 
 def _order_out(o) -> dict:
@@ -278,13 +367,35 @@ async def topup_orders(uid: int = Depends(web_user)):
 
 @router.post("/topup")
 async def topup(req: TopupRequest, uid: int = Depends(web_user)):
-    if "card" not in payments.providers():
-        raise HTTPException(503, "noCard")
+    if req.provider not in payments.providers():
+        raise HTTPException(503, "noCard" if req.provider == "card" else "noProvider")
     if req.amount not in (await app_settings.get())["topup_amounts"]:
         raise HTTPException(422, "badAmount")
-    order_id = await payments.create_order(uid, req.amount, "card")
+    order_id = await payments.create_order(uid, req.amount, req.provider)
+    if req.provider != "card":  # Payme / Click: their page, then back to the balance (credited by their callback)
+        back = f"{settings.site_url.rstrip('/')}/#/app/balance" if settings.site_url else ""
+        link = (payments.payme_link if req.provider == "payme" else payments.click_link)(order_id, req.amount, back)
+        return {"id": order_id, "amount": req.amount, "state": "new", "url": link}
     return {"id": order_id, "code": payments.payment_code(order_id), "amount": req.amount, "state": "new",
             "card": {"number": card_display(settings.card_number), "holder": settings.card_holder}}
+
+
+@router.post("/promo")
+async def promo(req: PromoRequest, request: Request, uid: int = Depends(web_user)):
+    if await web_auth.count("promo", user_id=uid) >= 10:  # guessing codes
+        raise HTTPException(429, "tooMany")
+    await web_auth.note("promo", uid, _ip(request))
+    try:
+        amount, new = await growth.redeem(uid, req.code)
+    except growth.PromoError as e:
+        raise HTTPException(404 if str(e) == "promoNotFound" else 409, str(e)) from e
+    return {"amount": amount, "balance": new}
+
+
+@router.get("/referral")
+async def referral(uid: int = Depends(web_user)):
+    await growth.settle(uid)
+    return await growth.referral_info(uid)
 
 
 @router.post("/topup/{order_id}/receipt")
@@ -294,11 +405,7 @@ async def receipt(order_id: int, request: Request, uid: int = Depends(web_user))
     state = await db.pool().fetchval("SELECT state FROM orders WHERE id = $1 AND user_id = $2 AND provider = 'card'", order_id, uid)
     if state not in ("new", "review"):
         raise HTTPException(404 if state is None else 409, "notFound" if state is None else "decided")
-    data = bytearray()
-    async for chunk in request.stream():
-        data += chunk
-        if len(data) > MAX_RECEIPT:
-            raise HTTPException(413, "tooBig")
+    data = await _read_body(request, MAX_RECEIPT)
     try:
         Image.open(io.BytesIO(data)).verify()
     except Exception as e:
@@ -307,7 +414,7 @@ async def receipt(order_id: int, request: Request, uid: int = Depends(web_user))
     code = payments.payment_code(order_id)
     try:
         sent = await telegram.call("sendPhoto", data={"chat_id": uid, "caption": TEXTS[lang]["receipt"].format(code=code)},
-                                   files={"photo": ("receipt.jpg", bytes(data))}, timeout=120)
+                                   files={"photo": ("receipt.jpg", data)}, timeout=120)
         file_id = sent["result"]["photo"][-1]["file_id"]
     except Exception as e:
         log.warning("could not pass the receipt of order %s through the bot", order_id)
@@ -365,3 +472,28 @@ async def make_pdf(files: list[UploadFile] = File(...), name: str = Form(""), ui
     return FileResponse(out, filename=f"{pdfs.clean_name(name) or 'rasmlar'}.pdf", media_type="application/pdf",
                         headers={"X-Skipped": str(skipped)}, background=BackgroundTask(shutil.rmtree, tmp, ignore_errors=True))
 
+
+
+# ---------------------------------------------------------------- sample decks
+
+def _sample(template_id: int) -> Path:
+    """The demo content (engine/content/soliq.json) drawn in this template; drawn again when the template changes."""
+    out = SAMPLES / f"{template_id:02d}.pptx"
+    source = next(ENGINE_DIR.glob(f"templates/{template_id:02d}-*.js"), None)
+    if out.exists() and (source is None or out.stat().st_mtime >= source.stat().st_mtime):
+        return out
+    SAMPLES.mkdir(parents=True, exist_ok=True)
+    tmp = out.with_suffix(".tmp.pptx")
+    render_sync(jobs.demo_content("Soliq islohotlari va iqtisodiy o'sish", {"author": "SlideAI", "loc": "Toshkent"}), template_id, tmp)
+    tmp.replace(out)
+    return out
+
+
+@router.get("/samples/{template_id}.pptx")
+async def sample(template_id: int):
+    if not 1 <= template_id <= 40:
+        raise HTTPException(404, "notFound")
+    async with _drawing:
+        path = await run_in_threadpool(_sample, template_id)
+    return FileResponse(path, filename=f"SlideAI-namuna-{template_id:02d}.pptx", media_type=PPTX,
+                        headers={"Cache-Control": "public, max-age=86400"})

@@ -61,19 +61,20 @@ def providers() -> list[str]:
 
 # ---------- links ----------
 
-def payme_link(order_id: int, amount: int) -> str:
+def payme_link(order_id: int, amount: int, return_url: str = "") -> str:
+    """return_url: where the provider sends the user back (the website passes its own; default PAYMENT_RETURN_URL)."""
     params = f"m={settings.payme_merchant_id};ac.{settings.payme_account_field}={order_id};a={amount * 100}"
-    if settings.return_url:
-        params += f";c={settings.return_url}"
+    if return_url or settings.return_url:
+        params += f";c={return_url or settings.return_url}"
     host = "https://test.paycom.uz" if settings.payme_test else "https://checkout.paycom.uz"
     return f"{host}/{base64.b64encode(params.encode()).decode()}"
 
 
-def click_link(order_id: int, amount: int) -> str:
+def click_link(order_id: int, amount: int, return_url: str = "") -> str:
     q = {"service_id": settings.click_service_id, "merchant_id": settings.click_merchant_id,
          "amount": amount, "transaction_param": order_id}
-    if settings.return_url:
-        q["return_url"] = settings.return_url
+    if return_url or settings.return_url:
+        q["return_url"] = return_url or settings.return_url
     return "https://my.click.uz/services/pay?" + urlencode(q)
 
 

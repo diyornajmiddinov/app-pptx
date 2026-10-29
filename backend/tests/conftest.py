@@ -31,7 +31,8 @@ from app.core import (
 ADMIN = 1000
 REAL_POST = alerts.post  # the fixtures below replace it; tests of post() itself use this
 TABLES = ("users", "balances", "ledger", "orders", "payme_txns", "click_txns", "decks", "app_settings",
-          "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs", "web_logins", "web_sessions", "web_actions")
+          "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs", "web_logins", "web_sessions", "web_actions",
+          "promo_codes", "promo_uses", "ref_codes", "referrals", "web_stats", "web_visitors")
 
 
 @pytest.fixture(scope="session", autouse=True)

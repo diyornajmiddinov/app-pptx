@@ -81,7 +81,7 @@ export function LangSwitch() {
 
 export function Logo() {
   return (
-    <a href="#/" className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900 dark:text-white">
+    <a href="/" className="flex items-center gap-2 font-extrabold tracking-tight text-slate-900 dark:text-white">
       <img src="/favicon.svg" alt="" className="h-8 w-8" />
       <span className="text-lg">Slide<span className="text-brand-600 dark:text-brand-400">AI</span></span>
     </a>
@@ -96,7 +96,7 @@ export function useCopy() {
   return [copied, copy];
 }
 
-const Thumb = memo(function Thumb({ tpl, selected, onSelect, name }) {
+const Thumb = memo(function Thumb({ tpl, selected, onSelect, name, sample }) {
   const body = (
     <>
       <div className={cx('relative aspect-video overflow-hidden rounded-xl bg-slate-100 transition dark:bg-slate-800',
@@ -111,13 +111,13 @@ const Thumb = memo(function Thumb({ tpl, selected, onSelect, name }) {
       <p className={cx('mt-2 truncate text-sm', selected ? 'font-semibold text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-400')}>{name}</p>
     </>
   );
-  return onSelect
-    ? <button type="button" onClick={() => onSelect(tpl.id)} aria-pressed={selected} className="group block w-full text-left focus:outline-none">{body}</button>
-    : <div className="group">{body}</div>;
+  if (onSelect) return <button type="button" onClick={() => onSelect(tpl.id)} aria-pressed={selected} className="group block w-full text-left focus:outline-none">{body}</button>;
+  if (sample) return <a href={`/api/web/samples/${tpl.id}.pptx`} download title={sample} className="group block focus:outline-none" rel="nofollow">{body}</a>;
+  return <div className="group">{body}</div>;
 });
 
 /** The 40 templates with category tabs; selectable when onSelect is given. */
-export function TemplateGrid({ value, onSelect, exclude, compact }) {
+export function TemplateGrid({ value, onSelect, exclude, compact, sampleLinks }) {
   const { t, templateName } = useI18n();
   const [cat, setCat] = useState('all');
   const list = useMemo(() => TEMPLATES.filter((x) => (cat === 'all' || x.category === cat) && x.id !== exclude), [cat, exclude]);
@@ -133,7 +133,7 @@ export function TemplateGrid({ value, onSelect, exclude, compact }) {
         ))}
       </div>
       <div className={cx('grid gap-4', compact ? 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5')}>
-        {list.map((tpl) => <Thumb key={tpl.id} tpl={tpl} name={templateName(tpl)} selected={value === tpl.id} onSelect={onSelect} />)}
+        {list.map((tpl) => <Thumb key={tpl.id} tpl={tpl} name={templateName(tpl)} selected={value === tpl.id} onSelect={onSelect} sample={sampleLinks ? t('sample') : null} />)}
       </div>
     </div>
   );

@@ -8,9 +8,11 @@ import Dashboard from './Dashboard.jsx';
 import Decks from './Decks.jsx';
 import Ledger from './Ledger.jsx';
 import Payments from './Payments.jsx';
+import Promos from './Promos.jsx';
 import Settings, { AdminLog } from './Settings.jsx';
 import Users, { UserDrawer } from './Users.jsx';
 import { Icon, useLoad } from './ui.jsx';
+import Website from './Website.jsx';
 
 const PAGES = [
   ['dashboard', 'Boshqaruv paneli', 'Umumiy ko\'rsatkichlar'],
@@ -19,6 +21,8 @@ const PAGES = [
   ['ledger', 'Tranzaksiyalar', 'Har bir pul harakati'],
   ['decks', 'Taqdimotlar', 'Yaratilgan barcha taqdimotlar'],
   ['broadcast', 'Xabar yuborish', 'Bot foydalanuvchilariga ommaviy xabar'],
+  ['website', 'Sayt', 'slidechi.uz: tashriflar, kirishlar, takliflar'],
+  ['promos', 'Promokodlar', 'Saytda balansga qo\'shiladigan kodlar'],
   ['settings', 'Sozlamalar', 'Narxlar, to\'lov usullari, server'],
   ['log', 'Admin jurnali', 'Adminlar qilgan o\'zgarishlar'],
 ];
@@ -80,7 +84,7 @@ export default function App() {
   const props = { go, openUser: setUserId, onChanged: changed };
   const body = {
     dashboard: <Dashboard {...props} />, users: <Users {...props} />, payments: <Payments {...props} />,
-    ledger: <Ledger {...props} />, decks: <Decks {...props} />, broadcast: <Broadcast />, settings: <Settings />, log: <AdminLog />,
+    ledger: <Ledger {...props} />, decks: <Decks {...props} />, broadcast: <Broadcast />, website: <Website />, promos: <Promos />, settings: <Settings />, log: <AdminLog />,
   }[page] || <Dashboard {...props} />;
 
   const badge = pending.data?.total > 0 && <span className="nav-badge">{pending.data.total}</span>;

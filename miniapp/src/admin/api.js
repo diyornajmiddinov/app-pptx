@@ -75,4 +75,8 @@ export const api = {
   settings: () => call('GET', '/settings'),
   saveSettings: (body) => call('PUT', '/settings', body),
   log: (o) => call('GET', `/log${qs(o)}`),
+  web: (days) => call('GET', `/web${qs({ days })}`),
+  promos: () => call('GET', '/promos'),
+  createPromo: (body) => call('POST', '/promos', body),
+  promoActive: (id, active) => call('POST', `/promos/${id}/active`, { active }),
 };

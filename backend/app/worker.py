@@ -12,7 +12,7 @@ import signal
 
 from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
-from app.services import billing, housekeeping, jobs
+from app.services import billing, growth, housekeeping, jobs
 from app.services.ai import models
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -28,6 +28,11 @@ async def _hourly():
             await asyncio.to_thread(housekeeping.sweep)
         except Exception:
             log.exception("Vaqtinchalik fayllarni tozalash ishlamadi")
+        try:  # the website: invite bonuses after a first top-up; visitor hashes older than 90 days
+            await growth.settle()
+            await growth.purge()
+        except Exception:
+            log.exception("Taklif bonuslarini hisoblab bo'lmadi")
         try:
             if diff := await billing.reconcile():
                 log.error("Balans va ledger mos emas: %s", diff[:10])

@@ -18,6 +18,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.api.routes import admin, editor, miniapp, payments, web
 from app.core import alerts, db, systemd, telegram
 from app.core.config import DATA_DIR, settings
+from app.services import jobs
+from app.services.ai import models
 from app.services.editor import EditorError
 
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
@@ -39,6 +41,7 @@ async def lifespan(_: FastAPI):
     logging.getLogger("uvicorn.access").addFilter(_HideTokens())
     await db.connect(max_size=10)
     await admin.mark_interrupted()
+    models.on_usage = jobs.save_usage  # the website's outline requests are Gemini calls too -> ai_usage
     alerts.started("backend")
     dog = asyncio.create_task(systemd.watchdog())
     yield

@@ -55,3 +55,11 @@ async def list_all(user_id: int) -> list[dict]:
                   extract(epoch FROM created)::bigint AS created, extract(epoch FROM updated)::bigint AS updated  -- the Mini App wants seconds
            FROM decks WHERE user_id = $1 ORDER BY decks.created DESC""", user_id)
     return [dict(r) for r in rows]
+
+
+async def delete(user_id: int, deck_id: str) -> bool:
+    """Remove one of the user's decks and its photos. False if there was no such deck of theirs."""
+    gone = await db.pool().fetchval("DELETE FROM decks WHERE id = $1 AND user_id = $2 RETURNING 1", str(deck_id), user_id)
+    if gone:
+        shutil.rmtree(DATA / str(user_id) / "decks" / str(deck_id), ignore_errors=True)
+    return bool(gone)

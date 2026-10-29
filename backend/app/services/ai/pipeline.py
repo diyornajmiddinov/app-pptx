@@ -15,9 +15,10 @@ def workdir() -> Path:
 
 
 async def build_presentation(topic: str, template_id: int, slide_count: int = 10, language: str = "uz", meta: dict | None = None,
-                             out_path: Path | None = None, ask: Ask = ai, search: Search | None = None) -> tuple[Path, dict]:
+                             out_path: Path | None = None, ask: Ask = ai, search: Search | None = None,
+                             outline: list[str] | None = None, notes: bool = False, source: str = "") -> tuple[Path, dict]:
     """Returns (pptx path, content) — the content is kept to switch templates later."""
-    content = await generate_content(topic, slide_count, language, template_id, ask=ask)
+    content = await generate_content(topic, slide_count, language, template_id, ask=ask, outline=outline, notes=notes, source=source)
     content["meta"] = Meta(topic=topic, **(meta or {})).model_dump()
     work = workdir()
     if template_id in PHOTO_TEMPLATES:

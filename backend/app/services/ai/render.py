@@ -6,9 +6,27 @@ import subprocess
 import tempfile
 from pathlib import Path
 
+from pptx import Presentation
+
 from app.core.config import ENGINE_DIR
 
 TIMEOUT = 180  # s
+
+
+def add_notes(path: Path, content: dict) -> Path:
+    """Speaker notes (slide["notes"], a website option) go into the notes pages, one content slide per pptx slide.
+    The engine draws no notes itself; nothing is touched when the deck has none."""
+    notes = [s.get("notes") or "" for s in content.get("slides", [])]
+    if not any(notes):
+        return path
+    prs = Presentation(str(path))
+    if len(prs.slides) != len(notes):  # a template that splits or merges slides: better no notes than wrong ones
+        return path
+    for slide, text in zip(prs.slides, notes, strict=True):
+        if text:
+            slide.notes_slide.notes_text_frame.text = text
+    prs.save(str(path))
+    return path
 
 
 def _content_file(content: dict) -> str:
@@ -33,7 +51,7 @@ async def render(content: dict, template_id: int, out_path: Path | str) -> Path:
         os.unlink(src)
     if proc.returncode:  # the same error type as subprocess.run(check=True): alerts.why explains it
         raise subprocess.CalledProcessError(proc.returncode, cmd, out.decode(errors="replace"), err.decode(errors="replace"))
-    return Path(out_path)
+    return await asyncio.to_thread(add_notes, Path(out_path), content)
 
 
 def render_sync(content: dict, template_id: int, out_path: Path | str) -> Path:
@@ -44,4 +62,4 @@ def render_sync(content: dict, template_id: int, out_path: Path | str) -> Path:
                        capture_output=True, text=True)
     finally:
         os.unlink(src)
-    return Path(out_path)
+    return add_notes(Path(out_path), content)

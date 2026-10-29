@@ -9,7 +9,7 @@ export class ApiError extends Error {
   constructor(key, status) { super(key); this.name = 'ApiError'; this.key = key; this.status = status; }
 }
 
-async function send(method, path, { json, body, timeout = TIMEOUT_MS } = {}) {
+async function send(method, path, { json, body, headers = {}, timeout = TIMEOUT_MS } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeout);
   let res;
@@ -17,7 +17,7 @@ async function send(method, path, { json, body, timeout = TIMEOUT_MS } = {}) {
     res = await fetch(BASE + path, {
       method,
       credentials: 'same-origin',
-      headers: json ? { 'Content-Type': 'application/json' } : {},
+      headers: { ...(json ? { 'Content-Type': 'application/json' } : {}), ...headers },
       body: json ? JSON.stringify(json) : body,
       signal: controller.signal,
     });
@@ -49,7 +49,8 @@ async function saveFile(res, fallback) {
 export const api = {
   config: () => json('GET', '/config'),
   login: (login) => json('POST', '/login', { json: { login } }),
-  verify: (login_id, code) => json('POST', '/verify', { json: { login_id, code } }),
+  verify: (login_id, code, ref) => json('POST', '/verify', { json: { login_id, code, ref: ref || null } }),
+  hit: () => fetch(`${BASE}/hit`, { method: 'POST', credentials: 'same-origin', keepalive: true }).catch(() => {}),
   logout: (everywhere = false) => json('POST', '/logout', { json: { everywhere } }),
   me: () => json('GET', '/me'),
   decks: () => json('GET', '/decks'),
@@ -58,9 +59,14 @@ export const api = {
   generate: (payload) => json('POST', '/generate', { json: payload }),
   restyle: (deck_id, template_id) => json('POST', '/restyle', { json: { deck_id, template_id } }),
   editor: () => json('GET', '/editor'),
+  outline: (payload) => json('POST', '/outline', { json: payload, timeout: 120_000 }),
+  source: (file) => json('POST', '/source', { body: file, headers: { 'X-Filename': encodeURIComponent(file.name) }, timeout: 120_000 }),
+  deleteDeck: (deckId) => json('POST', `/decks/${deckId}/delete`),
   download: async (deckId) => saveFile(await send('GET', `/decks/${deckId}/download`, { timeout: 180_000 }), 'taqdimot.pptx'),
   orders: () => json('GET', '/topup'),
-  topup: (amount) => json('POST', '/topup', { json: { amount } }),
+  topup: (amount, provider = 'card') => json('POST', '/topup', { json: { amount, provider } }),
+  promo: (code) => json('POST', '/promo', { json: { code } }),
+  referral: () => json('GET', '/referral'),
   receipt: (orderId, file) => json('POST', `/topup/${orderId}/receipt`, { body: file, timeout: 120_000 }),
   pdf: async (files, name) => {
     const form = new FormData();
@@ -71,3 +77,4 @@ export const api = {
     return Number(res.headers.get('x-skipped') || 0);
   },
 };
+
