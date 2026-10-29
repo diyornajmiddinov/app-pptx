@@ -12,7 +12,7 @@ from pathlib import Path
 os.environ.update({
     "DATABASE_URL": os.environ.get("TEST_DATABASE_URL", "postgresql://slideai:slideai@127.0.0.1:5432/slideai_test"),
     "BOT_TOKEN": "123456:TEST-TOKEN-ABCDEFGHIJKLMNOPQRSTUVWXYZ012",
-    "WEBAPP_URL": "https://app.test", "PUBLIC_URL": "https://app.test",
+    "WEBAPP_URL": "https://app.test", "PUBLIC_URL": "https://app.test", "SITE_URL": "https://site.test",
     "ADMIN_IDS": "1000", "CARD_NUMBER": "8600123412341234", "CARD_HOLDER": "Test Holder",
     "PRICE_GENERATE": "5000", "PRICE_RESTYLE": "2000", "TOPUP_AMOUNTS": "15000,30000",
     "GEMINI_API_KEY": "", "PEXELS_API_KEY": "", "ANTHROPIC_API_KEY": "", "LOG_CHANNEL_ID": "",
@@ -31,7 +31,7 @@ from app.core import (
 ADMIN = 1000
 REAL_POST = alerts.post  # the fixtures below replace it; tests of post() itself use this
 TABLES = ("users", "balances", "ledger", "orders", "payme_txns", "click_txns", "decks", "app_settings",
-          "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs")
+          "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs", "web_logins", "web_sessions", "web_actions")
 
 
 @pytest.fixture(scope="session", autouse=True)

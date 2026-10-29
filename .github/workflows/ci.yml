@@ -64,3 +64,21 @@ jobs:
         run: npm run lint -- --max-warnings 0
       - name: Build (Mini App, editor, admin panel)
         run: npm run build
+
+  web:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Lint
+        run: npm run lint -- --max-warnings 0
+      - name: Build (slidechi.uz)
+        run: npm run build

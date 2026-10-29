@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Telegram
     bot_token: str = Field(pattern=r"^\d+:[\w-]{20,}$")
     webapp_url: str = ""                  # Mini App / editor / admin pages (HTTPS)
+    site_url: str = ""                    # the website (https://slidechi.uz): POSTs to /api/web must come from it
     public_url: str = ""                  # backend address for the webhook and payment callbacks
     webhook_secret: str = ""              # Telegram sends it back in a header
     allowed_origins: Annotated[list[str], NoDecode] = ["*"]

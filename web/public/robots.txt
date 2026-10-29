@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /editor.html
+Sitemap: https://slidechi.uz/sitemap.xml
