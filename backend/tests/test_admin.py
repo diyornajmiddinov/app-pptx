@@ -56,7 +56,8 @@ async def test_card_decision_from_the_panel(admin, tg):
 async def test_prices_change_for_bot_and_app(admin):
     r = await admin.put("/api/admin/settings", json={"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [20000, 10000]})
     assert r.json()["values"] == {"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [10000, 20000],
-                                  "referral_bonus": 1000, "first_generate_price": None, "price_paper": 7000}  # the website's: .env defaults
+                                  "referral_bonus": 1000, "first_generate_price": None, "price_paper": 7000,
+                                  "ai_model": r.json()["values"]["ai_model"]}  # the website's: .env defaults
     r = await admin.put("/api/admin/settings", json={"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [10000], "price_paper": 9000})
     assert r.json()["values"]["price_paper"] == 9000 and r.json()["values"]["price_generate"] == 7000
     assert (await admin.put("/api/admin/settings", json={"price_generate": 1, "price_restyle": 1, "topup_amounts": [5]})).status_code == 422
@@ -140,3 +141,19 @@ async def test_deck_download_redraws_the_saved_content(admin, monkeypatch, tmp_p
     r = await admin.get("/api/admin/decks/99/download")
     assert r.content == b"PK-pptx" and "Soliq%20_%202026.pptx" in r.headers["content-disposition"]  # RFC 5987: a slash cannot reach the file name
     assert (await admin.get("/api/admin/decks/nope/download")).status_code == 404
+
+
+async def test_the_ai_model_is_chosen_in_the_panel(admin, monkeypatch):
+    from app.services.ai import models
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("GEMINI_API_KEY", "g")
+    monkeypatch.delenv("AI_PROVIDER", raising=False)
+    ai = (await admin.get("/api/admin/settings")).json()["ai"]
+    assert ai["model"] == ai["default"] == f"gemini:{models.GEMINI_MODEL}" and "openai:gpt-6.1-terra" in ai["choices"]
+    r = await admin.put("/api/admin/ai-model", json={"model": "openai:gpt-6.1-terra"})
+    assert r.json() == {"model": "openai:gpt-6.1-terra"} and await models.current() == "openai:gpt-6.1-terra"
+    assert (await admin.put("/api/admin/ai-model", json={"model": "openai:gpt-9"})).status_code == 422
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    assert (await admin.put("/api/admin/ai-model", json={"model": "openai:gpt-6.1-sol"})).status_code == 422  # no key
+    log = (await admin.get("/api/admin/log")).json()["items"][0]
+    assert log["action"] == "ai_model" and log["details"]["after"] == "openai:gpt-6.1-terra"

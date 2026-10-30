@@ -162,10 +162,47 @@ async def claude(messages: Messages) -> str:
     return "".join(b.text for b in r.content if b.type == "text")
 
 
+# ---------------------------------------------------------------- which model writes (the admin panel chooses)
+
+CHOICES = {  # "provider:model" -> shown in the admin panel; a choice needs its provider's key in .env
+    "openai:gpt-6.1-terra": "OpenAI GPT-6.1 Terra — tez, sifatli, arzon (tavsiya)",
+    "openai:gpt-6.1-sol": "OpenAI GPT-6.1 Sol — chuqurroq matn, 2 baravar qimmat",
+    "openai:gpt-6-luna": "OpenAI GPT-6 Luna — eng arzon, referatda ishonchsiz",
+    "gemini:gemini-3.6-flash": "Google Gemini 3.6 Flash — tez-tez band (503)",
+    "gemini:gemini-3.5-flash": "Google Gemini 3.5 Flash — tez-tez band (503)",
+    "gemini:gemini-2.5-flash": "Google Gemini 2.5 Flash — barqaror, eskiroq",
+}
+KEYS = {"openai": "OPENAI_API_KEY", "gemini": "GEMINI_API_KEY"}
+
+
+def available() -> dict[str, str]:
+    return {k: v for k, v in CHOICES.items() if os.getenv(KEYS[k.split(":")[0]])}
+
+
+def default_choice() -> str:
+    """From .env: AI_PROVIDER=openai (OPENAI_MODEL), else Gemini (GEMINI_MODEL) when its key is there, else Claude."""
+    if os.getenv("AI_PROVIDER", "").lower() == "openai" and os.getenv("OPENAI_API_KEY"):
+        return f"openai:{OPENAI_MODEL}"
+    return f"gemini:{GEMINI_MODEL}" if os.getenv("GEMINI_API_KEY") else f"claude:{CLAUDE_MODEL}"
+
+
+async def current() -> str:
+    """The admin panel's choice (app_settings ai_model, cached a few seconds), or the .env default. A choice whose key
+    was removed from .env falls back to the default."""
+    try:
+        from app.services import app_settings  # the database layer; this module is imported before it
+        choice = (await app_settings.get()).get("ai_model") or default_choice()
+    except Exception:  # no database (scripts, early start): .env decides
+        return default_choice()
+    provider = choice.split(":", 1)[0]
+    return choice if provider == "claude" or os.getenv(KEYS.get(provider, "")) else default_choice()
+
+
 async def ai(messages: Messages) -> str:
-    """The configured model: AI_PROVIDER=openai (OPENAI_MODEL) or gemini (GEMINI_MODEL); unset: Gemini if its key is
-    there, else Claude."""
-    provider = os.getenv("AI_PROVIDER", "").lower()
-    if provider == "openai" and os.getenv("OPENAI_API_KEY"):
-        return await openai(messages)
-    return await (gemini(messages) if os.getenv("GEMINI_API_KEY") else claude(messages))
+    """The chosen model writes."""
+    provider, model = (await current()).split(":", 1)
+    if provider == "openai":
+        return await openai(messages, model)
+    if provider == "gemini":
+        return await gemini(messages, model)
+    return await claude(messages)

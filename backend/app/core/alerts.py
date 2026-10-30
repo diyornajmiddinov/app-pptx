@@ -130,9 +130,11 @@ def why(exc: BaseException) -> tuple[str, str]:
     text = " | ".join(f"{type(e).__name__}: {e}" for e in chain).lower()
     names = {type(e).__name__ for e in chain}
     status = next((s for s in map(_http_status, chain) if s), None)
-    if status is None and (m := re.search(r"\b(gemini|telegram|http)\D{0,12}(40[13]|429|50[0234])\b", text)):
+    if status is None and (m := re.search(r"\b(gemini|openai|telegram|http)\D{0,12}(40[13]|429|50[0234])\b", text)):
         status = int(m.group(2))  # e.g. "Gemini javob bermadi: Gemini 503 (gemini-3.5-flash)"
     gemini = "gemini" in text or "generativelanguage" in text
+    openai = "openai" in text or "api.openai.com" in text
+    ai_name = "OpenAI" if openai else "Google Gemini" if gemini else None
     tg = "telegram" in text or "api.telegram.org" in text or "bot was blocked" in text or "chat not found" in text
 
     if "bot was blocked by the user" in text:
@@ -140,11 +142,14 @@ def why(exc: BaseException) -> tuple[str, str]:
     if "chat not found" in text or "user is deactivated" in text:
         return "👤 Foydalanuvchi", "Bunday chat yo'q yoki Telegram akkaunti o'chirilgan. Bizda tuzatadigan narsa yo'q."
     if status == 503 or "unavailable" in text or "high demand" in text or "overloaded" in text:
-        return "🌐 Tashqi xizmat", (("Google Gemini" if gemini else "Tashqi server") + " band (503) — bizning xatomiz emas. "
+        return "🌐 Tashqi xizmat", ((ai_name or "Tashqi server") + " band (503) — bizning xatomiz emas. "
                                    "Odatda bir necha daqiqada o'tadi. Taqdimot yaratishda bo'lsa, pul foydalanuvchiga avtomatik qaytarildi.")
     if status == 429 or "too many requests" in text or "resource_exhausted" in text or "quota" in text:
-        return "🌐 Tashqi xizmat", ("So'rovlar chegarasi (429) — " + ("Gemini kvotasi tugagan yoki daqiqalik limit oshgan: AI Studio'da kvota va to'lovni tekshiring."
+        return "🌐 Tashqi xizmat", ("So'rovlar chegarasi (429) — " + ("OpenAI limiti oshgan yoki hisobda pul tugagan: platform.openai.com da Usage va Billing'ni tekshiring."
+                                   if openai else "Gemini kvotasi tugagan yoki daqiqalik limit oshgan: AI Studio'da kvota va to'lovni tekshiring."
                                    if gemini else "Telegram juda tez yuborishni to'xtatdi, biroz kutib qayta urinish kerak." if tg else "tashqi xizmat limiti oshgan."))
+    if status in (401, 403) and openai:
+        return "🔑 Sozlama", "OpenAI API kaliti noto'g'ri, o'chirilgan yoki bloklangan. .env dagi OPENAI_API_KEY ni tekshiring."
     if status in (401, 403) and gemini:
         return "🔑 Sozlama", "Gemini API kaliti noto'g'ri, o'chirilgan yoki bloklangan. .env dagi GEMINI_API_KEY ni tekshiring."
     if status == 401 and tg:

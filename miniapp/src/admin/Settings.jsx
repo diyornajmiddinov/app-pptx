@@ -36,6 +36,15 @@ export default function Settings() {
     try { await api.saveSettings(body); toast('Saqlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
   };
 
+  const changeModel = async (model) => {
+    if (model === data.ai.model) return;
+    if (!await confirm({ title: 'AI modelini almashtirish', body: <>
+      Yangi taqdimot, referat va rejalarni endi <b>{data.ai.choices[model]}</b> yozadi.<br /><br />
+      Bot, Mini App va sayt bir necha soniyada shu modelga o'tadi. Navbatda turgan ishlar ham yangi model bilan yoziladi.</> })) return;
+    setBusy(true);
+    try { await api.saveAiModel(model); toast('Model almashtirildi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
+  };
+
   const Provider = ({ on, name, note }) => (
     <tr><td>{name}</td><td>{on ? <Pill tone="good">Ulangan</Pill> : <Pill>Ulanmagan</Pill>}</td><td style={{ color: 'var(--muted)', whiteSpace: 'normal', fontSize: 12 }}>{note}</td></tr>
   );
@@ -87,7 +96,13 @@ export default function Settings() {
           <div className="card">
             <div className="card-h"><h2>AI</h2></div>
             <table><tbody>
-              <tr><td>Matn</td><td>{data.ai.model}</td></tr>
+              <tr><td>Matn yozuvchi model</td><td>
+                <select className="input" aria-label="AI modeli" value={data.ai.model} disabled={busy} onChange={(e) => changeModel(e.target.value)}>
+                  {!data.ai.choices[data.ai.model] && <option value={data.ai.model}>{data.ai.model}</option>}
+                  {Object.entries(data.ai.choices).map(([id, label]) => <option key={id} value={id}>{label}</option>)}
+                </select>
+                <span className="help">.env dagi standart: {data.ai.default}</span>
+              </td></tr>
               <tr><td>Rasmlar</td><td>{data.ai.photos}</td></tr>
               <tr><td>Adminlar</td><td className="num">{data.admins.join(', ')}</td></tr>
             </tbody></table>
@@ -115,7 +130,7 @@ export default function Settings() {
 }
 
 const ACTIONS = { balance: "Balans o'zgartirildi", message: 'Xabar yuborildi', card_paid: "Karta to'lovi tasdiqlandi",
-  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi" };
+  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi' };
 
 export function AdminLog() {
   const [page, setPage] = useState(1);

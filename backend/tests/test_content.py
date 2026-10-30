@@ -183,11 +183,18 @@ async def test_openai_drops_the_reasoning_setting_a_model_rejects_and_stops_on_b
 
 
 async def test_the_provider_is_chosen_by_ai_provider(net, monkeypatch):
-    answers, _ = net
+    answers, seen = net
     monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
     answers["api.openai.com"] = [httpx.Response(200, json={"choices": [{"message": {"content": '{"from": "openai"}'}}]})]
     answers["generativelanguage"] = [httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"from": "gemini"}'}]}}]})]
+    from app.services import app_settings
     monkeypatch.delenv("AI_PROVIDER", raising=False)
     assert "gemini" in await models.ai([{"role": "user", "content": "x"}])
     monkeypatch.setenv("AI_PROVIDER", "openai")
+    app_settings.forget()
+    assert "openai" in await models.ai([{"role": "user", "content": "x"}])
+    await app_settings.set_many({"ai_model": "gemini:gemini-2.5-flash"}, 1)  # the admin panel's choice wins over .env
+    assert "gemini" in await models.ai([{"role": "user", "content": "x"}])
+    assert "/models/gemini-2.5-flash:" in seen[-1]
+    monkeypatch.setenv("GEMINI_API_KEY", "")  # its key removed from .env: back to the .env default
     assert "openai" in await models.ai([{"role": "user", "content": "x"}])

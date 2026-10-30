@@ -398,7 +398,7 @@ async def get_settings(uid: int = Depends(admin_user)):
         "providers": {"payme": "payme" in payments.providers(), "click": "click" in payments.providers(),
                       "card": "card" in payments.providers(), "payme_test": settings.payme_test},
         "admins": sorted(settings.admin_ids), "webapp_url": settings.webapp_url,
-        "ai": {"model": models.GEMINI_MODEL if os.getenv("GEMINI_API_KEY") else "Claude", "photos": "Pexels" if os.getenv("PEXELS_API_KEY") else "Gemini"},
+        "ai": {"model": await models.current(), "choices": models.available(), "default": models.default_choice(), "photos": "Pexels" if os.getenv("PEXELS_API_KEY") else "Gemini"},
         "system": {"uptime": int(time.time() - STARTED), "disk_total": disk.total, "disk_free": disk.free,
                    "data_size": await run_in_threadpool(_dir_size, DATA), "ram": ram, "load": os.getloadavg(),
                    "db_size": counts["db_size"], "postgres": " ".join(counts["pg"].split()[:2]),
@@ -422,6 +422,21 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
     await app_settings.set_many(new, uid)
     await audit(uid, "settings", None, before=old, after=new)
     return {"values": await app_settings.get()}
+
+
+class AiModelReq(BaseModel):
+    model: str = Field(max_length=80)
+
+
+@router.put("/ai-model")
+async def put_ai_model(req: AiModelReq, uid: int = Depends(admin_user)):
+    """Which model writes decks and papers, from now on (every process sees it within app_settings.TTL seconds)."""
+    if req.model not in models.available():
+        raise HTTPException(422, "Bu model mavjud emas yoki uning kaliti .env da yo'q")
+    old = await models.current()
+    await app_settings.set_many({"ai_model": req.model}, uid)
+    await audit(uid, "ai_model", None, before=old, after=req.model)
+    return {"model": await models.current()}
 
 
 @router.get("/log")

@@ -41,6 +41,9 @@ def test_external_program_error_shows_its_message():
 
 def test_kinds():
     assert alerts.why(KeyError("x"))[0] == "🐞 Kod xatosi"
+    assert "OpenAI band (503)" in alerts.why(RuntimeError("OpenAI javob bermadi: OpenAI 503 (gpt-6.1-terra)"))[1]
+    assert "OPENAI_API_KEY" in alerts.why(RuntimeError("OpenAI 401: invalid key"))[1]
+    assert "Billing" in alerts.why(RuntimeError("OpenAI javob bermadi: OpenAI 429 (gpt-6.1-terra)"))[1]
     assert "bloklagan" in alerts.why(RuntimeError("Forbidden: bot was blocked by the user"))[1]
 
 
