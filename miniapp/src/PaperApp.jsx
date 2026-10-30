@@ -9,6 +9,7 @@ import Header from './components/Header.jsx';
 import SegmentedControl from './components/SegmentedControl.jsx';
 import { useTelegram } from './hooks/useTelegram.js';
 import { useMainButton } from './hooks/useMainButton.js';
+import { useAvatar } from './hooks/useAvatar.js';
 import { getMe, orderPaper, saveLang } from './api/client.js';
 import { useI18n } from './i18n/index.jsx';
 import { money } from './i18n/messages.js';
@@ -38,6 +39,7 @@ function Stepper({ value, onChange, text, dec, inc }) {
 export default function PaperApp() {
   const { tg, user, initData, isTelegram, showAlert, askConfirm, hapticSelect, hapticNotify } = useTelegram();
   const { t, lang, setLang } = useI18n();
+  const avatar = useAvatar({ user, initData, isTelegram });
   const params = new URLSearchParams(window.location.search);
   const [form, setForm] = useState({
     topic: '', subject: '', doc_type: params.get('type') === 'mustaqil' ? 'mustaqil' : 'referat', language: lang, pages: 15, wishes: '',
@@ -118,7 +120,7 @@ export default function PaperApp() {
 
   return (
     <div className="mx-auto min-h-screen max-w-2xl bg-tg-bg px-4 pb-8 text-tg-text">
-      <Header user={user?.first_name ? user : { ...user, ...account?.user }} onLangChange={handleUiLang} subtitle={t('pSubtitle')} />
+      <Header user={{ ...(user?.first_name ? user : { ...user, ...account?.user }), photo_url: avatar }} onLangChange={handleUiLang} subtitle={t('pSubtitle')} />
       {account && (
         <p className="-mt-3 mb-5 text-[13px] text-tg-hint">
           <span className="font-semibold text-tg-text">{t('balance', { balance: money(account.balance, lang) })}</span> · {t('topupHint')}

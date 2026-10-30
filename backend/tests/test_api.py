@@ -176,3 +176,46 @@ async def test_paper_bad_input_is_422_and_free_of_charge(client):
     for bad in ({"topic": "ab"}, {"topic": "Mavzu", "pages": 40}, {"topic": "Mavzu", "format": {"margin_left": 5}}):
         assert (await client.post("/api/paper", headers=h(), json=bad)).status_code == 422
     assert await billing.balance(U) == 10000
+
+
+# ---------------------------------------------------------------- the profile photo (opened from the bottom keyboard)
+
+async def test_profile_photo_comes_through_the_server_and_is_cached(client, tg, monkeypatch, tmp_path):
+    from app.core import telegram
+    from app.services import users
+    monkeypatch.setattr(users, "AVATARS", tmp_path)
+    photos = {"photos": [[{"file_id": "s", "width": 80}, {"file_id": "m", "width": 320}, {"file_id": "l", "width": 640}]]}
+
+    async def call(method, **kw):
+        tg.calls.append((method, kw.get("json") or {}))
+        return {"ok": True, "result": photos if method == "getUserProfilePhotos" else {}}
+    monkeypatch.setattr(telegram, "call", call)
+    tg.files.update({"m": b"\xff\xd8JPEG-320"})
+    await add_user(U)
+    r = await client.get("/api/me/photo", headers={"X-App-Token": make_app_token(U)})
+    assert r.status_code == 200 and r.content == b"\xff\xd8JPEG-320" and r.headers["content-type"] == "image/jpeg"
+    assert (await client.get("/api/me/photo", headers=h())).content == b"\xff\xd8JPEG-320"
+    assert [m for m, _ in tg.calls].count("getUserProfilePhotos") == 1  # the second time from disk
+    assert (await client.get("/api/me/photo")).status_code == 401  # someone else's photo: no
+
+
+async def test_no_photo_is_404_and_telegram_is_not_asked_again(client, tg, monkeypatch, tmp_path):
+    from app.core import telegram
+    from app.services import users
+    monkeypatch.setattr(users, "AVATARS", tmp_path)
+    asked = []
+
+    async def call(method, **kw):
+        asked.append(method)
+        return {"ok": True, "result": {"photos": [], "total_count": 0}}
+    monkeypatch.setattr(telegram, "call", call)
+    await add_user(U)
+    for _ in range(2):
+        assert (await client.get("/api/me/photo", headers=h())).status_code == 404
+    assert asked == ["getUserProfilePhotos"]
+
+    async def down(method, **kw):
+        raise ConnectionError("telegram down")
+    monkeypatch.setattr(telegram, "call", down)
+    (tmp_path / f"{U}.none").unlink()
+    assert (await client.get("/api/me/photo", headers=h())).status_code == 404  # an error is a missing photo, not a 500

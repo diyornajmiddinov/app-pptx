@@ -7,6 +7,7 @@ import DeckList from './components/DeckList.jsx';
 import EditorPanel from './components/EditorPanel.jsx';
 import { useTelegram } from './hooks/useTelegram.js';
 import { useMainButton } from './hooks/useMainButton.js';
+import { useAvatar } from './hooks/useAvatar.js';
 import { generatePresentation, getDecks, getMe, restylePresentation, saveLang } from './api/client.js';
 import { useI18n } from './i18n/index.jsx';
 import { money } from './i18n/messages.js';
@@ -17,6 +18,7 @@ const SAVED_KEYS = ['author', 'org', 'loc'];
 export default function App() {
   const { tg, user, initData, isTelegram, showAlert, askConfirm, hapticSelect, hapticNotify } = useTelegram();
   const { t, lang, setLang } = useI18n();
+  const avatar = useAvatar({ user, initData, isTelegram });
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [slideCount, setSlideCount] = useState(12);
@@ -141,7 +143,7 @@ export default function App() {
 
   return (
     <div className="mx-auto min-h-screen max-w-2xl bg-tg-bg px-4 pb-8 text-tg-text">
-      <Header user={user?.first_name ? user : { ...user, ...account?.user }} onLangChange={handleUiLang} />
+      <Header user={{ ...(user?.first_name ? user : { ...user, ...account?.user }), photo_url: avatar }} onLangChange={handleUiLang} />
       {account && (
         <p className="-mt-3 mb-5 text-[13px] text-tg-hint">
           <span className="font-semibold text-tg-text">{t('balance', { balance: money(account.balance, lang) })}</span> · {t('topupHint')}

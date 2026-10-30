@@ -7,13 +7,14 @@ POST /api/restyle    one of the user's decks in another template (cheaper; one s
 POST /api/paper      referat / mustaqil ish (the bot's two buttons open the paper form): Word + PDF to the chat
 GET  /api/decks      the user's presentations, newest first
 GET/POST /api/me     language; GET also returns the balance and prices (money is added only in the bot)
+GET  /api/me/photo   the user's Telegram profile photo (the header, when Telegram gives no photo_url)
 GET  /api/templates  the 40 templates
 """
 import json
 import logging
 from typing import Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from app.api.papers import PaperRequest
@@ -23,7 +24,7 @@ from app.core.auth import telegram_user
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_message
 from app.services import app_settings, billing, decks, jobs
-from app.services.users import lang_of, set_lang, touch
+from app.services.users import avatar, lang_of, set_lang, touch
 from app.texts import t
 
 log = logging.getLogger("api")
@@ -116,6 +117,19 @@ async def restyle(req: RestyleRequest, tg_user: dict = Depends(telegram_user)):
 @router.get("/api/decks")
 async def list_decks(tg_user: dict = Depends(telegram_user)):
     return {"decks": await decks.list_all(tg_user["id"])}
+
+
+@router.get("/api/me/photo")
+async def my_photo(tg_user: dict = Depends(telegram_user)):
+    """The profile photo for the header: Telegram gives the Mini App no photo_url when it is opened from the bottom keyboard."""
+    try:
+        data = await avatar(tg_user["id"])
+    except Exception:  # Telegram unreachable: the header shows the initial instead
+        log.warning("profile photo of %s not loaded", tg_user["id"])
+        data = None
+    if not data:
+        raise HTTPException(404, "No photo")
+    return Response(data, media_type="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
 
 
 @router.get("/api/me")

@@ -43,4 +43,11 @@ export const getDecks = ({ initData }) => request('GET', '/api/decks', { initDat
 export const getMe = ({ initData }) => request('GET', '/api/me', { initData });
 /** { url } — signed link to the desktop editor (opened in the external browser) */
 export const getEditorLink = ({ initData }) => request('GET', '/api/editor/link', { initData });
+/** The profile photo (a Blob), or null when the user has none the bot may see. */
+export async function getPhoto({ initData }) {
+  const res = await fetch(`${API_BASE}/api/me/photo`, {
+    headers: { 'X-Telegram-Init-Data': initData || '', ...(APP_TOKEN ? { 'X-App-Token': APP_TOKEN } : {}) },
+  });
+  return res.ok ? res.blob() : null;
+}
 export const saveLang = ({ initData, lang }) => request('POST', '/api/me', { initData, payload: { lang } });
