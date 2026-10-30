@@ -150,3 +150,44 @@ async def test_build_presentation_end_to_end_with_fakes(tmp_path, monkeypatch):
     _, new = await pipeline.switch_template(c, 7, ask=restyler)
     assert [s.get("image") for s in new["slides"]] == [s.get("image") for s in c["slides"]]
     assert next(s for s in new["slides"] if s["type"] == "sources")["items"] == next(s for s in c["slides"] if s["type"] == "sources")["items"]
+
+
+# ---------------------------------------------------------------- OpenAI (AI_PROVIDER=openai)
+
+async def test_openai_answers_retries_when_busy_and_reports_usage(net, monkeypatch):
+    answers, seen = net
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    ok = {"choices": [{"message": {"content": '{"ok": 1}'}, "finish_reason": "stop"}],
+          "usage": {"prompt_tokens": 7, "completion_tokens": 5, "total_tokens": 12, "completion_tokens_details": {"reasoning_tokens": 2}}}
+    answers["api.openai.com"] = [httpx.Response(429), httpx.Response(503), httpx.Response(200, json=ok)]
+    usage = []
+
+    async def record(rec):
+        usage.append(rec)
+    monkeypatch.setattr(models, "on_usage", record)
+    assert await models.openai([{"role": "user", "content": "x"}], "gpt-6.1-terra") == '{"ok": 1}'
+    assert [u["status"] for u in usage] == ["429", "503", "ok"] and len(seen) == 3
+    assert usage[-1]["model"] == "gpt-6.1-terra" and usage[-1]["output_tokens"] == 5 and usage[-1]["thinking_tokens"] == 2
+
+
+async def test_openai_drops_the_reasoning_setting_a_model_rejects_and_stops_on_bad_requests(net, monkeypatch):
+    answers, seen = net
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    ok = {"choices": [{"message": {"content": "{}"}}]}
+    answers["api.openai.com"] = [httpx.Response(400, text="Unsupported parameter: 'reasoning_effort'"), httpx.Response(200, json=ok)]
+    assert await models.openai([{"role": "user", "content": "x"}]) == "{}"
+    assert len(seen) == 2
+    answers["api.openai.com"] = [httpx.Response(401, text="invalid key")]
+    with pytest.raises(RuntimeError, match="OpenAI 401"):
+        await models.openai([{"role": "user", "content": "x"}])
+
+
+async def test_the_provider_is_chosen_by_ai_provider(net, monkeypatch):
+    answers, _ = net
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    answers["api.openai.com"] = [httpx.Response(200, json={"choices": [{"message": {"content": '{"from": "openai"}'}}]})]
+    answers["generativelanguage"] = [httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": '{"from": "gemini"}'}]}}]})]
+    monkeypatch.delenv("AI_PROVIDER", raising=False)
+    assert "gemini" in await models.ai([{"role": "user", "content": "x"}])
+    monkeypatch.setenv("AI_PROVIDER", "openai")
+    assert "openai" in await models.ai([{"role": "user", "content": "x"}])

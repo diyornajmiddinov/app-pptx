@@ -165,6 +165,7 @@ bo'yicha alifbo tartibida), oxirida internet manbalari. Rasmiylashtirish (GOST 7
   O‘zbekiston Respublikasining “Ta’lim to‘g‘risida”gi Qonuni. 2020-yil 23-sentabr, O‘RQ-637-son.
   Familiya I.O. Kitob nomi: darslik. – Toshkent: Nashriyot, 2021. – 256 b.
   O‘zbekiston Respublikasi Qonunchilik ma’lumotlari milliy bazasi. – URL: https://lex.uz
+Xorijiy manbaning nomini ASL tilida qoldir (tarjima qilma), izoh yoki tushuntirish qatorlarini yozma — faqat manbalar.
 Hujjatning sanasi va raqamini faqat aniq bilsang yoz, aks holda faqat nomi va yili. Saytlar uchun faqat asosiy manzil
 (https://lex.uz kabi), sahifa yo'lini to'qima.
 Raqam qo'yma — ro'yxat tartibi raqam bo'ladi.
