@@ -21,6 +21,7 @@ export const MORE = {
     support: "Bog'lanish", oferta: 'Ommaviy oferta', privacy: 'Maxfiylik siyosati', legalAgree: "Kirish orqali siz {oferta} va {privacy} shartlariga rozilik bildirasiz.",
     legalBack: '← Bosh sahifa', updated: 'Tahrir sanasi', k_promo: 'Promokod', k_referral: 'Taklif bonusi',
     // referat / mustaqil ish
+    e_tooManyJobs: "Oldingi buyurtmalaringiz hali tayyorlanmoqda. Ular tugagach qayta urining.",
     tabPaper: 'Referat', k_paper: 'Referat',
     paperTitle: 'Referat va mustaqil ish',
     paperLead: "Institut talablariga mos Word fayl: titul varaq, sahifa raqamlari bilan mundarija, kirish, boblar, xulosa va adabiyotlar ro'yxati.",
@@ -82,6 +83,7 @@ export const MORE = {
     sample: 'Скачать пример', sampleHint: 'Нажмите на шаблон — скачается пример презентации.',
     support: 'Связаться', oferta: 'Публичная оферта', privacy: 'Политика конфиденциальности', legalAgree: 'Входя, вы соглашаетесь с условиями: {oferta} и {privacy}.',
     legalBack: '← На главную', updated: 'Редакция от', k_promo: 'Промокод', k_referral: 'Бонус за приглашение',
+    e_tooManyJobs: 'Предыдущие заказы ещё готовятся. Попробуйте, когда они будут готовы.',
     tabPaper: 'Реферат', k_paper: 'Реферат',
     paperTitle: 'Реферат и самостоятельная работа',
     paperLead: 'Файл Word по требованиям вуза: титульный лист, содержание с номерами страниц, введение, главы, заключение и список литературы.',
@@ -143,6 +145,7 @@ export const MORE = {
     sample: 'Download a sample', sampleHint: 'Click a template to download a sample presentation.',
     support: 'Contact', oferta: 'Public offer', privacy: 'Privacy policy', legalAgree: 'By signing in you agree to the {oferta} and the {privacy}.',
     legalBack: '← Home', updated: 'Version of', k_promo: 'Promo code', k_referral: 'Invite bonus',
+    e_tooManyJobs: 'Your previous orders are still being made. Try again when they are ready.',
     tabPaper: 'Essay', k_paper: 'Essay',
     paperTitle: 'Essay and independent work',
     paperLead: 'A Word file laid out the way universities ask: title page, contents with page numbers, introduction, chapters, conclusion and references.',

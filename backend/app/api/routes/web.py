@@ -221,9 +221,15 @@ class RestyleRequest(BaseModel):
     deck_id: str = Field(pattern=r"^\d{1,20}$")
 
 
-async def _charge(uid: int, price: int, kind: str):
-    if await billing.charge(uid, price, kind) is None:
-        raise HTTPException(402, "lowBalance")
+async def _order(uid: int, kind: str, payload: dict, price: int | None = None) -> tuple[int, int]:
+    """Charge and queue in one transaction (jobs.order): a refused order takes no money."""
+    try:
+        job_id, ahead, _ = await jobs.order(kind, uid, payload, price)
+    except jobs.LowBalance:
+        raise HTTPException(402, "lowBalance") from None
+    except jobs.TooMany:
+        raise HTTPException(429, "tooManyJobs") from None
+    return job_id, ahead
 
 
 @router.post("/generate", status_code=202)
@@ -233,10 +239,7 @@ async def generate(req: GenerateRequest, uid: int = Depends(web_user)):
     payload = {"user_id": uid, "via": "web", **req.model_dump(exclude_none=True)}
     if not payload.get("source"):
         payload.pop("source", None)
-    ordered = await jobs.order_generate(uid, payload)  # the price is fixed here: a later change does not alter the refund
-    if ordered is None:
-        raise HTTPException(402, "lowBalance")
-    job_id, ahead, _ = ordered
+    job_id, ahead = await _order(uid, "generate", payload)  # the price is fixed here: a later change does not alter the refund
     await growth.count("generates")
     return {"job": job_id, "ahead": ahead}
 
@@ -272,9 +275,8 @@ async def restyle(req: RestyleRequest, uid: int = Depends(web_user)):
         raise HTTPException(404, "notFound")
     if deck["request"]["template_id"] == req.template_id:
         raise HTTPException(422, "sameTemplate")
-    price = (await app_settings.get())["price_restyle"]
-    await _charge(uid, price, "restyle")
-    job_id, ahead = await jobs.enqueue("restyle", uid, {"deck_id": req.deck_id, "template_id": req.template_id}, price)
+    job_id, ahead = await _order(uid, "restyle", {"deck_id": req.deck_id, "template_id": req.template_id},
+                                 (await app_settings.get())["price_restyle"])
     return {"job": job_id, "ahead": ahead}
 
 
@@ -364,12 +366,10 @@ async def paper_outline(req: PaperOutlineRequest, uid: int = Depends(web_user)):
 
 @router.post("/paper", status_code=202)
 async def paper(req: PaperRequest, uid: int = Depends(web_user)):
-    price = (await app_settings.get())["price_paper"]
-    await _charge(uid, price, "paper")
     payload = {"user_id": uid, "via": "web", **req.model_dump(exclude_none=True)}
     if not payload.get("source"):
         payload.pop("source", None)
-    job_id, ahead = await jobs.enqueue("paper", uid, payload, price)
+    job_id, ahead = await _order(uid, "paper", payload, (await app_settings.get())["price_paper"])
     return {"job": job_id, "ahead": ahead}
 
 
@@ -418,7 +418,7 @@ async def download(deck_id: str, uid: int = Depends(web_user)):
     tmp = Path(tempfile.mkdtemp(prefix="slideai-web-"))
     try:
         async with machine_lock_async("drawing"):  # node draws one deck at a time on the server: 2 CPUs, 2 GB
-            path = await run_in_threadpool(render_sync, deck["content"], deck["request"]["template_id"], tmp / "deck.pptx")
+            path = await run_in_threadpool(render_sync, deck["content"], deck["request"]["template_id"], tmp / "deck.pptx", False)
     except Exception:
         shutil.rmtree(tmp, ignore_errors=True)
         raise
@@ -574,7 +574,8 @@ def _sample(template_id: int) -> Path:
         return out
     SAMPLES.mkdir(parents=True, exist_ok=True)
     tmp = out.with_suffix(f".{os.getpid()}.tmp.pptx")  # two processes drawing the same sample do not share a file
-    render_sync(jobs.demo_content("Soliq islohotlari va iqtisodiy o'sish", {"author": "SlideAI", "loc": "Toshkent"}), template_id, tmp)
+    render_sync(jobs.demo_content("Soliq islohotlari va iqtisodiy o'sish", {"author": "SlideAI", "loc": "Toshkent"}), template_id, tmp,
+                lock=False)  # the caller holds the "drawing" lock
     tmp.replace(out)
     return out
 

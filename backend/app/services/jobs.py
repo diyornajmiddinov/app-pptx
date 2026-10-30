@@ -27,6 +27,15 @@ log = logging.getLogger("jobs")
 TMP = Path(tempfile.gettempdir())
 MAX_ATTEMPTS = 2  # a job interrupted by a restart is run once more, then refunded
 JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini busy for minutes) -> refunded
+MAX_ACTIVE = 3     # a user's jobs queued or running at once: one person cannot fill the queue for everybody
+
+
+class LowBalance(Exception):
+    pass
+
+
+class TooMany(Exception):
+    """The user already has MAX_ACTIVE jobs waiting."""
 
 
 # ---------------------------------------------------------------- queue
@@ -62,16 +71,21 @@ async def generate_price(user_id: int) -> int:
     return _price(await app_settings.get(), await db.pool().fetchval(_HAS_DECK, user_id))
 
 
-async def order_generate(user_id: int, payload: dict) -> tuple[int, int, int] | None:
-    """Charge and queue a new deck in one transaction, under the user's balance lock: two requests at the same
-    moment cannot both get the first-deck price. Returns (job id, jobs ahead, price), or None if the balance is low."""
-    cfg = await app_settings.get()
+async def order(kind: str, user_id: int, payload: dict, price: int | None = None) -> tuple[int, int, int]:
+    """Charge and queue paid work in one transaction, under the user's balance lock: a refused order takes no money,
+    and two requests at the same moment cannot both get the first-deck price. price=None: a new deck at this user's
+    price (generate_price). Returns (job id, jobs ahead, price). Raises LowBalance or TooMany."""
+    cfg = await app_settings.get() if price is None else None
     async with db.transaction() as con:
         await billing.lock_in(con, user_id)
-        price = _price(cfg, await con.fetchval(_HAS_DECK, user_id))
-        if await billing.apply_in(con, user_id, -price, "generate", None, False) is None:
-            return None
-        job_id, ahead = await _enqueue_in(con, "generate", user_id, payload, price)
+        if await con.fetchval("SELECT count(*) FROM jobs WHERE user_id = $1 AND state IN ('queued', 'running')", user_id) >= MAX_ACTIVE:
+            raise TooMany
+        if cfg is not None:
+            price = _price(cfg, await con.fetchval(_HAS_DECK, user_id))
+        assert price is not None
+        if await billing.apply_in(con, user_id, -price, kind, None, False) is None:
+            raise LowBalance
+        job_id, ahead = await _enqueue_in(con, kind, user_id, payload, price)
     return job_id, ahead, price
 
 

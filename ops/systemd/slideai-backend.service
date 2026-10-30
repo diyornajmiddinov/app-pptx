@@ -8,13 +8,16 @@ StartLimitBurst=10
 
 [Service]
 Type=notify
-NotifyAccess=main
+NotifyAccess=all
 WatchdogSec=120
 WorkingDirectory=/home/slideai-src/slideai/backend
 EnvironmentFile=/home/slideai-src/slideai/backend/.env
-ExecStart=/home/slideai-src/slideai/backend/.venv/bin/uvicorn app.api.main:app --host 127.0.0.1 --port 8000 --proxy-headers
+ExecStart=/home/slideai-src/slideai/backend/.venv/bin/uvicorn app.api.main:app --host 127.0.0.1 --port 8000 --proxy-headers --workers 2 --timeout-graceful-shutdown 30
 Restart=always
 RestartSec=3
+# 2 API processes (2 CPUs): one busy or restarting does not stop the site and the bot; state is in PostgreSQL
+# Kept alive before the worker when memory runs out (LibreOffice / node live in the worker)
+OOMScoreAdjust=-300
 
 [Install]
 WantedBy=multi-user.target

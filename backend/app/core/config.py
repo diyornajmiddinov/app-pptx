@@ -37,7 +37,8 @@ class Settings(BaseSettings):
 
     # storage and jobs
     database_url: str = Field(pattern=r"^postgres(ql)?://")
-    worker_concurrency: int = Field(2, ge=1, le=8)  # presentations drawn at the same time (2 CPUs, 2 GB RAM)
+    worker_concurrency: int = Field(5, ge=1, le=12)  # jobs at the same time: they mostly wait for the AI; node and
+                                                      # LibreOffice run one at a time anyway (core/locks.py)
     demo: bool = Field(False, validation_alias="SLIDEAI_DEMO")  # no AI / Pexels: engine/content/soliq.json
 
     # billing, UZS (so'm); the admin panel can override the prices (app_settings)

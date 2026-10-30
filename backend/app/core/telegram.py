@@ -1,4 +1,10 @@
-"""Minimal Telegram Bot API calls used by the backend and the bot (async, one shared httpx client per process)."""
+"""Minimal Telegram Bot API calls used by the backend and the bot (async, one shared httpx client per process).
+
+When many users act at once Telegram answers 429 "retry after N s": every call waits and tries again (up to 3 times).
+A request that never reached Telegram (no connection) is tried again too; anything else is not, so nothing is sent twice.
+"""
+import asyncio
+
 import httpx
 
 from app.core.config import settings
@@ -21,10 +27,34 @@ async def close():
         _client = None
 
 
+RETRIES = 3
+MAX_WAIT = 30  # s: a longer retry_after is not waited for
+
+
+def _retry_after(r: httpx.Response) -> float | None:
+    try:
+        return float(((r.json() or {}).get("parameters") or {}).get("retry_after") or 1)
+    except ValueError:
+        return 1
+
+
 async def call(method: str, **kw):
-    r = await client().post(API.format(token=settings.bot_token, method=method), **kw)
-    r.raise_for_status()
-    return r.json()
+    for attempt in range(RETRIES + 1):
+        for f in (kw.get("files") or {}).values():  # a file being sent again is read from the start
+            f[1].seek(0)
+        try:
+            r = await client().post(API.format(token=settings.bot_token, method=method), **kw)
+        except (httpx.ConnectError, httpx.ConnectTimeout, httpx.PoolTimeout):  # not sent at all
+            if attempt == RETRIES:
+                raise
+            await asyncio.sleep(1 + attempt)
+            continue
+        if r.status_code == 429 and attempt < RETRIES and (wait := _retry_after(r)) is not None and wait <= MAX_WAIT:
+            await asyncio.sleep(wait)
+            continue
+        r.raise_for_status()
+        return r.json()
+    raise AssertionError("unreachable")
 
 
 async def send_message(chat_id: int, text: str, reply_markup: dict | None = None, parse_mode: str | None = None):

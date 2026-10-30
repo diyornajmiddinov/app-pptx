@@ -89,3 +89,34 @@ async def test_backend_sets_the_bot_up_and_survives_telegram_errors(tg, monkeypa
     assert not task.done() and "webhook'ini o'rnatib bo'lmadi" in caplog.text  # logged; the API keeps running
     task.cancel()
     await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_telegram_calls_wait_on_429_and_retry_unsent_requests(monkeypatch):
+    import httpx
+
+    from app.core import telegram
+    seen, waits = [], []
+    answers = [httpx.Response(429, json={"ok": False, "parameters": {"retry_after": 2}}), httpx.ConnectError("down"),
+               httpx.Response(200, json={"ok": True, "result": 1})]
+
+    class Client:
+        async def post(self, url, **kw):
+            seen.append(kw["files"]["document"][1].read() if "files" in kw else url)
+            a = answers.pop(0)
+            if isinstance(a, Exception):
+                raise a
+            return a.__class__(a.status_code, content=a.content, request=httpx.Request("POST", url))
+
+    async def sleep(s):
+        waits.append(s)
+    from conftest import REAL_CALL
+    monkeypatch.setattr(telegram, "call", REAL_CALL)
+    monkeypatch.setattr(telegram, "_client", Client())
+    monkeypatch.setattr(telegram.asyncio, "sleep", sleep)
+    import io
+    assert (await telegram.call("sendDocument", files={"document": ("a.pdf", io.BytesIO(b"PDF"))}))["result"] == 1
+    assert seen == [b"PDF"] * 3 and waits == [2.0, 2]  # the file is sent whole every time; waited as Telegram asked
+    answers[:] = [httpx.Response(400, json={"ok": False})]
+    with pytest.raises(httpx.HTTPStatusError):
+        await telegram.call("sendMessage", json={})  # other errors: not retried
+    monkeypatch.setattr(telegram, "_client", None)

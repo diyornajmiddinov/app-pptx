@@ -51,11 +51,16 @@ class LangRequest(BaseModel):
     lang: Literal["uz", "ru", "en"]
 
 
-async def _charge_or_402(user_id: int, price: int, kind: str, lang: str):
-    """Take the price from the UZS balance; if it is too low, the bot sends top-up buttons and the API answers 402."""
-    if await billing.charge(user_id, price, kind) is None:
-        await send_low_balance(user_id, lang, price)
-        raise HTTPException(402, "Balans yetarli emas")
+async def _order(user_id: int, lang: str, kind: str, payload: dict, price: int | None = None) -> tuple[int, int, int]:
+    """Charge and queue (jobs.order). Balance too low: the bot sends top-up buttons and the API answers 402;
+    MAX_ACTIVE jobs already waiting: 429."""
+    try:
+        return await jobs.order(kind, user_id, payload, price)
+    except jobs.LowBalance:
+        await send_low_balance(user_id, lang, price if price is not None else await jobs.generate_price(user_id))
+        raise HTTPException(402, "Balans yetarli emas") from None
+    except jobs.TooMany:
+        raise HTTPException(429, "Oldingi buyurtmalaringiz hali tayyorlanmoqda") from None
 
 
 async def _queued(user_id: int, lang: str, text: str, ahead: int):
@@ -73,11 +78,7 @@ async def generate(req: GenerateRequest, tg_user: dict = Depends(telegram_user))
     if req.user_id != tg_user["id"]:
         raise HTTPException(403, "User mismatch")
     lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
-    ordered = await jobs.order_generate(tg_user["id"], req.model_dump())  # the first deck may be free (admin panel)
-    if ordered is None:
-        await send_low_balance(tg_user["id"], lang, await jobs.generate_price(tg_user["id"]))
-        raise HTTPException(402, "Balans yetarli emas")
-    job_id, ahead, _ = ordered
+    job_id, ahead, _ = await _order(tg_user["id"], lang, "generate", req.model_dump())  # the first deck may be free (admin panel)
     await _queued(tg_user["id"], lang, t(lang, "queued", topic=req.topic), ahead)
     return {"status": "queued", "job": job_id, "ahead": ahead}
 
@@ -92,9 +93,8 @@ async def restyle(req: RestyleRequest, tg_user: dict = Depends(telegram_user)):
     if deck["request"]["template_id"] == req.template_id:
         raise HTTPException(422, "Bu taqdimot allaqachon shu shablonda")
     lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
-    price = (await app_settings.get())["price_restyle"]
-    await _charge_or_402(tg_user["id"], price, "restyle", lang)
-    job_id, ahead = await jobs.enqueue("restyle", tg_user["id"], {"deck_id": req.deck_id, "template_id": req.template_id}, price)
+    job_id, ahead, _ = await _order(tg_user["id"], lang, "restyle", {"deck_id": req.deck_id, "template_id": req.template_id},
+                                    (await app_settings.get())["price_restyle"])
     await _queued(tg_user["id"], lang, t(lang, "restyle_queued", topic=deck["content"]["meta"]["topic"]), ahead)
     return {"status": "queued", "job": job_id, "ahead": ahead}
 

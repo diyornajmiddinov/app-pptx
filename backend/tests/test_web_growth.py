@@ -241,7 +241,7 @@ async def test_delete_only_own_deck(client, tg):  # noqa: F811
 async def test_sample_is_drawn_once_and_cached(client, monkeypatch, tmp_path):  # noqa: F811
     drawn = []
 
-    def fake_render(content, template_id, out):
+    def fake_render(content, template_id, out, lock=True):
         drawn.append(template_id); out.write_bytes(b"PK-sample"); return out
     monkeypatch.setattr(web, "render_sync", fake_render)
     monkeypatch.setattr(web, "SAMPLES", tmp_path)

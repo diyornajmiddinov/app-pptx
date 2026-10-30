@@ -20,8 +20,8 @@ MAX_ATTEMPTS = 5                   # wrong codes before that code is dead
 SESSION_DAYS = 30
 RESEND_AFTER = 60                  # s between two codes to one user
 CODES_PER_HOUR_USER = 5
-CODES_PER_HOUR_IP = 10
-FAILS_PER_HOUR_IP = 30
+CODES_PER_HOUR_IP = 60               # one address can be a whole classroom or a mobile operator's NAT
+FAILS_PER_HOUR_IP = 150              # guessing is stopped per code (MAX_ATTEMPTS) and per user (CODES_PER_HOUR_USER)
 
 
 class AuthError(Exception):
@@ -115,12 +115,14 @@ async def verify(login_id: str, code: str, ip: str | None, user_agent: str | Non
 
 
 async def session(token: str) -> int | None:
-    """The signed-in user, or None. last_seen is refreshed at most every 5 minutes."""
+    """The signed-in user, or None. A read; last_seen is written at most every 5 minutes (not on every request)."""
     if not token:
         return None
-    return await db.pool().fetchval(
-        "UPDATE web_sessions SET last_seen = CASE WHEN last_seen < now() - interval '5 minutes' THEN now() ELSE last_seen END "
-        "WHERE token_hash = $1 AND expires > now() RETURNING user_id", _token_hash(token))
+    row = await db.pool().fetchrow("SELECT user_id, last_seen < now() - interval '5 minutes' AS stale FROM web_sessions "
+                                   "WHERE token_hash = $1 AND expires > now()", _token_hash(token))
+    if row and row["stale"]:
+        await db.pool().execute("UPDATE web_sessions SET last_seen = now() WHERE token_hash = $1", _token_hash(token))
+    return row["user_id"] if row else None
 
 
 async def logout(token: str, everywhere: bool = False):

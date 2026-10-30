@@ -89,6 +89,8 @@ async def test_restyle_rules(client):
 
 
 async def test_busy_worker_tells_how_many_are_ahead(client, tg, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "worker_concurrency", 2)
     await add_user(U, balance=50000)
     body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}
     for _ in range(3):
@@ -119,9 +121,11 @@ async def test_two_requests_at_once_get_one_free_deck(tg):
     await app_settings.set_many({"first_generate_price": 0}, 1000)
     await add_user(U, balance=10000)
     payload = {"topic": "Mavzu", "template_id": 1, "slide_count": 8}
-    results = await asyncio.gather(*(jobs.order_generate(U, payload) for _ in range(4)))
-    prices = sorted(r[2] for r in results if r)
-    assert prices == [0, 5000, 5000] and results.count(None) == 1  # 10 000 so'm: one free deck + two paid, the fourth refused
+    results = await asyncio.gather(*(jobs.order("generate", U, payload) for _ in range(3)), return_exceptions=True)
+    assert sorted(r[2] for r in results) == [0, 5000, 5000]  # 10 000 so'm: one free deck + two paid
+    await db.pool().execute("UPDATE jobs SET state = 'done'")
+    with pytest.raises(jobs.LowBalance):
+        await jobs.order("generate", U, payload)
     assert await billing.balance(U) == 0 and not await billing.reconcile()
 
 
@@ -133,8 +137,18 @@ async def test_a_failed_first_deck_leaves_the_free_one(tg, monkeypatch):
     async def broken(*a, **k):
         raise RuntimeError("test")
     monkeypatch.setattr(jobs, "build", broken)
-    assert (await jobs.order_generate(U, {"topic": "Mavzu", "template_id": 1, "slide_count": 8}))[2] == 0
+    assert (await jobs.order("generate", U, {"topic": "Mavzu", "template_id": 1, "slide_count": 8}))[2] == 0
     await jobs.run_pending()  # failed, "refunded" 0
     assert await jobs.generate_price(U) == 0  # still the first deck
     await db.pool().execute("INSERT INTO decks (id, user_id, request, content) VALUES ('1', $1, '{}', '{}')", U)
     assert await jobs.generate_price(U) == 5000  # a deck from before the jobs table counts too
+
+
+async def test_one_user_cannot_fill_the_queue(client, tg):
+    await add_user(U, balance=100000)
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "language": "uz", "topic": "Mavzu"}
+    codes = [(await client.post("/api/generate", headers=h(), json=body)).status_code for _ in range(jobs.MAX_ACTIVE + 1)]
+    assert codes == [202] * jobs.MAX_ACTIVE + [429]
+    assert await billing.balance(U) == 100000 - 5000 * jobs.MAX_ACTIVE  # the refused one took no money
+    await db.pool().execute("UPDATE jobs SET state = 'done' WHERE id = (SELECT min(id) FROM jobs)")
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202  # one finished: room again

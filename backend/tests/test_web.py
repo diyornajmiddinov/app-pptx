@@ -173,7 +173,7 @@ async def test_restyle_download_and_editor(client, tg, monkeypatch, tmp_path):
     assert (await client.post("/api/web/restyle", json={"deck_id": "123", "template_id": 5})).status_code == 202
     assert await billing.balance(U) == 8000
 
-    def fake_render(content, template_id, out):
+    def fake_render(content, template_id, out, lock=True):
         out.write_bytes(b"PK-pptx"); return out
     monkeypatch.setattr(web, "render_sync", fake_render)
     r = await client.get("/api/web/decks/123/download")

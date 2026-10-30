@@ -30,6 +30,7 @@ from app.core import (
 
 ADMIN = 1000
 REAL_POST = alerts.post  # the fixtures below replace it; tests of post() itself use this
+REAL_CALL = telegram.call  # the same for the Telegram client
 TABLES = ("users", "balances", "ledger", "orders", "payme_txns", "click_txns", "decks", "app_settings",
           "broadcasts", "admin_log", "ai_usage", "pdf_drafts", "jobs", "web_logins", "web_sessions", "web_actions",
           "promo_codes", "promo_uses", "ref_codes", "referrals", "web_stats", "web_visitors", "papers")
@@ -44,7 +45,9 @@ async def database():
 
 @pytest.fixture(autouse=True)
 async def clean(database):
+    from app.services import app_settings
     await db.pool().execute(f"TRUNCATE {', '.join(TABLES)} RESTART IDENTITY CASCADE")
+    app_settings.forget()  # its short cache must not carry prices from one test to the next
 
 
 class FakeTelegram:

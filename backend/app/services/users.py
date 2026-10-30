@@ -4,14 +4,19 @@ from app.texts import LANGS
 
 
 async def touch(user: dict):
-    """Remember a Telegram user (an update's `from`, or the Mini App's initData user) and the time we saw them."""
+    """Remember a Telegram user (an update's `from`, or the Mini App's initData user) and the time we saw them.
+    The row is written only when something changed or last_seen is 5 minutes old: most requests write nothing."""
     if not user.get("id"):
         return
     await db.pool().execute(
         """INSERT INTO users (id, first_name, last_name, username, language_code) VALUES ($1, $2, $3, $4, $5)
            ON CONFLICT (id) DO UPDATE SET first_name = coalesce(excluded.first_name, users.first_name),
                last_name = coalesce(excluded.last_name, users.last_name), username = coalesce(excluded.username, users.username),
-               language_code = coalesce(excluded.language_code, users.language_code), last_seen = now()""",
+               language_code = coalesce(excluded.language_code, users.language_code), last_seen = now()
+           WHERE users.last_seen < now() - interval '5 minutes'
+              OR (users.first_name, users.last_name, users.username, users.language_code)
+                 IS DISTINCT FROM (coalesce(excluded.first_name, users.first_name), coalesce(excluded.last_name, users.last_name),
+                                   coalesce(excluded.username, users.username), coalesce(excluded.language_code, users.language_code))""",
         user["id"], user.get("first_name"), user.get("last_name"), user.get("username"), user.get("language_code"))
 
 

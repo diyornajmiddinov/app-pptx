@@ -17,6 +17,15 @@ from app.core.config import MIGRATIONS_DIR, settings
 
 MIGRATIONS = MIGRATIONS_DIR
 _pool: asyncpg.Pool | None = None
+COMMAND_TIMEOUT = 60  # s: a stuck query fails instead of holding a connection (and the request) forever
+
+
+async def _reset(con):
+    """On release to the pool. asyncpg's default resets the whole session (one extra round trip after every query);
+    our code leaves no session state behind (advisory locks are unlocked, listeners removed, transactions closed by
+    their context managers), so only a forgotten transaction is ended here."""
+    if con.is_in_transaction():
+        await con.execute("ROLLBACK")
 
 
 async def _init_conn(con):
@@ -29,7 +38,8 @@ async def connect(min_size: int = 1, max_size: int = 5):
     if _pool is None:
         if not settings.database_url:
             raise RuntimeError("DATABASE_URL is not set")
-        _pool = await asyncpg.create_pool(settings.database_url, min_size=min_size, max_size=max_size, init=_init_conn)
+        _pool = await asyncpg.create_pool(settings.database_url, min_size=min_size, max_size=max_size, init=_init_conn,
+                                          reset=_reset, command_timeout=COMMAND_TIMEOUT)
         async with _pool.acquire() as con:
             await migrate(con)
     return _pool

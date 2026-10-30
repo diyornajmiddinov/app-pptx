@@ -1,5 +1,6 @@
 """Draw a .pptx from content JSON with the Node engine (engine/fill.js)."""
 import asyncio
+import contextlib
 import json
 import os
 import subprocess
@@ -9,6 +10,7 @@ from pathlib import Path
 from pptx import Presentation
 
 from app.core.config import ENGINE_DIR
+from app.core.locks import machine_lock, machine_lock_async
 
 TIMEOUT = 180  # s
 
@@ -36,17 +38,20 @@ def _content_file(content: dict) -> str:
 
 
 async def render(content: dict, template_id: int, out_path: Path | str) -> Path:
-    """Async: a cancelled job (time limit) kills node instead of leaving it running."""
+    """Async: a cancelled job (time limit) kills node instead of leaving it running. One node on the server at a time
+    (the "drawing" lock): the worker runs several jobs at once, but they mostly wait for the AI, drawing takes ~1 s."""
     src = _content_file(content)
     cmd = ["node", "fill.js", str(template_id), src, str(out_path)]
-    proc = await asyncio.create_subprocess_exec(*cmd, cwd=ENGINE_DIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
     try:
-        out, err = await asyncio.wait_for(proc.communicate(), TIMEOUT)
-    except BaseException:  # timeout or cancelled
-        if proc.returncode is None:
-            proc.kill()
-            await proc.wait()
-        raise
+        async with machine_lock_async("drawing"):
+            proc = await asyncio.create_subprocess_exec(*cmd, cwd=ENGINE_DIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            try:
+                out, err = await asyncio.wait_for(proc.communicate(), TIMEOUT)
+            except BaseException:  # timeout or cancelled
+                if proc.returncode is None:
+                    proc.kill()
+                    await proc.wait()
+                raise
     finally:
         os.unlink(src)
     if proc.returncode:  # the same error type as subprocess.run(check=True): alerts.why explains it
@@ -54,12 +59,13 @@ async def render(content: dict, template_id: int, out_path: Path | str) -> Path:
     return await asyncio.to_thread(add_notes, Path(out_path), content)
 
 
-def render_sync(content: dict, template_id: int, out_path: Path | str) -> Path:
-    """For code that already runs in a thread (the editor's import)."""
+def render_sync(content: dict, template_id: int, out_path: Path | str, lock: bool = True) -> Path:
+    """For code that already runs in a thread (the editor's import). lock=False: the caller holds the "drawing" lock."""
     src = _content_file(content)
     try:
-        subprocess.run(["node", "fill.js", str(template_id), src, str(out_path)], cwd=ENGINE_DIR, check=True, timeout=TIMEOUT,
-                       capture_output=True, text=True)
+        with machine_lock("drawing") if lock else contextlib.nullcontext():
+            subprocess.run(["node", "fill.js", str(template_id), src, str(out_path)], cwd=ENGINE_DIR, check=True, timeout=TIMEOUT,
+                           capture_output=True, text=True)
     finally:
         os.unlink(src)
     return add_notes(Path(out_path), content)

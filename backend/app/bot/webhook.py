@@ -7,6 +7,7 @@ So there is no separate bot service. Back to polling: run app.bot.polling (it re
 `python -m app.bot.webhook` only installs the webhook and the commands, then exits.
 """
 import asyncio
+import contextlib
 import logging
 
 from app.bot import polling
@@ -61,13 +62,18 @@ async def serve():
             log.exception("Bot webhook'i uchun bazaga ulanib bo'lmadi")
             await asyncio.sleep(CHECK_EVERY)
             continue
+        leader = False
         try:
-            if await con.fetchval("SELECT pg_try_advisory_lock($1)", LEADER):
-                await _look_after()  # runs until the process stops (the lock goes with the connection)
+            leader = await con.fetchval("SELECT pg_try_advisory_lock($1)", LEADER)
+            if leader:
+                await _look_after()  # runs until the process stops (if it dies, PostgreSQL drops the lock with the connection)
         except Exception:
             log.exception("Bot webhook'ini kuzatish to'xtadi")
         finally:
-            await db.pool().release(con)  # asyncpg resets the session: the advisory lock is let go
+            if leader:  # the pool does not reset sessions (db._reset): let the lock go before the connection is reused
+                with contextlib.suppress(Exception):
+                    await asyncio.shield(con.execute("SELECT pg_advisory_unlock($1)", LEADER))
+            await db.pool().release(con)
         await asyncio.sleep(CHECK_EVERY)  # another process has it: try again later
 
 
