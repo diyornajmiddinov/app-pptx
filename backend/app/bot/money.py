@@ -9,13 +9,22 @@ card_ok:/card_no:<order> buttons -> the admin's choice credits the balance or re
 import html
 import logging
 
-from app.bot.keyboards import PROVIDER_NAMES, main_keyboard, open_keyboard, provider_keyboard, topup_keyboard, user_label
+from app.bot.keyboards import (
+    DANGER,
+    PROVIDER_NAMES,
+    SUCCESS,
+    main_keyboard,
+    open_keyboard,
+    provider_keyboard,
+    topup_keyboard,
+    user_label,
+)
 from app.core.config import settings
 from app.core.telegram import answer_callback, edit_caption, send_file_id, send_message
 from app.services import app_settings, billing, payments
 from app.services import images_pdf as pdfs
 from app.services.users import lang_of
-from app.texts import som, t
+from app.texts import esc, som, t
 
 log = logging.getLogger("bot")
 
@@ -23,7 +32,8 @@ log = logging.getLogger("bot")
 async def show_balance(chat_id: int, user_id: int, lang: str):
     cfg = await app_settings.get()
     await send_message(chat_id, t(lang, "balance", balance=som(await billing.balance(user_id), lang),
-                                  p_gen=som(cfg["price_generate"], lang), p_restyle=som(cfg["price_restyle"], lang)),
+                                  p_gen=som(cfg["price_generate"], lang), p_restyle=som(cfg["price_restyle"], lang),
+                                  p_paper=som(cfg["price_paper"], lang)),
                        topup_keyboard(lang, cfg["topup_amounts"]))
 
 
@@ -50,7 +60,7 @@ async def send_pay_link(chat_id: int, user_id: int, amount: int, lang: str, prov
         return
     url = payments.payme_link(order_id, amount) if provider == "payme" else payments.click_link(order_id, amount)
     await send_message(chat_id, t(lang, "pay_link", amount=som(amount, lang), provider=PROVIDER_NAMES[provider]),
-                       {"inline_keyboard": [[{"text": t(lang, "pay_btn", provider=PROVIDER_NAMES[provider]), "url": url}]]})
+                       {"inline_keyboard": [[{"text": t(lang, "pay_btn", provider=PROVIDER_NAMES[provider]), "url": url, "style": SUCCESS}]]})
 
 
 async def receive_screenshot(chat_id: int, user: dict, file_id: str, kind: str, caption: str, lang: str):
@@ -62,8 +72,8 @@ async def receive_screenshot(chat_id: int, user: dict, file_id: str, kind: str, 
     await send_message(chat_id, t(lang, "card_got", code=code, amount=som(order["amount"], lang)))
     for admin in settings.admin_ids:
         al = await lang_of(admin)
-        kb = {"inline_keyboard": [[{"text": t(al, "card_ok_btn"), "callback_data": f"card_ok:{order['id']}"},
-                                   {"text": t(al, "card_no_btn"), "callback_data": f"card_no:{order['id']}"}]]}
+        kb = {"inline_keyboard": [[{"text": t(al, "card_ok_btn"), "callback_data": f"card_ok:{order['id']}", "style": SUCCESS},
+                                   {"text": t(al, "card_no_btn"), "callback_data": f"card_no:{order['id']}", "style": DANGER}]]}
         text = t(al, "card_admin", code=code, amount=som(order["amount"], al), user=user_label(user), uid=user["id"])
         try:
             await send_file_id(admin, file_id, kind, text, kb)
@@ -81,7 +91,7 @@ async def card_decision(q: dict, approve: bool, order_id: int):
     m = q.get("message") or {}
     if m.get("message_id"):
         verdict = t(al, "card_admin_paid" if outcome == "paid" else "card_admin_rejected", admin=user_label(admin))
-        await edit_caption(m["chat"]["id"], m["message_id"], f"{m.get('caption', '')}\n\n{verdict}")
+        await edit_caption(m["chat"]["id"], m["message_id"], f"{esc(m.get('caption', ''))}\n\n<b>{verdict}</b>")  # HTML
     if outcome == "paid":
         await notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new})
     else:

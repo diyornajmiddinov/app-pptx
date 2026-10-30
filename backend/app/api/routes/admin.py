@@ -219,7 +219,7 @@ def _tg_error(e: httpx.HTTPError) -> str:
 @router.post("/users/{user_id}/message")
 async def message_user(user_id: int, req: Message, uid: int = Depends(admin_user)):
     try:
-        await send_message(user_id, req.text)
+        await send_message(user_id, req.text, parse_mode=None)  # as the admin typed it
     except httpx.HTTPError as e:
         raise HTTPException(400, f"Telegram: {_tg_error(e)}") from e
     await audit(uid, "message", user_id, text=req.text[:200])
@@ -341,7 +341,7 @@ class BroadcastReq(BaseModel):
 async def broadcast(req: BroadcastReq, uid: int = Depends(admin_user)):
     if req.test:
         try:
-            await send_message(uid, req.text)
+            await send_message(uid, req.text, parse_mode=None)  # as the admin typed it
         except httpx.HTTPError as e:
             raise HTTPException(400, f"Telegram: {_tg_error(e)}") from e
         return {"ok": True, "test": True}

@@ -15,12 +15,22 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from app.bot import money, pdf
-from app.bot.keyboards import BUTTONS, app_url, editor_keyboard, has_webapp, lang_keyboard, main_keyboard, open_keyboard, paper_url
+from app.bot.keyboards import (
+    BUTTONS,
+    PRIMARY,
+    app_url,
+    editor_keyboard,
+    has_webapp,
+    lang_keyboard,
+    main_keyboard,
+    open_keyboard,
+    paper_url,
+)
 from app.core import alerts, telegram
 from app.core.auth import make_admin_token
 from app.core.config import settings
 from app.core.telegram import answer_callback, send_message
-from app.services import billing, editor
+from app.services import app_settings, billing, editor
 from app.services import images_pdf as pdfs
 from app.services.users import has_choice, lang_of, set_lang, touch
 from app.texts import CHOOSE, LANGS, som, t
@@ -74,7 +84,7 @@ async def channel_joined(cm: dict):
         return
     if status == "administrator":
         alerts.set_channel(chat["id"])
-        await send_message(chat["id"], "✅ SlideAI log kanali ulandi.\n\nBu yerga keladi:\n• har kuni bazaning zaxira nusxasi\n"
+        await send_message(chat["id"], "✅ <b>SlideAI log kanali ulandi.</b>\n\nBu yerga keladi:\n• har kuni bazaning zaxira nusxasi\n"
                                        "• bot va backend xatolari\n• xizmatlar qayta ishga tushgani")
         log.info("log channel set: %s", chat["id"])
     elif status in ("left", "kicked") and alerts.channel_id() == str(chat["id"]):
@@ -93,7 +103,7 @@ async def cmd_start(m: Msg):
 async def cmd_create(m: Msg):
     # an old keyboard (plain text button) or no HTTPS address yet: answer with the inline button
     if has_webapp():
-        await send_message(m.chat_id, t(m.lang, "create_open"), {"inline_keyboard": [[{"text": t(m.lang, "open"), "web_app": {"url": app_url(m.lang)}}]]})
+        await send_message(m.chat_id, t(m.lang, "create_open"), {"inline_keyboard": [[{"text": t(m.lang, "open"), "web_app": {"url": app_url(m.lang)}, "style": PRIMARY}]]})
     else:
         await send_message(m.chat_id, t(m.lang, "hint"))
 
@@ -103,7 +113,7 @@ async def cmd_paper(m: Msg):
     doc_type = "mustaqil" if m.key == "kb_mustaqil" or m.text.lower().startswith("/mustaqil") else "referat"
     if has_webapp():
         await send_message(m.chat_id, t(m.lang, "create_open"),
-                           {"inline_keyboard": [[{"text": t(m.lang, f"kb_{doc_type}"), "web_app": {"url": paper_url(m.lang, doc_type)}}]]})
+                           {"inline_keyboard": [[{"text": t(m.lang, f"kb_{doc_type}"), "web_app": {"url": paper_url(m.lang, doc_type)}, "style": PRIMARY}]]})
     else:
         await send_message(m.chat_id, t(m.lang, "hint"))
 
@@ -135,7 +145,7 @@ async def cmd_help(m: Msg):
 async def cmd_admin(m: Msg):
     url = f"{settings.webapp_url.rstrip('/')}/admin.html#t={make_admin_token(m.uid)}"
     await send_message(m.chat_id, t(m.lang, "admin_link"),
-                       {"inline_keyboard": [[{"text": t(m.lang, "admin_btn"), "url": url}]]} if has_webapp() else None)
+                       {"inline_keyboard": [[{"text": t(m.lang, "admin_btn"), "url": url, "style": PRIMARY}]]} if has_webapp() else None)
 
 
 async def cmd_addbalance(m: Msg):
@@ -149,7 +159,30 @@ async def cmd_addbalance(m: Msg):
             return
         await send_message(m.chat_id, t(m.lang, "admin_added", user=target, amount=som(amount, m.lang), balance=som(new, m.lang)))
     else:
-        await send_message(m.chat_id, "/addbalance <user_id> <amount>")
+        await send_message(m.chat_id, "/addbalance &lt;user_id&gt; &lt;amount&gt;")
+
+
+async def cmd_emoji(m: Msg):
+    """Admins: /emoji with premium (animated) emoji from the Telegram keyboard — the bot uses them instead of the plain
+    ones in its messages and as button icons (core/telegram.py). /emoji off — back to plain emoji."""
+    current = dict((await app_settings.get()).get("custom_emoji") or {})
+    raw = m.raw.get("text") or ""
+    if raw.split()[1:2] == ["off"]:
+        await app_settings.set_many({"custom_emoji": {}}, m.uid)
+        await send_message(m.chat_id, "✅ Animatsiyali emojilar o'chirildi, oddiy emojilar ishlatiladi.")
+        return
+    u16 = raw.encode("utf-16-le")  # entity offsets count UTF-16 code units
+    found = {u16[e["offset"] * 2:(e["offset"] + e["length"]) * 2].decode("utf-16-le"): e["custom_emoji_id"]
+             for e in m.raw.get("entities") or [] if e.get("type") == "custom_emoji"}
+    if not found:
+        await send_message(m.chat_id, "✨ <b>Animatsiyali emojilar</b>\n\nBuyruq bilan birga Telegram'dagi premium emojilarni yuboring, "
+                                      "masalan: <code>/emoji</code> 📊📝📘🖼💰✏️🌐❓✅❌\nHar biri o'sha oddiy emoji o'rnida ishlatiladi.\n\n"
+                                      f"Hozir sozlangan: <b>{len(current)} ta</b>. O'chirish: <code>/emoji off</code>\n\n"
+                                      "<i>Ular faqat bot egasida Telegram Premium bo'lsa ko'rinadi.</i>")
+        return
+    current.update(found)
+    await app_settings.set_many({"custom_emoji": current}, m.uid)
+    await send_message(m.chat_id, f"✅ Saqlandi: {' '.join(found)}\nJami: <b>{len(current)} ta</b>. Endi xabarlar va tugmalarda shular chiqadi.")
 
 
 Handler = Callable[[Msg], Awaitable[None]]
@@ -164,6 +197,7 @@ ROUTES: list[tuple[tuple[str, ...], tuple[str, ...], bool, Handler]] = [
     (("/balance", "/balans"), ("kb_balance",), False, cmd_balance),
     (("/addbalance",), (), True, cmd_addbalance),
     (("/admin",), (), True, cmd_admin),
+    (("/emoji",), (), True, cmd_emoji),
     (("/editor", "/muharrir"), ("kb_editor",), False, cmd_editor),
     (("/help",), ("kb_help",), False, cmd_help),
 ]

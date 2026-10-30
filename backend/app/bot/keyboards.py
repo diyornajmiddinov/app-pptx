@@ -1,11 +1,23 @@
 """Keyboards and links the bot sends. Every label comes from texts.py in the user's language."""
+import re
+
 from app.core.auth import make_app_token, make_editor_token
 from app.core.config import settings
 from app.services import payments
 from app.texts import LANG_NAMES, LANGS, T, som, t
 
 PROVIDER_NAMES = {"payme": "Payme", "click": "Click"}
-BUTTONS = {T[lang][k]: k for lang in LANGS for k in T[lang] if k.startswith("kb_")}  # reply-keyboard text -> key, any language
+def _bare(text: str) -> str:
+    """The button text without its leading emoji: what Telegram sends when the emoji is shown as the button's icon."""
+    return re.sub(r"^[^\w«(]+", "", text).strip()
+
+
+# reply-keyboard text -> key, any language; with and without the leading emoji (telegram.emoji_buttons)
+_KB = [(str(T[lang][k]), k) for lang in LANGS for k in T[lang] if k.startswith("kb_")]
+BUTTONS: dict[str, str] = {**{_bare(text): k for text, k in _KB}, **dict(_KB)}
+
+
+PRIMARY, SUCCESS, DANGER = "primary", "success", "danger"  # button colours (Bot API "style"): blue, green, red
 
 
 def has_webapp() -> bool:
@@ -32,7 +44,7 @@ def lang_keyboard() -> dict:
 
 
 def open_keyboard(lang: str) -> dict:
-    rows = [[{"text": t(lang, "open"), "web_app": {"url": app_url(lang)}}]] if has_webapp() else []
+    rows = [[{"text": t(lang, "open"), "web_app": {"url": app_url(lang)}, "style": PRIMARY}]] if has_webapp() else []
     rows.append([{"text": t(lang, "btn_balance"), "callback_data": "balance"}])
     return {"inline_keyboard": rows}
 
@@ -42,27 +54,27 @@ def main_keyboard(lang: str, user_id: int) -> dict:
     no initData that way, so the URL carries this user's signed token (auth.make_app_token)."""
     def b(key):
         return {"text": t(lang, key)}
-    def app(key, url):
-        return {**b(key), "web_app": {"url": url}} if has_webapp() else b(key)
-    create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}")
-    papers = [app(f"kb_{d}", paper_url(lang, d, user_id)) for d in ("referat", "mustaqil")]
+    def app(key, url, style):
+        return {**b(key), "web_app": {"url": url}, "style": style} if has_webapp() else b(key)
+    create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}", PRIMARY)
+    papers = [app(f"kb_{d}", paper_url(lang, d, user_id), SUCCESS) for d in ("referat", "mustaqil")]
     return {"keyboard": [[create], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 
 def pdf_keyboard(lang: str) -> dict:
-    return {"keyboard": [[{"text": t(lang, "kb_pdf_make")}], [{"text": t(lang, "kb_pdf_cancel")}]],
+    return {"keyboard": [[{"text": t(lang, "kb_pdf_make"), "style": SUCCESS}], [{"text": t(lang, "kb_pdf_cancel"), "style": DANGER}]],
             "resize_keyboard": True, "is_persistent": True}
 
 
 def pdf_name_keyboard(lang: str) -> dict:
     """While the name is awaited: the field is for typing; only Cancel stays as a button."""
-    return {"keyboard": [[{"text": t(lang, "kb_pdf_cancel")}]], "resize_keyboard": True, "is_persistent": True,
+    return {"keyboard": [[{"text": t(lang, "kb_pdf_cancel"), "style": DANGER}]], "resize_keyboard": True, "is_persistent": True,
             "input_field_placeholder": t(lang, "pdf_name_ph")}
 
 
 def topup_keyboard(lang: str, amounts: list[int]) -> dict:
-    btns = [{"text": t(lang, "topup_btn", amount=som(a, lang)), "callback_data": f"topup:{a}"} for a in amounts]
+    btns = [{"text": t(lang, "topup_btn", amount=som(a, lang)), "callback_data": f"topup:{a}", "style": SUCCESS} for a in amounts]
     return {"inline_keyboard": [btns[i:i + 2] for i in range(0, len(btns), 2)]}
 
 
@@ -71,13 +83,13 @@ def provider_name(provider: str, lang: str) -> str:
 
 
 def provider_keyboard(amount: int, lang: str) -> dict:
-    return {"inline_keyboard": [[{"text": provider_name(p, lang), "callback_data": f"pay:{p}:{amount}"} for p in payments.providers()]]}
+    return {"inline_keyboard": [[{"text": provider_name(p, lang), "callback_data": f"pay:{p}:{amount}", "style": PRIMARY} for p in payments.providers()]]}
 
 
 def editor_keyboard(user_id: int, lang: str, doc: str | None = None) -> dict | None:
     if not has_webapp():
         return None
-    return {"inline_keyboard": [[{"text": t(lang, "editor_btn"), "url": editor_url(user_id, lang) + (f"&doc={doc}" if doc else "")}]]}
+    return {"inline_keyboard": [[{"text": t(lang, "editor_btn"), "url": editor_url(user_id, lang) + (f"&doc={doc}" if doc else ""), "style": PRIMARY}]]}
 
 
 def user_label(u: dict) -> str:

@@ -32,7 +32,7 @@ async def recover():
 async def _send(user_id: int, text: str) -> bool:
     for attempt in range(3):
         try:
-            await send_message(user_id, text)
+            await send_message(user_id, text, parse_mode=None)  # as the admin typed it
             return True
         except httpx.HTTPStatusError as e:
             wait = ((e.response.json() or {}).get("parameters") or {}).get("retry_after") if e.response.status_code == 429 else None

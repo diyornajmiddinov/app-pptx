@@ -80,7 +80,7 @@ async def test_images_to_pdf_with_a_name(tg):
     assert await pdfs.stage(U) == "name"
     await bot.handle(msg("Kurs ishi: chizmalar", mid=7))
     doc = tg.sent("sendDocument")[-1]
-    assert "«Kurs ishi chizmalar» tayyor: 2 sahifa" in doc["caption"]
+    assert "<b>«Kurs ishi chizmalar»</b> tayyor: 2 sahifa" in doc["caption"] and doc["parse_mode"] == "HTML"
     assert await pdfs.stage(U) is None
     assert any("1 ta faylni" in t for t in tg.texts())  # the non-image was reported
 

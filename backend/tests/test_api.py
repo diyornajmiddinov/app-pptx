@@ -96,7 +96,7 @@ async def test_busy_worker_tells_how_many_are_ahead(client, tg, monkeypatch):
     for _ in range(3):
         r = await client.post("/api/generate", headers=h(), json=body)
     assert r.json()["ahead"] == 2
-    assert "Navbatda oldingizda 2 ta" in tg.texts()[-1]  # 2 workers busy -> it has to wait
+    assert "Navbatda oldingizda <b>2 ta</b>" in tg.texts()[-1]  # 2 workers busy -> it has to wait
 
 
 # ---------------------------------------------------------------- the first deck may be free (admin panel)

@@ -21,7 +21,7 @@ from app.services import app_settings, billing, decks, papers
 from app.services.ai import models, pipeline
 from app.services.ai.render import render
 from app.services.users import lang_of
-from app.texts import som, t
+from app.texts import esc, som, t
 
 log = logging.getLogger("jobs")
 TMP = Path(tempfile.gettempdir())
@@ -158,7 +158,7 @@ async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".
     name = re.sub(r"[^\w\-]+", "_", topic)[:60] + ext
     final = Path(path).with_name(name); Path(path).rename(final)
     try:
-        await send_document(chat_id, str(final), caption=f"{topic}\n{note}")
+        await send_document(chat_id, str(final), caption=f"<b>{esc(topic)}</b>\n{note}")
     finally:
         _drop_tmp(final.parent)
 
