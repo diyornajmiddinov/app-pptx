@@ -8,7 +8,7 @@ Temporary HTTPS address (cloudflared quick tunnel -> Vite on :5173) until the pr
 The address changes every time cloudflared starts, so this keeps everything pointing at the current one:
   1. start cloudflared and read its https://*.trycloudflare.com address,
   2. write it to backend/.env (WEBAPP_URL, PUBLIC_URL) if it changed,
-  3. restart slideai-backend and slideai-bot so they use it (the bot then fixes users' menu buttons),
+  3. restart slideai-backend so it uses it (it then fixes users' menu buttons),
   4. post the new address to the log channel.
 Runs as slideai-tunnel.service; when cloudflared exits, systemd starts this again.
 """
@@ -44,7 +44,7 @@ def main():
             announced = True
             url = m.group(0)
             if set_env(url):
-                subprocess.run(["systemctl", "restart", "slideai-backend", "slideai-bot"], check=False)
+                subprocess.run(["systemctl", "restart", "slideai-backend"], check=False)
             alerts.post(f"🌐 Mini App manzili: {url}\nAdmin panel uchun botga /admin yozing.")
     sys.exit(proc.wait())
 

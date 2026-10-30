@@ -2,7 +2,7 @@
 SlideAI web API (FastAPI): uvicorn app.api.main:app
 
 routes/miniapp.py   the Telegram Mini App (generate, restyle, decks, me, templates, health)
-routes/payments.py  Payme / Click callbacks and the Telegram webhook
+routes/payments.py  Payme / Click callbacks and the Telegram webhook (the bot runs here: app.bot.webhook.serve)
 routes/editor.py    the desktop presentation editor (editor.html)
 routes/admin.py     the admin panel (admin.html, opened from the bot's /admin link)
 routes/web.py       the website slidechi.uz (web/): sign-in with a code from the bot, the same account
@@ -16,6 +16,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes import admin, editor, miniapp, payments, web
+from app.bot import webhook
 from app.core import alerts, db, systemd, telegram
 from app.core.config import DATA_DIR, settings
 from app.services import jobs
@@ -43,9 +44,12 @@ async def lifespan(_: FastAPI):
     await admin.mark_interrupted()
     models.on_usage = jobs.save_usage  # the website's outline requests are Gemini calls too -> ai_usage
     alerts.started("backend")
-    dog = asyncio.create_task(systemd.watchdog())
+    tasks = [asyncio.create_task(systemd.watchdog())]
+    if webhook.enabled():  # the bot: its updates come here (routes/payments.py); no separate bot service
+        tasks.append(asyncio.create_task(webhook.serve()))
     yield
-    dog.cancel()
+    for task in tasks:
+        task.cancel()
     await telegram.close()
     await db.close()
 

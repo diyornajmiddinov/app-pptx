@@ -1,15 +1,16 @@
 """
-The bot in webhook mode (production, systemd slideai-bot): Telegram posts updates to PUBLIC_URL/telegram/webhook,
-the backend checks WEBHOOK_SECRET and handles them (routes/payments.py). This process only sets things up and watches:
+The bot in webhook mode (production): Telegram posts updates to PUBLIC_URL/telegram/webhook, the backend checks
+WEBHOOK_SECRET and handles them (routes/payments.py). The backend also runs serve() for the life of its process:
     - setWebhook (keeps updates that arrived meanwhile), the command list, menu buttons after an address change
     - every few minutes getWebhookInfo: a new delivery error or a growing queue goes to the log channel
-Back to polling: run app.bot.polling (it removes the webhook).
+So there is no separate bot service. Back to polling: run app.bot.polling (it removes the webhook);
+`python -m app.bot.webhook` only installs the webhook and the commands, then exits.
 """
 import asyncio
 import logging
 
 from app.bot import polling
-from app.core import alerts, db, systemd, telegram
+from app.core import db, telegram
 from app.core.config import settings
 
 log = logging.getLogger("webhook")
@@ -42,26 +43,37 @@ async def check(last_error: int) -> int:
     return max(when, last_error)
 
 
-async def main():
-    alerts.install("bot")
-    await db.connect(max_size=2)
-    await install()
-    await polling.set_commands()
-    me = (await telegram.call("getMe"))["result"]
-    log.info("bot @%s started (webhook %s)", me["username"], url())
-    alerts.started("bot")
-    tasks = {asyncio.create_task(polling.refresh_menu_buttons()), asyncio.create_task(systemd.watchdog())}
-    last_error = (await telegram.call("getWebhookInfo"))["result"].get("last_error_date") or 0  # errors from before this start are old news
+def enabled() -> bool:
+    return settings.public_url.startswith("https://") and bool(settings.webhook_secret)
+
+
+async def serve():
+    """A task of the backend: set the bot up, then watch the webhook. Never raises (the API must keep running)."""
     try:
-        while True:
-            await asyncio.sleep(CHECK_EVERY)
-            try:
-                last_error = await check(last_error)
-            except Exception as e:  # network hiccup: try again next time
-                log.warning("getWebhookInfo failed: %s", str(e).replace(settings.bot_token, "***"))
+        await install()
+        await polling.set_commands()
+        me = (await telegram.call("getMe"))["result"]
+        log.info("bot @%s: webhook %s", me["username"], url())
+        await polling.refresh_menu_buttons()
+        last_error = (await telegram.call("getWebhookInfo"))["result"].get("last_error_date") or 0  # older errors are old news
+    except Exception:
+        log.exception("Bot webhook'ini o'rnatib bo'lmadi")
+        last_error = 0
+    while True:
+        await asyncio.sleep(CHECK_EVERY)
+        try:
+            last_error = await check(last_error)
+        except Exception as e:  # network hiccup: try again next time
+            log.warning("getWebhookInfo failed: %s", str(e).replace(settings.bot_token, "***"))
+
+
+async def main():
+    await db.connect(max_size=2)
+    try:
+        await install()
+        await polling.set_commands()
+        print("webhook:", url())
     finally:
-        for t in tasks:
-            t.cancel()
         await telegram.close()
         await db.close()
 

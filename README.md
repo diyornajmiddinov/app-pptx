@@ -84,15 +84,16 @@ set -a; . ./.env; set +a
 .venv/bin/uvicorn app.api.main:app --host 127.0.0.1 --port 8000   # API (migratsiyalar shu yerda qo'llanadi)
 .venv/bin/python -m app.worker                                     # navbatdagi taqdimotlarni chizadi
 .venv/bin/python -m app.bot.polling                                # bot (lokal: polling, domen kerak emas)
-# production: ops/systemd/*.service (slideai-backend, -worker, -bot, -backup.timer)
-#   slideai-bot = app.bot.webhook: webhook'ni o'rnatadi (PUBLIC_URL + WEBHOOK_SECRET), xabarlarni backend qabul qiladi
+# production: ops/systemd/*.service — slideai-backend (API + bot), slideai-worker, slideai-backup.timer
+#   bot alohida xizmat emas: PUBLIC_URL (https) va WEBHOOK_SECRET bo'lsa, backend ishga tushganda webhook'ni o'rnatadi,
+#   xabarlarni o'zi qabul qiladi va webhook'ni kuzatadi (app.bot.webhook.serve)
 
 # 3) Mini App
 cd ../miniapp
 npm install
 cp .env.example .env                       # VITE_API_URL=https://api.sizning-domen.uz
 npm run build                              # dist/ ni HTTPS hostingga joylang
-# webhook, buyruqlar (3 tilda) va menyu tugmalarini slideai-bot (app.bot.webhook) har ishga tushganda o'zi o'rnatadi
+# webhook, buyruqlar (3 tilda) va menyu tugmalarini backend har ishga tushganda o'zi o'rnatadi (app.bot.webhook)
 ```
 `SLIDEAI_DEMO=1` bilan backend AI va Pexels'siz ishlaydi (namuna kontent bilan): integratsiyani
 tekshirish uchun qulay.

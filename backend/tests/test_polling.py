@@ -61,3 +61,28 @@ async def test_webhook_refuses_to_start_without_a_secret(monkeypatch):
     monkeypatch.setattr(webhook.settings, "webhook_secret", "")
     with pytest.raises(SystemExit):
         await webhook.install()
+
+
+async def test_backend_sets_the_bot_up_and_survives_telegram_errors(tg, monkeypatch, caplog, tmp_path):
+    import asyncio
+
+    from app.bot import webhook
+    monkeypatch.setattr(alerts, "DATA", tmp_path)
+    monkeypatch.setattr(webhook.settings, "public_url", "https://slidechi.test")
+    monkeypatch.setattr(webhook.settings, "webhook_secret", "")
+    assert not webhook.enabled()  # no secret: the backend leaves the bot alone
+    monkeypatch.setattr(webhook.settings, "webhook_secret", "s")
+    assert webhook.enabled()
+    task = asyncio.create_task(webhook.serve())
+    await asyncio.sleep(0.05)
+    assert tg.sent("setWebhook")[0]["secret_token"] == "s" and tg.sent("setMyCommands")
+    assert not task.done()  # keeps watching
+    task.cancel()
+
+    async def down(method, **kw):
+        raise ConnectionError("telegram down")
+    monkeypatch.setattr(webhook.telegram, "call", down)
+    task = asyncio.create_task(webhook.serve())
+    await asyncio.sleep(0.05)
+    assert not task.done() and "webhook'ini o'rnatib bo'lmadi" in caplog.text  # logged; the API keeps running
+    task.cancel()
