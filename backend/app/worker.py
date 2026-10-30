@@ -1,5 +1,6 @@
 """
-The worker: draws the paid presentations from the `jobs` queue (app/services/jobs.py).
+The worker: draws the paid presentations from the `jobs` queue (app/services/jobs.py) and sends the admin panel's
+broadcasts (app/services/broadcasts.py).
 
     python -m app.worker          (systemd: slideai-worker.service)
 
@@ -12,7 +13,7 @@ import signal
 
 from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
-from app.services import billing, growth, housekeeping, jobs
+from app.services import billing, broadcasts, growth, housekeeping, jobs
 from app.services.ai import models
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -48,6 +49,7 @@ async def main(stopping: asyncio.Event | None = None):
     loop = asyncio.get_running_loop()
     models.on_usage = jobs.save_usage  # every Gemini request -> ai_usage
     await jobs.recover()
+    await broadcasts.recover()
 
     wake = asyncio.Event()
     if stopping is None:
@@ -59,7 +61,7 @@ async def main(stopping: asyncio.Event | None = None):
     listener = await db.pool().acquire()
     await listener.add_listener("jobs", on_notify)
     slots = asyncio.Semaphore(settings.worker_concurrency)
-    background = [asyncio.create_task(_hourly()), asyncio.create_task(systemd.watchdog())]
+    background = [asyncio.create_task(_hourly()), asyncio.create_task(systemd.watchdog()), asyncio.create_task(broadcasts.loop(stopping))]
     running: set[asyncio.Task] = set()
 
     async def work(job):

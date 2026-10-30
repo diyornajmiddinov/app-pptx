@@ -75,7 +75,8 @@ async def test_card_screenshot_is_proxied_from_telegram(admin, tg, monkeypatch):
 
 
 async def test_broadcast_reaches_everyone_it_can(admin, tg, monkeypatch):
-    import asyncio
+    from app.services import broadcasts
+    monkeypatch.setattr(broadcasts, "PAUSE", 0)
     for uid in (11, 12, 13):
         await add_user(uid, lang="uz")
     await add_user(14, lang="ru")
@@ -89,13 +90,42 @@ async def test_broadcast_reaches_everyone_it_can(admin, tg, monkeypatch):
     monkeypatch.setattr(telegram, "call", call)
     assert (await admin.post("/api/admin/broadcasts", json={"text": "Salom", "test": True})).json()["test"]
     bid = (await admin.post("/api/admin/broadcasts", json={"text": "Yangi shablonlar!", "lang": "uz"})).json()["id"]
-    for _ in range(50):
-        b = (await admin.get("/api/admin/broadcasts")).json()["items"][0]
-        if b["state"] == "done":
-            break
-        await asyncio.sleep(0.1)
-    assert b["id"] == bid and (b["total"], b["sent"], b["failed"]) == (3, 2, 1)
+    assert (await admin.post("/api/admin/broadcasts", json={"text": "x"})).status_code == 409  # one at a time
+    assert (await admin.get("/api/admin/broadcasts")).json()["items"][0]["state"] == "queued"  # the worker sends it
+    b = await broadcasts.claim()
+    assert b["id"] == bid and await broadcasts.claim() is None  # one worker takes it
+    await broadcasts.run(b)
+    b = (await admin.get("/api/admin/broadcasts")).json()["items"][0]
+    assert b["state"] == "done" and (b["total"], b["sent"], b["failed"]) == (3, 2, 1)
     assert (await admin.post("/api/admin/broadcasts", json={"text": "x"})).status_code == 200  # the first one finished
+
+
+async def test_broadcast_continues_after_a_worker_restart(tg, monkeypatch):
+    from app.services import broadcasts
+    monkeypatch.setattr(broadcasts, "PAUSE", 0)
+    for uid in (21, 22, 23):
+        await add_user(uid, lang="uz")
+    await db.pool().execute("INSERT INTO broadcasts (text, created_by) VALUES ('Salom', $1)", ADMIN)
+    b = await broadcasts.claim()
+    sent = []
+
+    async def stop_after_first(chat_id, text, *a, **k):
+        sent.append(chat_id)
+        if len(sent) == 1:
+            return
+        raise SystemExit  # the worker is killed in the middle
+    monkeypatch.setattr(broadcasts, "send_message", stop_after_first)
+    with pytest.raises(SystemExit):
+        await broadcasts.run(b)
+    await broadcasts.recover()  # the next worker start
+    monkeypatch.setattr(broadcasts, "send_message", lambda chat_id, text, *a, **k: sent.append(chat_id) or _ok())
+    await broadcasts.run(await broadcasts.claim())
+    row = await db.pool().fetchrow("SELECT state, total, sent FROM broadcasts")
+    assert sent == [21, 22, 22, 23] and dict(row) == {"state": "done", "total": 3, "sent": 3}  # 22 was cut off mid-send
+
+
+async def _ok():
+    return {"ok": True}
 
 
 async def test_deck_download_redraws_the_saved_content(admin, monkeypatch, tmp_path):

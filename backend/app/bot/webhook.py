@@ -1,6 +1,6 @@
 """
 The bot in webhook mode (production): Telegram posts updates to PUBLIC_URL/telegram/webhook, the backend checks
-WEBHOOK_SECRET and handles them (routes/payments.py). The backend also runs serve() for the life of its process:
+WEBHOOK_SECRET and handles them (routes/payments.py). The backend also runs serve() for the life of its process (one API process, if there are several):
     - setWebhook (keeps updates that arrived meanwhile), the command list, menu buttons after an address change
     - every few minutes getWebhookInfo: a new delivery error or a growing queue goes to the log channel
 So there is no separate bot service. Back to polling: run app.bot.polling (it removes the webhook);
@@ -47,8 +47,31 @@ def enabled() -> bool:
     return settings.public_url.startswith("https://") and bool(settings.webhook_secret)
 
 
+LEADER = 0x5EB400C  # pg advisory lock: with several API processes only one sets the bot up and watches
+
+
 async def serve():
-    """A task of the backend: set the bot up, then watch the webhook. Never raises (the API must keep running)."""
+    """A task of the backend: become the one process that looks after the bot (a session advisory lock on a
+    connection of its own; if that process dies, PostgreSQL frees the lock and another one takes over), set the bot
+    up, then watch the webhook. Never raises: the API must keep running."""
+    while True:
+        try:
+            con = await db.pool().acquire()
+        except Exception:
+            log.exception("Bot webhook'i uchun bazaga ulanib bo'lmadi")
+            await asyncio.sleep(CHECK_EVERY)
+            continue
+        try:
+            if await con.fetchval("SELECT pg_try_advisory_lock($1)", LEADER):
+                await _look_after()  # runs until the process stops (the lock goes with the connection)
+        except Exception:
+            log.exception("Bot webhook'ini kuzatish to'xtadi")
+        finally:
+            await db.pool().release(con)  # asyncpg resets the session: the advisory lock is let go
+        await asyncio.sleep(CHECK_EVERY)  # another process has it: try again later
+
+
+async def _look_after():
     try:
         await install()
         await polling.set_commands()

@@ -8,14 +8,13 @@ from the bot's /admin command (ADMIN_IDS only); every request carries it in X-Ad
   GET  /orders, /orders/{id}/screenshot     top-up orders; the card receipt image (proxied from Telegram)
   POST /orders/{id}/decide                  approve / reject a card transfer (same rules as the bot's buttons)
   GET  /ledger, /decks, /decks/{id}/download
-  GET/POST /broadcasts                      message to all users (or one language), sent in the background
+  GET/POST /broadcasts                      message to all users (or one language), queued; the worker sends it
   GET/PUT /settings                         prices and top-up amounts (app_settings), payment providers, system
   GET  /log                                 what the admins did
   GET/POST /promos, POST /promos/{id}/active  promo codes for the website (services/growth.py)
   GET  /web                                 the website: visits, sign-ins, decks, invites (last N days)
 Every change is written to admin_log.
 """
-import asyncio
 import contextlib
 import logging
 import os
@@ -26,6 +25,7 @@ import uuid
 from pathlib import Path
 from typing import Literal
 
+import asyncpg
 import httpx
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 from fastapi.responses import FileResponse, Response
@@ -337,31 +337,6 @@ class BroadcastReq(BaseModel):
     test: bool = False  # only to the admin who sends it
 
 
-_running: set[asyncio.Task] = set()
-
-
-async def _broadcast(bid: int, text: str, lang: str | None):
-    p = db.pool()
-    ids = [r["id"] for r in await p.fetch("SELECT id FROM users WHERE $1::text IS NULL OR lang = $1 ORDER BY id", lang)]
-    await p.execute("UPDATE broadcasts SET total = $2 WHERE id = $1", bid, len(ids))
-    sent = failed = 0
-    for i, user_id in enumerate(ids, 1):
-        for attempt in range(3):
-            try:
-                await send_message(user_id, text); sent += 1; break
-            except httpx.HTTPStatusError as e:
-                wait = ((e.response.json() or {}).get("parameters") or {}).get("retry_after") if e.response.status_code == 429 else None
-                if wait and attempt < 2:
-                    await asyncio.sleep(wait + 1); continue
-                failed += 1; break  # blocked the bot, deleted account, ...
-            except httpx.HTTPError:
-                failed += 1; break
-        if i % 20 == 0 or i == len(ids):
-            await p.execute("UPDATE broadcasts SET sent = $2, failed = $3 WHERE id = $1", bid, sent, failed)
-        await asyncio.sleep(0.05)  # ~20 messages a second, under Telegram's limit
-    await p.execute("UPDATE broadcasts SET state = 'done', sent = $2, failed = $3, finished = now() WHERE id = $1", bid, sent, failed)
-
-
 @router.post("/broadcasts")
 async def broadcast(req: BroadcastReq, uid: int = Depends(admin_user)):
     if req.test:
@@ -370,12 +345,12 @@ async def broadcast(req: BroadcastReq, uid: int = Depends(admin_user)):
         except httpx.HTTPError as e:
             raise HTTPException(400, f"Telegram: {_tg_error(e)}") from e
         return {"ok": True, "test": True}
-    if await db.pool().fetchval("SELECT 1 FROM broadcasts WHERE state = 'running'"):
-        raise HTTPException(409, "Boshqa xabar yuborilmoqda, tugashini kuting")
-    bid = await db.pool().fetchval("INSERT INTO broadcasts (text, lang, created_by) VALUES ($1, $2, $3) RETURNING id", req.text, req.lang, uid)
+    try:  # sent by the worker (services/broadcasts.py); the unique index allows one queued or running at a time
+        bid = await db.pool().fetchval("INSERT INTO broadcasts (text, lang, created_by) VALUES ($1, $2, $3) RETURNING id",
+                                       req.text, req.lang, uid)
+    except asyncpg.UniqueViolationError as e:
+        raise HTTPException(409, "Boshqa xabar yuborilmoqda, tugashini kuting") from e
     await audit(uid, "broadcast", bid, lang=req.lang, text=req.text[:200])
-    task = asyncio.create_task(_broadcast(bid, req.text, req.lang))
-    _running.add(task); task.add_done_callback(_running.discard)
     return {"id": bid}
 
 
@@ -384,11 +359,6 @@ async def broadcasts(uid: int = Depends(admin_user)):
     items = await db.pool().fetch("SELECT * FROM broadcasts ORDER BY id DESC LIMIT 50")
     audience = await db.pool().fetch("SELECT coalesce(lang, '—') AS lang, count(*) AS n FROM users GROUP BY 1")
     return {"items": rows(items), "audience": {r["lang"]: r["n"] for r in audience}}
-
-
-async def mark_interrupted():
-    """At startup: a broadcast that was running when the server stopped will not continue by itself."""
-    await db.pool().execute("UPDATE broadcasts SET state = 'interrupted', finished = now() WHERE state = 'running'")
 
 
 # ---------------------------------------------------------------- settings / system / log

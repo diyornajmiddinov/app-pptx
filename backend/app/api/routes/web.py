@@ -22,9 +22,9 @@ POST /api/web/hit                         a page view, for the admin panel's sit
 POST /api/web/paper, /api/web/paper/outline   referat / mustaqil ish: charged and queued; its plan to edit first (free)
 GET  /api/web/papers, /papers/{id}/{docx|pdf}, POST /papers/{id}/delete   the user's papers (services/papers.py)
 """
-import asyncio
 import io
 import logging
+import os
 import shutil
 import tempfile
 from pathlib import Path
@@ -42,6 +42,7 @@ from app.bot.money import card_display, receive_screenshot
 from app.core import db, telegram
 from app.core.auth import make_editor_token
 from app.core.config import DATA_DIR, ENGINE_DIR, settings
+from app.core.locks import machine_lock_async
 from app.core.telegram import send_message
 from app.services import app_settings, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
 from app.services import images_pdf as pdfs
@@ -68,7 +69,6 @@ MAX_PDF_IMAGE = 20 * 1024 * 1024
 PDFS_PER_DAY = 20
 OUTLINES_PER_DAY = 30  # free AI calls: limited so that nobody drains the Gemini quota
 SAMPLES = DATA_DIR / "samples"
-_drawing = asyncio.Semaphore(1)  # downloads are drawn by node one at a time: the server has 2 CPUs and 2 GB
 
 # what the bot writes to the user's chat on behalf of the site
 TEXTS = {
@@ -426,7 +426,7 @@ async def download(deck_id: str, uid: int = Depends(web_user)):
         raise HTTPException(404, "notFound")
     tmp = Path(tempfile.mkdtemp(prefix="slideai-web-"))
     try:
-        async with _drawing:
+        async with machine_lock_async("drawing"):  # node draws one deck at a time on the server: 2 CPUs, 2 GB
             path = await run_in_threadpool(render_sync, deck["content"], deck["request"]["template_id"], tmp / "deck.pptx")
     except Exception:
         shutil.rmtree(tmp, ignore_errors=True)
@@ -582,7 +582,7 @@ def _sample(template_id: int) -> Path:
     if out.exists() and (source is None or out.stat().st_mtime >= source.stat().st_mtime):
         return out
     SAMPLES.mkdir(parents=True, exist_ok=True)
-    tmp = out.with_suffix(".tmp.pptx")
+    tmp = out.with_suffix(f".{os.getpid()}.tmp.pptx")  # two processes drawing the same sample do not share a file
     render_sync(jobs.demo_content("Soliq islohotlari va iqtisodiy o'sish", {"author": "SlideAI", "loc": "Toshkent"}), template_id, tmp)
     tmp.replace(out)
     return out
@@ -592,7 +592,7 @@ def _sample(template_id: int) -> Path:
 async def sample(template_id: int):
     if not 1 <= template_id <= 40:
         raise HTTPException(404, "notFound")
-    async with _drawing:
+    async with machine_lock_async("drawing"):  # node draws one deck at a time on the server: 2 CPUs, 2 GB
         path = await run_in_threadpool(_sample, template_id)
     return FileResponse(path, filename=f"SlideAI-namuna-{template_id:02d}.pptx", media_type=PPTX,
                         headers={"Cache-Control": "public, max-age=86400"})

@@ -73,16 +73,19 @@ async def test_backend_sets_the_bot_up_and_survives_telegram_errors(tg, monkeypa
     assert not webhook.enabled()  # no secret: the backend leaves the bot alone
     monkeypatch.setattr(webhook.settings, "webhook_secret", "s")
     assert webhook.enabled()
-    task = asyncio.create_task(webhook.serve())
-    await asyncio.sleep(0.05)
-    assert tg.sent("setWebhook")[0]["secret_token"] == "s" and tg.sent("setMyCommands")
-    assert not task.done()  # keeps watching
-    task.cancel()
+    tasks = [asyncio.create_task(webhook.serve()) for _ in range(3)]  # three API processes
+    await asyncio.sleep(0.1)
+    assert len(tg.sent("setWebhook")) == 1 and tg.sent("setWebhook")[0]["secret_token"] == "s"  # only one looks after the bot
+    assert tg.sent("setMyCommands") and not any(t.done() for t in tasks)  # keeps watching
+    for t in tasks:
+        t.cancel()
+    await asyncio.gather(*tasks, return_exceptions=True)
 
     async def down(method, **kw):
         raise ConnectionError("telegram down")
     monkeypatch.setattr(webhook.telegram, "call", down)
     task = asyncio.create_task(webhook.serve())
-    await asyncio.sleep(0.05)
+    await asyncio.sleep(0.1)
     assert not task.done() and "webhook'ini o'rnatib bo'lmadi" in caplog.text  # logged; the API keeps running
     task.cancel()
+    await asyncio.gather(task, return_exceptions=True)

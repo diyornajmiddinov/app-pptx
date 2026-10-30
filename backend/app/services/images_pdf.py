@@ -53,6 +53,17 @@ async def add(user_id: int, file_id: str, message_id: int) -> int | None:
         "RETURNING jsonb_array_length(files)", user_id, [{"file_id": file_id, "message_id": message_id}], MAX_IMAGES)
 
 
+async def next_ack(user_id: int) -> int | None:
+    """A new "received" number for the draft: earlier photos that are still waiting will not answer."""
+    return await db.pool().fetchval("UPDATE pdf_drafts SET ack_seq = ack_seq + 1 WHERE user_id = $1 RETURNING ack_seq", user_id)
+
+
+async def ack_due(user_id: int, seq: int) -> int:
+    """How many images to report if `seq` is still the latest photo of a draft that is collecting, else 0."""
+    return await db.pool().fetchval("SELECT jsonb_array_length(files) FROM pdf_drafts WHERE user_id = $1 AND ack_seq = $2 "
+                                    "AND stage = 'collect'", user_id, seq) or 0
+
+
 async def count(user_id: int) -> int:
     return await db.pool().fetchval("SELECT jsonb_array_length(files) FROM pdf_drafts WHERE user_id = $1", user_id) or 0
 

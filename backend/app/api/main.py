@@ -41,7 +41,6 @@ async def lifespan(_: FastAPI):
     alerts.install("backend")
     logging.getLogger("uvicorn.access").addFilter(_HideTokens())
     await db.connect(max_size=10)
-    await admin.mark_interrupted()
     models.on_usage = jobs.save_usage  # the website's outline requests are Gemini calls too -> ai_usage
     alerts.started("backend")
     tasks = [asyncio.create_task(systemd.watchdog())]

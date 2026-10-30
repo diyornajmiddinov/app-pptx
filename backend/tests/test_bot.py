@@ -84,6 +84,21 @@ async def test_images_to_pdf_with_a_name(tg):
     assert any("1 ta faylni" in t for t in tg.texts())  # the non-image was reported
 
 
+async def test_an_album_gets_one_answer_even_across_processes(tg):
+    import asyncio
+    await add_user(U)
+    await bot.handle(msg("🖼 Rasmdan PDF"))
+    tg.calls.clear()
+    # the photos of one album arrive together (with several API processes, to different ones): one "received: 3"
+    await asyncio.gather(*(bot.handle(msg("", mid=i, photo=[{"file_id": f"p{i}"}])) for i in range(2, 5)))
+    answers = [t for t in tg.texts() if "3" in t]
+    assert len(tg.texts()) == 1 and answers, tg.texts()
+    await bot.handle(msg("", mid=5, photo=[{"file_id": "p5"}]))
+    assert len(tg.texts()) == 2  # a later photo answers again
+    await asyncio.gather(bot.handle(msg("", mid=6, photo=[{"file_id": "p6"}])), bot.handle(msg("✅ PDF yaratish", mid=7)))
+    assert len(tg.texts()) == 3  # only the question for the file name: the photo still waiting stays silent
+
+
 async def test_card_choice_closes_an_open_pdf_draft(tg):
     await add_user(U)
     await bot.handle(msg("/pdf"))

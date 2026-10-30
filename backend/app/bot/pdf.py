@@ -1,6 +1,8 @@
 """
 Images -> PDF conversation: "🖼 Rasmdan PDF" -> photos / image files -> "✅ PDF yaratish" -> the file name -> the PDF.
 The draft (images and stage) is in the database (images_pdf.py), so a bot restart does not lose it.
+An album comes as many updates, possibly to different API processes: every photo bumps pdf_drafts.ack_seq and
+waits a moment; only the one whose number is still the latest answers "received: N".
 """
 import asyncio
 import logging
@@ -15,7 +17,7 @@ from app.services import images_pdf as pdfs
 from app.texts import t
 
 log = logging.getLogger("bot")
-_acks: dict[int, asyncio.Task] = {}  # one "received: N" answer per album, not one per photo
+ACK_WAIT = 1.5  # s: the rest of an album arrives within this
 
 
 async def start(chat_id: int, user_id: int, lang: str):
@@ -23,25 +25,17 @@ async def start(chat_id: int, user_id: int, lang: str):
     await send_message(chat_id, t(lang, "pdf_start", max=pdfs.MAX_IMAGES), pdf_keyboard(lang))
 
 
-async def _ack_later(chat_id: int, user_id: int, lang: str):
-    await asyncio.sleep(1.5)
-    _acks.pop(user_id, None)
-    n = await pdfs.count(user_id)
-    if n:
-        await send_message(chat_id, t(lang, "pdf_full" if n >= pdfs.MAX_IMAGES else "pdf_added", n=n, max=pdfs.MAX_IMAGES))
-
-
 async def _receive(chat_id: int, user_id: int, file_id: str, message_id: int, lang: str):
     await pdfs.add(user_id, file_id, message_id)  # None (full) is reported by the answer below
-    if old := _acks.pop(user_id, None):
-        old.cancel()
-    _acks[user_id] = asyncio.create_task(_ack_later(chat_id, user_id, lang))
+    seq = await pdfs.next_ack(user_id)
+    await asyncio.sleep(ACK_WAIT)
+    if seq is not None and (n := await pdfs.ack_due(user_id, seq)):
+        await send_message(chat_id, t(lang, "pdf_full" if n >= pdfs.MAX_IMAGES else "pdf_added", n=n, max=pdfs.MAX_IMAGES))
 
 
 async def _ask_name(chat_id: int, user_id: int, lang: str):
     """"✅ PDF yaratish": the images are in; the user names the file before it is made."""
-    if task := _acks.pop(user_id, None):
-        task.cancel()
+    await pdfs.next_ack(user_id)  # photos still waiting to answer stay silent
     n = await pdfs.count(user_id)
     if not n:
         await send_message(chat_id, t(lang, "pdf_empty"), pdf_keyboard(lang))

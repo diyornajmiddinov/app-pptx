@@ -3,7 +3,7 @@ import { api } from './api.js';
 import { dateTime, LANGS, num } from './format.js';
 import { ErrorBox, Loading, Pill, useConfirm, useLoad, useToast } from './ui.jsx';
 
-const STATES = { running: ['Yuborilmoqda', 'info'], done: ['Tugadi', 'good'], interrupted: ["To'xtatildi", 'bad'] };
+const STATES = { queued: ['Navbatda', 'info'], running: ['Yuborilmoqda', 'info'], done: ['Tugadi', 'good'], interrupted: ["To'xtatildi", 'bad'] };
 
 export default function Broadcast() {
   const [text, setText] = useState('');
@@ -12,7 +12,7 @@ export default function Broadcast() {
   const { data, error, reload } = useLoad(() => api.broadcasts(), []);
   const toast = useToast();
   const [confirm, confirmNode] = useConfirm();
-  const running = data?.items.some((b) => b.state === 'running');
+  const running = data?.items.some((b) => b.state === 'running' || b.state === 'queued');
 
   useEffect(() => { // live progress while one is being sent
     if (!running) return undefined;

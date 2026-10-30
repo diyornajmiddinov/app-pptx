@@ -84,6 +84,12 @@ def tg(monkeypatch):
     return fake
 
 
+@pytest.fixture(autouse=True)
+def quick_album_wait(monkeypatch):
+    from app.bot import pdf
+    monkeypatch.setattr(pdf, "ACK_WAIT", 0.05)  # images -> PDF: the pause before "received: N"
+
+
 async def add_user(uid: int, lang: str | None = "uz", balance: int = 0, name: str = "Test"):
     await db.pool().execute("INSERT INTO users (id, first_name, lang) VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING", uid, name, lang)
     if balance:

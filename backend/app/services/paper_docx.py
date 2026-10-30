@@ -16,7 +16,6 @@ import re
 import shutil
 import subprocess
 import tempfile
-import threading
 from pathlib import Path
 
 from docx import Document
@@ -27,12 +26,13 @@ from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
 from docx.shared import Cm, Mm, Pt, RGBColor
 
+from app.core.locks import machine_lock
+
 log = logging.getLogger("paper")
 FONT = "Times New Roman"
 BLANK = "_______________________"
 DEFAULT_FORMAT = {"font_size": 14, "spacing": 1.5, "margin_left": 30, "margin_right": 15, "margin_top": 20, "margin_bottom": 20,
                   "page_numbers": "bottom_center", "toc_title": "mundarija"}
-_office = threading.Lock()  # one LibreOffice at a time: 2 CPUs, 2 GB
 
 ROMAN = ["I", "II", "III", "IV", "V", "VI"]
 LABELS = {
@@ -302,7 +302,7 @@ def to_pdf(docx: Path, timeout: int = 120) -> Path:
     """LibreOffice, headless, with a profile of its own (a second soffice would otherwise wait for the first)."""
     profile = Path(tempfile.mkdtemp(prefix="slideai-lo-"))
     try:
-        with _office:
+        with machine_lock("office"):  # one LibreOffice on the server at a time (the editor uses it too)
             subprocess.run(["soffice", f"-env:UserInstallation=file://{profile}", "--headless", "--norestore",
                             "--convert-to", "pdf", "--outdir", str(docx.parent), str(docx)],
                            check=True, capture_output=True, timeout=timeout)

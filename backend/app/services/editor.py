@@ -21,7 +21,6 @@ import secrets
 import shutil
 import subprocess
 import tempfile
-import threading
 import time
 import zipfile
 from pathlib import Path
@@ -35,6 +34,7 @@ from pptx.oxml.ns import qn
 from pptx.util import Emu, Pt
 
 from app.core.config import DATA_DIR
+from app.core.locks import machine_lock
 from app.services import pptx_model
 
 DATA = DATA_DIR
@@ -43,7 +43,6 @@ MAX_UNZIPPED = 300 * 1024 * 1024     # guard against zip bombs
 MAX_IMAGE = 10 * 1024 * 1024
 MAX_VERSIONS = 30
 IMPORTABLE = (".pptx", ".ppt", ".odp", ".pps", ".ppsx")
-_render_lock = threading.Lock()      # one LibreOffice at a time: it is heavy and its profile is not shareable
 
 ALIGN = {PP_ALIGN.LEFT: "left", PP_ALIGN.CENTER: "center", PP_ALIGN.RIGHT: "right", PP_ALIGN.JUSTIFY: "justify"}
 ALIGN_SET = {"left": PP_ALIGN.LEFT, "center": PP_ALIGN.CENTER, "right": PP_ALIGN.RIGHT, "justify": PP_ALIGN.JUSTIFY}
@@ -98,7 +97,7 @@ def _check_zip(data: bytes):
 
 
 def _soffice(args: list[str], cwd: Path, timeout: int = 120):
-    with _render_lock, tempfile.TemporaryDirectory(prefix="lo-") as profile:
+    with machine_lock("office"), tempfile.TemporaryDirectory(prefix="lo-") as profile:  # one LibreOffice on the server at a time
         subprocess.run(["soffice", f"-env:UserInstallation=file://{profile}", "--headless", "--norestore", *args],
                        cwd=cwd, check=True, timeout=timeout, capture_output=True)
 
@@ -231,15 +230,12 @@ def layer_file(user_id: int, doc_id: str, key: str) -> Path:
     f = out / f"{key}.png"
     if f.exists():
         return f
-    with _layer_lock:
+    with machine_lock("layers"):
         if not f.exists():
             _render_layers(folder, out)
     if not f.exists():
         raise EditorError("notFound")  # an older version's key: the page shows the plain background colour
     return f
-
-
-_layer_lock = threading.Lock()
 
 
 def _render_layers(folder: Path, out: Path):
