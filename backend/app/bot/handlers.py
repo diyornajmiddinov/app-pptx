@@ -15,7 +15,7 @@ from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 
 from app.bot import money, pdf
-from app.bot.keyboards import BUTTONS, app_url, editor_keyboard, has_webapp, lang_keyboard, main_keyboard, open_keyboard
+from app.bot.keyboards import BUTTONS, app_url, editor_keyboard, has_webapp, lang_keyboard, main_keyboard, open_keyboard, paper_url
 from app.core import alerts, telegram
 from app.core.auth import make_admin_token
 from app.core.config import settings
@@ -100,6 +100,16 @@ async def cmd_create(m: Msg):
         await send_message(m.chat_id, t(m.lang, "hint"))
 
 
+async def cmd_paper(m: Msg):
+    """An old keyboard without the paper buttons' web_app (or no HTTPS yet): the form as an inline button."""
+    doc_type = "mustaqil" if m.key == "kb_mustaqil" else "referat"
+    if has_webapp():
+        await send_message(m.chat_id, t(m.lang, "create_open"),
+                           {"inline_keyboard": [[{"text": t(m.lang, f"kb_{doc_type}"), "web_app": {"url": paper_url(m.lang, doc_type)}}]]})
+    else:
+        await send_message(m.chat_id, t(m.lang, "hint"))
+
+
 async def cmd_pdf(m: Msg):
     await pdf.start(m.chat_id, m.uid, m.lang)
 
@@ -149,6 +159,7 @@ Handler = Callable[[Msg], Awaitable[None]]
 ROUTES: list[tuple[tuple[str, ...], tuple[str, ...], bool, Handler]] = [
     (("/start",), (), False, cmd_start),
     ((), ("kb_create",), False, cmd_create),
+    ((), ("kb_referat", "kb_mustaqil"), False, cmd_paper),
     (("/pdf",), ("kb_pdf",), False, cmd_pdf),
     ((), ("kb_pdf_make", "kb_pdf_cancel"), False, cmd_old_pdf_button),
     (("/language", "/til"), ("kb_lang",), False, cmd_language),

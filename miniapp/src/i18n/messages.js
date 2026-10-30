@@ -2,6 +2,8 @@
  * All Mini App texts in three languages. Keys are shared; {name}-style placeholders are filled by t().
  * Add a language: copy one block, translate it, and add it to LANGS.
  */
+import { PAPER } from './paper.js';
+
 const ruSlides = (n) => { // 1 слайд, 2–4 слайда, 5–20 слайдов, 21 слайд ...
   const m10 = n % 10, m100 = n % 100;
   return `${n} ${m10 === 1 && m100 !== 11 ? 'слайд' : m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14) ? 'слайда' : 'слайдов'}`;
@@ -99,6 +101,8 @@ export const MESSAGES = {
 };
 
 /** Template names in Russian and English (Uzbek names live in data/templates.js). */
+for (const l of Object.keys(PAPER)) Object.assign(MESSAGES[l], PAPER[l]); // the referat form's texts
+
 export const TEMPLATE_NAMES = {
   1: ['Аврора', 'Aurora'], 2: ['Редакция', 'Editorial'], 3: ['Корпоративный', 'Corporate'], 4: ['Самарканд', 'Samarkand'],
   5: ['Градиент', 'Gradient'], 6: ['Швейцарский', 'Swiss'], 7: ['Природа', 'Nature'], 8: ['Академический', 'Academic'],

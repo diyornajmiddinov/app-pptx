@@ -152,3 +152,27 @@ async def test_one_user_cannot_fill_the_queue(client, tg):
     assert await billing.balance(U) == 100000 - 5000 * jobs.MAX_ACTIVE  # the refused one took no money
     await db.pool().execute("UPDATE jobs SET state = 'done' WHERE id = (SELECT min(id) FROM jobs)")
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202  # one finished: room again
+
+
+# ---------------------------------------------------------------- referat from the bot (Mini App paper form)
+
+async def test_paper_from_the_mini_app_is_charged_queued_and_announced(client, tg):
+    await add_user(U, balance=10000)
+    body = {"topic": "Inflyatsiya", "doc_type": "mustaqil", "language": "uzc", "pages": 12, "university": "TDIU",
+            "format": {"font_size": 12, "page_numbers": "top_right"}}
+    assert (await client.get("/api/me", headers=h())).json()["prices"]["paper"] == 7000
+    r = await client.post("/api/paper", headers=h(), json=body)
+    assert r.status_code == 202, r.text
+    assert await billing.balance(U) == 3000
+    job = await db.pool().fetchrow("SELECT kind, price, payload FROM jobs")
+    assert job["kind"] == "paper" and job["price"] == 7000
+    assert job["payload"]["via"] == "bot" and job["payload"]["format"]["page_numbers"] == "top_right"
+    assert "Inflyatsiya" in tg.texts()[-1] and "Word" in tg.texts()[-1]
+    assert (await client.post("/api/paper", headers=h(), json=body)).status_code == 402  # 3 000 left
+
+
+async def test_paper_bad_input_is_422_and_free_of_charge(client):
+    await add_user(U, balance=10000)
+    for bad in ({"topic": "ab"}, {"topic": "Mavzu", "pages": 40}, {"topic": "Mavzu", "format": {"margin_left": 5}}):
+        assert (await client.post("/api/paper", headers=h(), json=bad)).status_code == 422
+    assert await billing.balance(U) == 10000

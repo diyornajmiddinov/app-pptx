@@ -116,3 +116,16 @@ async def test_admin_adds_bot_to_a_channel(tg, tmp_path, monkeypatch):
     upd["my_chat_member"]["from"]["id"] = ADMIN
     await bot.handle(upd)
     assert alerts.channel_id() == "-100123"
+
+
+async def test_the_menu_has_referat_and_mustaqil_ish_buttons(tg):
+    from app.bot.keyboards import main_keyboard
+    rows = main_keyboard("uz", U)["keyboard"]
+    papers = rows[1]
+    assert [b["text"] for b in papers] == ["📝 Referat", "📘 Mustaqil ish"]
+    assert "mode=paper&type=referat" in papers[0]["web_app"]["url"] and "&t=" in papers[0]["web_app"]["url"]
+    assert "type=mustaqil" in papers[1]["web_app"]["url"]
+    await add_user(U)
+    await bot.handle(msg("📘 Mustaqil ish"))  # an old keyboard sends the text: the form comes as an inline button
+    url = tg.last()["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"]
+    assert "mode=paper&type=mustaqil" in url

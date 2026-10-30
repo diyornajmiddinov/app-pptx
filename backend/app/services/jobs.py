@@ -186,6 +186,10 @@ async def run(job: dict):
             shutil.copy(path, copy)
             lang = await lang_of(job["user_id"])
             await deliver(job["user_id"], copy, req["topic"], t(lang, "paper_ready", pages=pages or "—"), ".docx")
+            if (pdf := path.with_suffix(".pdf")).exists():  # the PDF too: to print or send as it is
+                copy = Path(tempfile.mkdtemp(prefix="slideai-")) / "paper.pdf"
+                shutil.copy(pdf, copy)
+                await deliver(job["user_id"], copy, req["topic"], "PDF", ".pdf")
         else:
             raise ValueError(f"unknown job kind {job['kind']}")
     except TimeoutError:  # wait_for cancelled the work (node is killed): nothing is sent

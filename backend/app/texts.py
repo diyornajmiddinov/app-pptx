@@ -16,7 +16,8 @@ T = {
         "admin_refused": "Balans o'zgarmadi: ayirish summasi balansdan katta.",
         "admin_link": "🛠 Admin panel kompyuter brauzerida ochiladi. Havola 12 soat amal qiladi, uni boshqalarga bermang.", "admin_btn": "🛠 Admin panelni ochish",
         # bottom (reply) keyboard and images -> PDF
-        "kb_create": "📊 Taqdimot yaratish", "create_open": "👇 Ilovani ochish uchun tugmani bosing:", "kb_pdf": "🖼 Rasmdan PDF", "kb_balance": "💰 Balans", "kb_editor": "✏️ Muharrir", "kb_lang": "🌐 Til", "kb_help": "❓ Yordam",
+        "kb_create": "📊 Taqdimot yaratish", "kb_referat": "📝 Referat", "kb_mustaqil": "📘 Mustaqil ish",
+        "paper_queued": "📝 «{topic}» yozilmoqda. Odatda 1–3 daqiqa vaqt oladi, tayyor bo'lgach Word va PDF fayllarini shu yerga yuboraman.", "create_open": "👇 Ilovani ochish uchun tugmani bosing:", "kb_pdf": "🖼 Rasmdan PDF", "kb_balance": "💰 Balans", "kb_editor": "✏️ Muharrir", "kb_lang": "🌐 Til", "kb_help": "❓ Yordam",
         "kb_pdf_make": "✅ PDF yaratish", "kb_pdf_cancel": "❌ Bekor qilish", "cmd_pdf": "Rasmlardan PDF yaratish",
         "menu": "👇 Pastdagi menyudan ham foydalanishingiz mumkin.",
         "pdf_start": "🖼 Rasmlarni yuboring: bittalab, albom qilib yoki fayl sifatida (sifati saqlanadi). "
@@ -46,7 +47,7 @@ T = {
         "err_gen": "Taqdimot tayyorlashda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         "err_restyle": "Shablonni almashtirishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
         "err_paper": "Referatni yozishda xatolik yuz berdi. Iltimos, qayta urinib ko'ring.",
-        "paper_ready": "📄 Referat tayyor: {pages} bet. PDF nusxasi slidechi.uz saytida.",
+        "paper_ready": "📄 Tayyor: {pages} bet.",
         "btn_balance": "💰 Balans", "cmd_balance": "Balans va to'ldirish",
         "balance": "💰 Balansingiz: {balance}\n\nNarxlar:\n• Yangi taqdimot — {p_gen}\n• Boshqa shablonga o'tkazish — {p_restyle}\n\nTo'ldirish uchun summani tanlang:",
         "topup_btn": "+ {amount}", "pay_link": "{amount} — {provider} orqali to'lash uchun tugmani bosing. To'lov o'tgach, balans avtomatik to'ldiriladi.",
@@ -79,7 +80,8 @@ T = {
         "admin_refused": "Баланс не изменён: сумма списания больше баланса.",
         "admin_link": "🛠 Админ-панель открывается в браузере на компьютере. Ссылка действует 12 часов, никому её не передавайте.", "admin_btn": "🛠 Открыть админ-панель",
         # bottom (reply) keyboard and images -> PDF
-        "kb_create": "📊 Создать презентацию", "create_open": "👇 Нажмите кнопку, чтобы открыть приложение:", "kb_pdf": "🖼 PDF из фото", "kb_balance": "💰 Баланс", "kb_editor": "✏️ Редактор", "kb_lang": "🌐 Язык", "kb_help": "❓ Помощь",
+        "kb_create": "📊 Создать презентацию", "kb_referat": "📝 Реферат", "kb_mustaqil": "📘 Самостоятельная работа",
+        "paper_queued": "📝 «{topic}» пишется. Обычно это занимает 1–3 минуты, готовые файлы Word и PDF пришлю сюда.", "create_open": "👇 Нажмите кнопку, чтобы открыть приложение:", "kb_pdf": "🖼 PDF из фото", "kb_balance": "💰 Баланс", "kb_editor": "✏️ Редактор", "kb_lang": "🌐 Язык", "kb_help": "❓ Помощь",
         "kb_pdf_make": "✅ Создать PDF", "kb_pdf_cancel": "❌ Отмена", "cmd_pdf": "PDF из фотографий",
         "menu": "👇 Также можно пользоваться меню внизу.",
         "pdf_start": "🖼 Отправьте фото: по одному, альбомом или файлом (без потери качества). "
@@ -109,7 +111,7 @@ T = {
         "err_gen": "При создании презентации произошла ошибка. Пожалуйста, попробуйте ещё раз.",
         "err_restyle": "При смене шаблона произошла ошибка. Пожалуйста, попробуйте ещё раз.",
         "err_paper": "При написании реферата произошла ошибка. Пожалуйста, попробуйте ещё раз.",
-        "paper_ready": "📄 Реферат готов: {pages} стр. PDF-версия — на сайте slidechi.uz.",
+        "paper_ready": "📄 Готово: {pages} стр.",
         "btn_balance": "💰 Баланс", "cmd_balance": "Баланс и пополнение",
         "balance": "💰 Ваш баланс: {balance}\n\nЦены:\n• Новая презентация — {p_gen}\n• Перенос в другой шаблон — {p_restyle}\n\nВыберите сумму пополнения:",
         "topup_btn": "+ {amount}", "pay_link": "{amount} — нажмите кнопку, чтобы оплатить через {provider}. После оплаты баланс пополнится автоматически.",
@@ -142,7 +144,8 @@ T = {
         "admin_refused": "Balance unchanged: the amount to take is more than the balance.",
         "admin_link": "🛠 The admin panel opens in a desktop browser. The link works for 12 hours — do not share it.", "admin_btn": "🛠 Open admin panel",
         # bottom (reply) keyboard and images -> PDF
-        "kb_create": "📊 Create presentation", "create_open": "👇 Tap the button to open the app:", "kb_pdf": "🖼 Images to PDF", "kb_balance": "💰 Balance", "kb_editor": "✏️ Editor", "kb_lang": "🌐 Language", "kb_help": "❓ Help",
+        "kb_create": "📊 Create presentation", "kb_referat": "📝 Essay", "kb_mustaqil": "📘 Independent work",
+        "paper_queued": "📝 «{topic}» is being written. It usually takes 1–3 minutes; I will send the Word and PDF files here.", "create_open": "👇 Tap the button to open the app:", "kb_pdf": "🖼 Images to PDF", "kb_balance": "💰 Balance", "kb_editor": "✏️ Editor", "kb_lang": "🌐 Language", "kb_help": "❓ Help",
         "kb_pdf_make": "✅ Make PDF", "kb_pdf_cancel": "❌ Cancel", "cmd_pdf": "Images to PDF",
         "menu": "👇 You can also use the menu below.",
         "pdf_start": "🖼 Send the images: one by one, as an album or as files (full quality). "
@@ -172,7 +175,7 @@ T = {
         "err_gen": "Something went wrong while creating the presentation. Please try again.",
         "err_restyle": "Something went wrong while changing the template. Please try again.",
         "err_paper": "Something went wrong while writing the paper. Please try again.",
-        "paper_ready": "📄 Your paper is ready: {pages} pages. The PDF copy is on slidechi.uz.",
+        "paper_ready": "📄 Ready: {pages} pages.",
         "btn_balance": "💰 Balance", "cmd_balance": "Balance and top-up",
         "balance": "💰 Your balance: {balance}\n\nPrices:\n• New presentation — {p_gen}\n• Move to another template — {p_restyle}\n\nChoose a top-up amount:",
         "topup_btn": "+ {amount}", "pay_link": "{amount} — tap the button to pay with {provider}. Your balance is topped up automatically after payment.",

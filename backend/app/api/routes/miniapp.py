@@ -4,6 +4,7 @@ token (X-App-Token) — see core/auth.telegram_user.
 
 POST /api/generate   new presentation: charged now, drawn by the worker (jobs queue), sent to the chat by the bot
 POST /api/restyle    one of the user's decks in another template (cheaper; one short AI call adapts the tone)
+POST /api/paper      referat / mustaqil ish (the bot's two buttons open the paper form): Word + PDF to the chat
 GET  /api/decks      the user's presentations, newest first
 GET/POST /api/me     language; GET also returns the balance and prices (money is added only in the bot)
 GET  /api/templates  the 40 templates
@@ -15,6 +16,7 @@ from typing import Literal
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.api.papers import PaperRequest
 from app.bot.money import send_low_balance
 from app.core import db
 from app.core.auth import telegram_user
@@ -83,6 +85,18 @@ async def generate(req: GenerateRequest, tg_user: dict = Depends(telegram_user))
     return {"status": "queued", "job": job_id, "ahead": ahead}
 
 
+@router.post("/api/paper", status_code=202)
+async def paper(req: PaperRequest, tg_user: dict = Depends(telegram_user)):
+    """Referat / mustaqil ish from the bot's buttons (the Mini App's paper form); the file comes to the chat."""
+    lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
+    payload = {"user_id": tg_user["id"], "via": "bot", **req.model_dump(exclude_none=True)}
+    if not payload.get("source"):
+        payload.pop("source", None)
+    job_id, ahead, _ = await _order(tg_user["id"], lang, "paper", payload, (await app_settings.get())["price_paper"])
+    await _queued(tg_user["id"], lang, t(lang, "paper_queued", topic=req.topic), ahead)
+    return {"status": "queued", "job": job_id, "ahead": ahead}
+
+
 @router.post("/api/restyle", status_code=202)
 async def restyle(req: RestyleRequest, tg_user: dict = Depends(telegram_user)):
     if req.user_id != tg_user["id"]:
@@ -111,7 +125,7 @@ async def me(tg_user: dict = Depends(telegram_user)):
     u = await db.pool().fetchrow("SELECT first_name, last_name FROM users WHERE id = $1", tg_user["id"])
     return {"user": {"id": tg_user["id"], **(dict(u) if u else {})},  # the keyboard-opened app knows only the id
             "lang": await lang_of(tg_user["id"], tg_user.get("language_code")), "balance": await billing.balance(tg_user["id"]),
-            "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"],
+            "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"], "paper": cfg["price_paper"],
                        "now": await jobs.generate_price(tg_user["id"])}}  # a new deck for this user now (the first may be free)
 
 

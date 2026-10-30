@@ -230,3 +230,15 @@ async def test_paper_outline_is_free_and_limited(client, tg, offline, monkeypatc
     assert r.status_code == 200, r.text
     assert [len(c["sections"]) for c in r.json()["chapters"]] == [3, 3]
     assert await billing.balance(U) == 0
+
+
+async def test_the_chat_gets_word_and_pdf(client, tg, offline, monkeypatch):  # noqa: F811
+    def built(content, fmt, out):
+        (out / "referat.docx").write_bytes(b"PK-docx"); (out / "referat.pdf").write_bytes(b"%PDF-1.4")
+        return out / "referat.docx", out / "referat.pdf", 12
+    monkeypatch.setattr(paper_docx, "build", built)
+    await named(balance=7000)
+    await jobs.order("paper", U, {**ORDER, "user_id": U}, 7000)
+    await jobs.run_pending()
+    docs = tg.sent("sendDocument")
+    assert len(docs) == 2 and "12 bet" in docs[0]["caption"] and docs[1]["caption"].endswith("PDF")

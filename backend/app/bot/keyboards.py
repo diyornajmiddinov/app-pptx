@@ -17,6 +17,11 @@ def app_url(lang: str) -> str:
     return f"{settings.webapp_url}{sep}lang={lang}"
 
 
+def paper_url(lang: str, doc_type: str, user_id: int | None = None) -> str:
+    """The Mini App's referat form (main.jsx: mode=paper); with user_id, signed for the bottom keyboard."""
+    return f"{app_url(lang)}&mode=paper&type={doc_type}" + (f"&t={make_app_token(user_id)}" if user_id else "")
+
+
 def editor_url(user_id: int, lang: str) -> str:
     """Signed link to the desktop editor; the token is in the #fragment, so it never reaches server logs."""
     return f"{settings.webapp_url.rstrip('/')}/editor.html#t={make_editor_token(user_id)}&lang={lang}"
@@ -37,8 +42,11 @@ def main_keyboard(lang: str, user_id: int) -> dict:
     no initData that way, so the URL carries this user's signed token (auth.make_app_token)."""
     def b(key):
         return {"text": t(lang, key)}
-    create = {**b("kb_create"), "web_app": {"url": f"{app_url(lang)}&t={make_app_token(user_id)}"}} if has_webapp() else b("kb_create")
-    return {"keyboard": [[create], [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
+    def app(key, url):
+        return {**b(key), "web_app": {"url": url}} if has_webapp() else b(key)
+    create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}")
+    papers = [app(f"kb_{d}", paper_url(lang, d, user_id)) for d in ("referat", "mustaqil")]
+    return {"keyboard": [[create], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 

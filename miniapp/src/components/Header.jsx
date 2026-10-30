@@ -1,6 +1,6 @@
 import { useI18n } from '../i18n/index.jsx';
 
-export default function Header({ user, onLangChange }) {
+export default function Header({ user, onLangChange, subtitle }) {
   const { t, lang, langs } = useI18n();
   const name = user?.first_name || t('guest');
   const initial = name.charAt(0).toUpperCase();
@@ -17,7 +17,7 @@ export default function Header({ user, onLangChange }) {
       )}
       <div className="min-w-0 flex-1">
         <h1 className="truncate text-[21px] font-bold leading-tight tracking-tight">{t('hello', { name })}</h1>
-        <p className="text-[14px] text-tg-hint">{t('subtitle')}</p>
+        <p className="text-[14px] text-tg-hint">{subtitle || t('subtitle')}</p>
       </div>
       {/* interface language: the same choice as in the bot, saved on the server */}
       <div role="radiogroup" aria-label={t('uiLang')} className="flex shrink-0 rounded-lg bg-tg-secondary-bg p-0.5">

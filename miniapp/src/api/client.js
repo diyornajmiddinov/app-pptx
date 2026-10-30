@@ -33,6 +33,8 @@ async function request(method, path, { initData, payload } = {}) {
 
 /** New presentation: AI writes content in the chosen template's style. */
 export const generatePresentation = ({ initData, payload }) => request('POST', '/api/generate', { initData, payload });
+/** Referat / mustaqil ish: charged now, written by the worker; the Word and PDF files come to the chat. */
+export const orderPaper = ({ initData, payload }) => request('POST', '/api/paper', { initData, payload });
 /** One of the user's presentations (deck_id) redrawn in another template (one short AI call adapts the tone). */
 export const restylePresentation = ({ initData, payload }) => request('POST', '/api/restyle', { initData, payload });
 /** { decks: [{ id, topic, template_id, slides, created, updated }] }, newest first */
