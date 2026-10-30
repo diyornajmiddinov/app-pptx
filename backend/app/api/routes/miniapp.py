@@ -73,9 +73,11 @@ async def generate(req: GenerateRequest, tg_user: dict = Depends(telegram_user))
     if req.user_id != tg_user["id"]:
         raise HTTPException(403, "User mismatch")
     lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
-    price = (await app_settings.get())["price_generate"]  # fixed at the moment of payment: a later price change does not alter the refund
-    await _charge_or_402(tg_user["id"], price, "generate", lang)
-    job_id, ahead = await jobs.enqueue("generate", tg_user["id"], req.model_dump(), price)
+    ordered = await jobs.order_generate(tg_user["id"], req.model_dump())  # the first deck may be free (admin panel)
+    if ordered is None:
+        await send_low_balance(tg_user["id"], lang, await jobs.generate_price(tg_user["id"]))
+        raise HTTPException(402, "Balans yetarli emas")
+    job_id, ahead, _ = ordered
     await _queued(tg_user["id"], lang, t(lang, "queued", topic=req.topic), ahead)
     return {"status": "queued", "job": job_id, "ahead": ahead}
 
@@ -109,7 +111,8 @@ async def me(tg_user: dict = Depends(telegram_user)):
     u = await db.pool().fetchrow("SELECT first_name, last_name FROM users WHERE id = $1", tg_user["id"])
     return {"user": {"id": tg_user["id"], **(dict(u) if u else {})},  # the keyboard-opened app knows only the id
             "lang": await lang_of(tg_user["id"], tg_user.get("language_code")), "balance": await billing.balance(tg_user["id"]),
-            "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"]}}
+            "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"],
+                       "now": await jobs.generate_price(tg_user["id"])}}  # a new deck for this user now (the first may be free)
 
 
 @router.post("/api/me")

@@ -95,3 +95,46 @@ async def test_busy_worker_tells_how_many_are_ahead(client, tg, monkeypatch):
         r = await client.post("/api/generate", headers=h(), json=body)
     assert r.json()["ahead"] == 2
     assert "Navbatda oldingizda 2 ta" in tg.texts()[-1]  # 2 workers busy -> it has to wait
+
+
+# ---------------------------------------------------------------- the first deck may be free (admin panel)
+
+async def test_first_deck_free_in_the_mini_app_once(client, tg):
+    from app.services import app_settings
+    await app_settings.set_many({"first_generate_price": 0}, 1000)
+    await add_user(U)  # no money at all
+    assert (await client.get("/api/me", headers=h())).json()["prices"]["now"] == 0
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "language": "uz", "topic": "Mavzu"}
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
+    assert await billing.balance(U) == 0
+    assert await db.pool().fetchval("SELECT price FROM jobs") == 0
+    assert (await client.get("/api/me", headers=h())).json()["prices"]["now"] == 5000
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 402  # the second one is paid
+
+
+async def test_two_requests_at_once_get_one_free_deck(tg):
+    import asyncio
+
+    from app.services import app_settings
+    await app_settings.set_many({"first_generate_price": 0}, 1000)
+    await add_user(U, balance=10000)
+    payload = {"topic": "Mavzu", "template_id": 1, "slide_count": 8}
+    results = await asyncio.gather(*(jobs.order_generate(U, payload) for _ in range(4)))
+    prices = sorted(r[2] for r in results if r)
+    assert prices == [0, 5000, 5000] and results.count(None) == 1  # 10 000 so'm: one free deck + two paid, the fourth refused
+    assert await billing.balance(U) == 0 and not await billing.reconcile()
+
+
+async def test_a_failed_first_deck_leaves_the_free_one(tg, monkeypatch):
+    from app.services import app_settings
+    await app_settings.set_many({"first_generate_price": 0}, 1000)
+    await add_user(U)
+
+    async def broken(*a, **k):
+        raise RuntimeError("test")
+    monkeypatch.setattr(jobs, "build", broken)
+    assert (await jobs.order_generate(U, {"topic": "Mavzu", "template_id": 1, "slide_count": 8}))[2] == 0
+    await jobs.run_pending()  # failed, "refunded" 0
+    assert await jobs.generate_price(U) == 0  # still the first deck
+    await db.pool().execute("INSERT INTO decks (id, user_id, request, content) VALUES ('1', $1, '{}', '{}')", U)
+    assert await jobs.generate_price(U) == 5000  # a deck from before the jobs table counts too

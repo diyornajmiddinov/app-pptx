@@ -95,8 +95,9 @@ export default function App() {
     if (!user?.id) { showAlert(t('noUser')); return; }
     if (!restyling) { // the user checks the topic's spelling: a typo makes the AI write about something else
       const topic = details.topic.trim();
-      const price = account?.prices?.generate;
-      const text = t('confirmTopic', { topic: topic.length > 110 ? `${topic.slice(0, 110)}…` : topic, n: slideCount, price: price ? money(price, lang) : '' });
+      const price = account?.prices?.now ?? account?.prices?.generate; // the first deck may cost less (admin panel)
+      const text = t('confirmTopic', { topic: topic.length > 110 ? `${topic.slice(0, 110)}…` : topic, n: slideCount,
+        price: price === 0 ? t('free') : price ? money(price, lang) : '' });
       submittingRef.current = true; // no second tap while the question is open
       const ok = await askConfirm(text);
       submittingRef.current = false;
@@ -131,8 +132,10 @@ export default function App() {
   }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
-  const price = account?.prices?.[restyling ? 'restyle' : 'generate'];
-  const buttonText = `${restyling ? t('restyleBtn') : t('mainBtn')}${price ? ` · ${money(price, lang)}` : ''}`;
+  const price = restyling ? account?.prices?.restyle : account?.prices?.now ?? account?.prices?.generate;
+  const priceText = price === 0 ? t('free') : price ? money(price, lang) : '';
+  const buttonText = `${restyling ? t('restyleBtn') : t('mainBtn')}${priceText ? ` · ${priceText}` : ''}`;
+  const firstOffer = !restyling && account?.prices?.now != null && account.prices.now < account.prices.generate;
   const editorTab = mode === 'editor';
   useMainButton({ tg, text: buttonText, active: ready, onClick: handleGenerate, hidden: editorTab });
 
@@ -142,6 +145,11 @@ export default function App() {
       {account && (
         <p className="-mt-3 mb-5 text-[13px] text-tg-hint">
           <span className="font-semibold text-tg-text">{t('balance', { balance: money(account.balance, lang) })}</span> · {t('topupHint')}
+        </p>
+      )}
+      {firstOffer && mode !== 'editor' && (
+        <p className="-mt-2 mb-5 rounded-xl bg-tg-secondary-bg px-3 py-2 text-[14px] font-medium text-tg-text">
+          {account.prices.now === 0 ? t('firstFree') : t('firstPrice', { price: money(account.prices.now, lang) })}
         </p>
       )}
       <div className="mb-5 rounded-xl bg-tg-secondary-bg p-1" role="tablist" aria-label={t('mode')}>

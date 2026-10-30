@@ -171,16 +171,6 @@ async def _prices() -> dict:
             "referral_bonus": cfg["referral_bonus"], "support_url": settings.support_url}
 
 
-async def _generate_price(uid: int) -> int:
-    """The first presentation ever (bot or site) may cost less: app_settings first_generate_price."""
-    cfg = await app_settings.get()
-    first = cfg["first_generate_price"]
-    if first is not None and first < cfg["price_generate"] and not await db.pool().fetchval(
-            "SELECT 1 FROM jobs WHERE user_id = $1 AND kind = 'generate' AND state <> 'failed' LIMIT 1", uid):
-        return first
-    return cfg["price_generate"]
-
-
 @router.get("/config")
 async def config():
     return await _prices()
@@ -196,7 +186,7 @@ async def hit(request: Request, user_agent: str | None = Header(None)):
 async def me(uid: int = Depends(web_user)):
     u = await db.pool().fetchrow("SELECT first_name, last_name, username, lang FROM users WHERE id = $1", uid)
     out = {"user": {"id": uid, **dict(u)}, "lang": u["lang"] or "uz", "balance": await billing.balance(uid), **await _prices()}
-    out["prices"]["now"] = await _generate_price(uid)  # what "create" costs this user right now
+    out["prices"]["now"] = await jobs.generate_price(uid)  # what "create" costs this user right now
     return out
 
 
@@ -240,12 +230,13 @@ async def _charge(uid: int, price: int, kind: str):
 async def generate(req: GenerateRequest, uid: int = Depends(web_user)):
     if req.outline is not None and len(req.outline) != req.slide_count:
         raise HTTPException(422, "outlineStale")  # the slide count changed after the outline was made
-    price = await _generate_price(uid)  # fixed at payment: a later price change does not alter the refund
-    await _charge(uid, price, "generate")
     payload = {"user_id": uid, "via": "web", **req.model_dump(exclude_none=True)}
     if not payload.get("source"):
         payload.pop("source", None)
-    job_id, ahead = await jobs.enqueue("generate", uid, payload, price)
+    ordered = await jobs.order_generate(uid, payload)  # the price is fixed here: a later change does not alter the refund
+    if ordered is None:
+        raise HTTPException(402, "lowBalance")
+    job_id, ahead, _ = ordered
     await growth.count("generates")
     return {"job": job_id, "ahead": ahead}
 

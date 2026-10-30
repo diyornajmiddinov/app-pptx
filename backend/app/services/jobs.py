@@ -17,7 +17,7 @@ from pathlib import Path
 from app.core import db
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_document, send_message
-from app.services import billing, decks, papers
+from app.services import app_settings, billing, decks, papers
 from app.services.ai import models, pipeline
 from app.services.ai.render import render
 from app.services.users import lang_of
@@ -34,11 +34,45 @@ JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini bus
 async def enqueue(kind: str, user_id: int, payload: dict, price: int) -> tuple[int, int]:
     """Add a paid job. Returns (job id, how many jobs are ahead of it); the worker is woken at once."""
     async with db.transaction() as con:
-        job_id = await con.fetchval("INSERT INTO jobs (kind, user_id, payload, price) VALUES ($1, $2, $3, $4) RETURNING id",
-                                    kind, user_id, payload, price)
-        ahead = await con.fetchval("SELECT count(*) FROM jobs WHERE state IN ('queued', 'running') AND id < $1", job_id)
-        await con.execute("SELECT pg_notify('jobs', $1)", str(job_id))
+        return await _enqueue_in(con, kind, user_id, payload, price)
+
+
+async def _enqueue_in(con, kind: str, user_id: int, payload: dict, price: int) -> tuple[int, int]:
+    job_id = await con.fetchval("INSERT INTO jobs (kind, user_id, payload, price) VALUES ($1, $2, $3, $4) RETURNING id",
+                                kind, user_id, payload, price)
+    ahead = await con.fetchval("SELECT count(*) FROM jobs WHERE state IN ('queued', 'running') AND id < $1", job_id)
+    await con.execute("SELECT pg_notify('jobs', $1)", str(job_id))  # sent when the transaction commits
     return job_id, ahead
+
+
+# ---------------------------------------------------------------- a new deck: the first one may be free
+
+_HAS_DECK = """SELECT EXISTS (SELECT 1 FROM jobs WHERE user_id = $1 AND kind = 'generate' AND state <> 'failed')
+                   OR EXISTS (SELECT 1 FROM decks WHERE user_id = $1)"""
+
+
+def _price(cfg: dict, has_deck: bool) -> int:
+    first = cfg["first_generate_price"]
+    return first if first is not None and first < cfg["price_generate"] and not has_deck else cfg["price_generate"]
+
+
+async def generate_price(user_id: int) -> int:
+    """What a new deck costs this user now (to show): first_generate_price (app_settings, the admin panel) for the
+    first deck ever — bot, Mini App or site; a first deck that failed does not count."""
+    return _price(await app_settings.get(), await db.pool().fetchval(_HAS_DECK, user_id))
+
+
+async def order_generate(user_id: int, payload: dict) -> tuple[int, int, int] | None:
+    """Charge and queue a new deck in one transaction, under the user's balance lock: two requests at the same
+    moment cannot both get the first-deck price. Returns (job id, jobs ahead, price), or None if the balance is low."""
+    cfg = await app_settings.get()
+    async with db.transaction() as con:
+        await billing.lock_in(con, user_id)
+        price = _price(cfg, await con.fetchval(_HAS_DECK, user_id))
+        if await billing.apply_in(con, user_id, -price, "generate", None, False) is None:
+            return None
+        job_id, ahead = await _enqueue_in(con, "generate", user_id, payload, price)
+    return job_id, ahead, price
 
 
 async def claim() -> dict | None:

@@ -30,7 +30,7 @@ export default function Settings() {
     if (!await confirm({ title: 'Narxlarni saqlash', body: <>
       Yangi taqdimot: <b>{som(body.price_generate)}</b><br />Shablon almashtirish: <b>{som(body.price_restyle)}</b><br />Referat (sayt): <b>{som(body.price_paper)}</b><br />
       To'ldirish: {body.topup_amounts.map(som).join(', ')}<br />
-      Taklif bonusi: <b>{som(body.referral_bonus)}</b><br />Birinchi taqdimot (sayt): <b>{first === null ? "oddiy narx" : som(first)}</b>
+      Taklif bonusi: <b>{som(body.referral_bonus)}</b><br />Birinchi taqdimot: <b>{first === null ? "oddiy narx" : first === 0 ? 'tekin' : som(first)}</b>
       <br /><br />Bot, Mini App va sayt darhol yangi narxlarni ko'rsatadi.</> })) return;
     setBusy(true);
     try { await api.saveSettings(body); toast('Saqlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
@@ -62,9 +62,16 @@ export default function Settings() {
             <div className="field"><label htmlFor="p-ref">Taklif bonusi (sayt)</label>
               <input id="p-ref" className="input num" inputMode="numeric" value={form.ref} onChange={(e) => setForm({ ...form, ref: e.target.value })} />
               <span className="help">Taklif qilingan do'st birinchi marta to'ldirganda taklif qilganga beriladi. 0 — o'chirilgan</span></div>
-            <div className="field"><label htmlFor="p-first">Birinchi taqdimot narxi (sayt)</label>
-              <input id="p-first" className="input num" inputMode="numeric" value={form.first} onChange={(e) => setForm({ ...form, first: e.target.value })} placeholder="bo'sh — oddiy narx" />
-              <span className="help">Foydalanuvchining eng birinchi taqdimoti saytda shu narxda. 0 — bepul</span></div>
+            <div className="field"><label htmlFor="p-first">Birinchi taqdimot (bot, Mini App va sayt)</label>
+              <div className="row" style={{ gap: 8, flexWrap: 'wrap' }}>
+                {[['', 'Oddiy narx'], ['0', 'Tekin']].map(([v, label]) => (
+                  <button key={label} type="button" className={`btn sm${String(form.first).trim() === v ? ' primary' : ''}`}
+                    onClick={() => setForm({ ...form, first: v })}>{label}</button>
+                ))}
+                <input id="p-first" className="input num" style={{ flex: 1, minWidth: 120 }} inputMode="numeric" value={form.first}
+                  onChange={(e) => setForm({ ...form, first: e.target.value })} placeholder="yoki chegirma narxi" />
+              </div>
+              <span className="help">Har bir foydalanuvchining eng birinchi taqdimoti shu narxda. 0 — tekin, bo'sh — oddiy narx. Bajarilmay qolgan taqdimot hisoblanmaydi.</span></div>
             <div className="row"><button type="button" className="btn primary" disabled={busy || !valid} onClick={save}>Saqlash</button></div>
           </div>
         </div>

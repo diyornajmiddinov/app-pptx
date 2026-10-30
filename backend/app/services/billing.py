@@ -13,11 +13,17 @@ async def balance(user_id: int) -> int:
     return await db.pool().fetchval("SELECT amount FROM balances WHERE user_id = $1", user_id) or 0
 
 
-async def apply_in(con, user_id: int, delta: int, kind: str, ref: str | None, allow_negative: bool) -> int | None:
-    """Add `delta` inside an open transaction. Returns the new balance, or None if refused (low balance / duplicate ref)."""
+async def lock_in(con, user_id: int) -> int:
+    """Lock the user's balance row until the transaction ends (the user's money moves one request at a time) and
+    return the balance. Decisions about the price (the first deck) are made under this lock, too."""
     await con.execute("INSERT INTO users (id) VALUES ($1) ON CONFLICT (id) DO NOTHING", user_id)  # balances / ledger point at users
     await con.execute("INSERT INTO balances (user_id, amount) VALUES ($1, 0) ON CONFLICT (user_id) DO NOTHING", user_id)
-    old = await con.fetchval("SELECT amount FROM balances WHERE user_id = $1 FOR UPDATE", user_id)
+    return await con.fetchval("SELECT amount FROM balances WHERE user_id = $1 FOR UPDATE", user_id)
+
+
+async def apply_in(con, user_id: int, delta: int, kind: str, ref: str | None, allow_negative: bool) -> int | None:
+    """Add `delta` inside an open transaction. Returns the new balance, or None if refused (low balance / duplicate ref)."""
+    old = await lock_in(con, user_id)
     if ref and await con.fetchval("SELECT 1 FROM ledger WHERE ref = $1", ref):
         return None
     new = old + delta
