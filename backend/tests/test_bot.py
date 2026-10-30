@@ -34,6 +34,7 @@ async def test_first_start_asks_language_then_welcome_with_menu(tg):
     rows = welcome["reply_markup"]["keyboard"]
     assert rows[0][0]["web_app"]["url"].startswith("https://app.test?lang=ru&t=")  # the app opens from the menu itself
     assert db.pool() and (await db.pool().fetchval("SELECT lang FROM users WHERE id = $1", U)) == "ru"
+    assert not tg.sent("setChatMenuButton")  # the button by the input field stays the command list
 
 
 async def test_users_are_recorded(tg):
@@ -129,3 +130,10 @@ async def test_the_menu_has_referat_and_mustaqil_ish_buttons(tg):
     await bot.handle(msg("📘 Mustaqil ish"))  # an old keyboard sends the text: the form comes as an inline button
     url = tg.last()["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"]
     assert "mode=paper&type=mustaqil" in url
+
+
+async def test_menu_commands_open_the_forms(tg):
+    await add_user(U)
+    for command, part in (("/taqdimot", "lang=uz"), ("/referat", "type=referat"), ("/mustaqil", "type=mustaqil")):
+        await bot.handle(msg(command))
+        assert part in tg.last()["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"]

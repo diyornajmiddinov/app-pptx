@@ -19,7 +19,7 @@ from app.bot.keyboards import BUTTONS, app_url, editor_keyboard, has_webapp, lan
 from app.core import alerts, telegram
 from app.core.auth import make_admin_token
 from app.core.config import settings
-from app.core.telegram import answer_callback, send_message, set_menu_button
+from app.core.telegram import answer_callback, send_message
 from app.services import billing, editor
 from app.services import images_pdf as pdfs
 from app.services.users import has_choice, lang_of, set_lang, touch
@@ -50,8 +50,6 @@ class Msg:
 
 
 async def welcome(chat_id: int, lang: str):
-    if has_webapp():
-        await set_menu_button(chat_id, t(lang, "open"), app_url(lang))  # the button by the input field follows the language
     await send_message(chat_id, t(lang, "welcome"), main_keyboard(lang, chat_id))
 
 
@@ -101,8 +99,8 @@ async def cmd_create(m: Msg):
 
 
 async def cmd_paper(m: Msg):
-    """An old keyboard without the paper buttons' web_app (or no HTTPS yet): the form as an inline button."""
-    doc_type = "mustaqil" if m.key == "kb_mustaqil" else "referat"
+    """/referat, /mustaqil (the Menu), or an old keyboard without the buttons' web_app: the form as an inline button."""
+    doc_type = "mustaqil" if m.key == "kb_mustaqil" or m.text.lower().startswith("/mustaqil") else "referat"
     if has_webapp():
         await send_message(m.chat_id, t(m.lang, "create_open"),
                            {"inline_keyboard": [[{"text": t(m.lang, f"kb_{doc_type}"), "web_app": {"url": paper_url(m.lang, doc_type)}}]]})
@@ -158,8 +156,8 @@ Handler = Callable[[Msg], Awaitable[None]]
 # (commands, bottom-menu button keys, admins only, handler) — the first match wins
 ROUTES: list[tuple[tuple[str, ...], tuple[str, ...], bool, Handler]] = [
     (("/start",), (), False, cmd_start),
-    ((), ("kb_create",), False, cmd_create),
-    ((), ("kb_referat", "kb_mustaqil"), False, cmd_paper),
+    (("/taqdimot",), ("kb_create",), False, cmd_create),
+    (("/referat", "/mustaqil"), ("kb_referat", "kb_mustaqil"), False, cmd_paper),
     (("/pdf",), ("kb_pdf",), False, cmd_pdf),
     ((), ("kb_pdf_make", "kb_pdf_cancel"), False, cmd_old_pdf_button),
     (("/language", "/til"), ("kb_lang",), False, cmd_language),

@@ -104,5 +104,6 @@ async def answer_callback(callback_id: str, text: str = ""):
     return await call("answerCallbackQuery", json={"callback_query_id": callback_id, "text": text})
 
 
-async def set_menu_button(chat_id: int, text: str, url: str):
-    return await call("setChatMenuButton", json={"chat_id": chat_id, "menu_button": {"type": "web_app", "text": text, "web_app": {"url": url}}})
+async def set_commands_menu(chat_id: int | None = None):
+    """The button by the input field opens the command list (Telegram's "Menu"); without chat_id: the default for all."""
+    return await call("setChatMenuButton", json={**({"chat_id": chat_id} if chat_id else {}), "menu_button": {"type": "commands"}})

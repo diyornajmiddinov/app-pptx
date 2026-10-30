@@ -13,17 +13,24 @@ def test_what_names_the_update():
     assert polling.what({"update_id": 1, "my_chat_member": {}}) == "my_chat_member"
 
 
-async def test_menu_buttons_follow_a_new_address(tg, tmp_path, monkeypatch):
+async def test_every_user_gets_the_command_list_as_the_menu_once(tg, tmp_path, monkeypatch):
     monkeypatch.setattr(alerts, "DATA", tmp_path)
     await add_user(1, lang="ru")
     await add_user(2, lang=None)
-    (tmp_path / "last_webapp_url").write_text("https://old.example")
     await polling.refresh_menu_buttons()
-    buttons = {kw["chat_id"]: kw["menu_button"]["web_app"]["url"] for kw in tg.sent("setChatMenuButton")}
-    assert buttons == {1: "https://app.test?lang=ru", 2: "https://app.test?lang=uz"}
+    sent = tg.sent("setChatMenuButton")
+    assert all(kw["menu_button"] == {"type": "commands"} for kw in sent)
+    assert sorted(kw.get("chat_id", 0) for kw in sent) == [0, 1, 2]  # the default (no chat_id) and each user's own
     tg.calls.clear()
-    await polling.refresh_menu_buttons()  # same address: nothing to do
+    await polling.refresh_menu_buttons()  # done once
     assert not tg.sent("setChatMenuButton")
+
+
+async def test_the_command_list_has_the_three_makers(tg):
+    await polling.set_commands()
+    uz = tg.sent("setMyCommands")[0]["commands"]
+    assert [c["command"] for c in uz][:4] == ["start", "taqdimot", "referat", "mustaqil"]
+    assert {c["command"]: c["description"] for c in uz}["referat"] == "Referat yozish"
 
 
 async def test_one_failing_update_does_not_stop_the_bot(monkeypatch, caplog):

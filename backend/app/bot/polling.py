@@ -9,10 +9,9 @@ import asyncio
 import logging
 
 from app.bot import handlers as bot
-from app.bot.keyboards import app_url, has_webapp
 from app.core import alerts, db, systemd, telegram
 from app.core.config import settings
-from app.texts import T, t
+from app.texts import T
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 logging.getLogger("httpx").setLevel(logging.WARNING)  # its request lines contain the bot token
@@ -37,29 +36,34 @@ async def handle(u: dict):
         log.exception("Bot xabarni qayta ishlay olmadi · %s", what(u))
 
 
+COMMANDS = ("start", "taqdimot", "referat", "mustaqil", "pdf", "balance", "editor", "language", "help")  # the Menu list, in order
+MENU = "commands"  # what the button by the input field is now; written to data/menu_button once every user has it
+
+
 async def refresh_menu_buttons():
-    """The Mini App address changed (temporary tunnel): every user's menu button still opens the old one."""
-    mark = alerts.DATA / "last_webapp_url"
+    """The button by the input field opens the command list. Users who still have the old per-chat "open the app"
+    button are switched once (data/menu_button remembers that it was done), and the default is set for new ones."""
+    mark = alerts.DATA / "menu_button"
     try:
-        old = mark.read_text().strip()
+        if mark.read_text().strip() == MENU:
+            return
     except OSError:
-        old = ""
-    if old == settings.webapp_url or not has_webapp():
-        return
-    rows = await db.pool().fetch("SELECT id, coalesce(lang, 'uz') AS lang FROM users")
+        pass
+    await telegram.set_commands_menu()
+    rows = await db.pool().fetch("SELECT id FROM users")
     for r in rows:
         try:
-            await telegram.set_menu_button(r["id"], t(r["lang"], "open"), app_url(r["lang"]))
+            await telegram.set_commands_menu(r["id"])
         except Exception:  # blocked the bot etc.
             pass
         await asyncio.sleep(0.05)
-    mark.write_text(settings.webapp_url)
-    log.info("menu buttons updated for %d users", len(rows))
+    mark.write_text(MENU)
+    log.info("menu buttons: the command list for %d users", len(rows))
 
 
 async def set_commands():
     for lang in ("uz", "ru", "en"):
-        cmds = [{"command": c, "description": T[lang][f"cmd_{c}"]} for c in ("start", "balance", "pdf", "editor", "language", "help")]
+        cmds = [{"command": c, "description": T[lang][f"cmd_{c}"]} for c in COMMANDS]
         await telegram.call("setMyCommands", json={"commands": cmds, **({} if lang == "uz" else {"language_code": lang})})
 
 
