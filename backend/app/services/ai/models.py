@@ -1,8 +1,10 @@
 """
 The language models over HTTP (async): Gemini when GEMINI_API_KEY is set, otherwise Claude.
 
-Gemini: a busy / slow answer is retried up to 5 times with pauses, moving through the fallback models; a model that
-rejects the thinking setting is asked again without it. Every request — failed ones and retries too — is reported
+Gemini: only GEMINI_MODEL answers (a lighter fallback model writes noticeably worse and shorter text). A busy
+(503 "high demand", Google's side) or slow answer is retried with growing pauses — 503 comes back in 2-3 s, and about
+half of the requests to a new model can get it at busy hours — up to ~1.5 minutes in all. GEMINI_FALLBACKS (empty by
+default) may list other models to move through. A model that rejects the thinking setting is asked again without it. Every request — failed ones and retries too — is reported
 to `on_usage` (the worker points it at the ai_usage table), tagged with `usage_context` (whose job it is).
 """
 import asyncio
@@ -15,11 +17,11 @@ import httpx
 
 CLAUDE_MODEL = os.getenv("SLIDEAI_MODEL", "claude-sonnet-5-5")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash")  # a fixed model: "*-latest" moves to the newest one, often overloaded (503)
-GEMINI_FALLBACKS = [m for m in os.getenv("GEMINI_FALLBACKS", "gemini-3.5-flash,gemini-flash-lite-latest").split(",") if m]
+GEMINI_FALLBACKS = [m for m in os.getenv("GEMINI_FALLBACKS", "").split(",") if m]
 GEMINI_THINKING = os.getenv("GEMINI_THINKING", "low")  # "low" answers much faster; "" = the model's default
 GEMINI_IMAGE_MODEL = os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image")
 GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
-RETRY_WAIT = (3, 8, 15, 25)  # s between the 5 attempts
+RETRY_WAIT = (2, 3, 5, 8, 10, 12, 15, 15, 15)  # s between the 10 attempts (~85 s of waiting at most)
 RETRYABLE = (429, 500, 502, 503, 504)
 
 Messages = list[dict]

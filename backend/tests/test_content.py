@@ -41,7 +41,7 @@ def net(monkeypatch):
                 return queue.pop(0) if len(queue) > 1 else queue[0]
         return httpx.Response(404)
     monkeypatch.setattr(models, "TRANSPORT", httpx.MockTransport(handle))
-    monkeypatch.setattr(models, "RETRY_WAIT", (0, 0, 0, 0))
+    monkeypatch.setattr(models, "RETRY_WAIT", (0,) * len(models.RETRY_WAIT))
     monkeypatch.setenv("GEMINI_API_KEY", "k")
     monkeypatch.setenv("PEXELS_API_KEY", "p")
     return answers, seen
@@ -61,6 +61,14 @@ async def test_gemini_retries_when_busy_and_reports_every_request(net, monkeypat
     assert [u["status"] for u in usage] == ["503", "429", "ok"]
     assert usage[-1]["total_tokens"] == 14 and usage[-1]["user_id"] == 5
     assert len(seen) == 3
+
+
+async def test_only_the_main_model_answers_even_when_it_is_busy_for_long(net):
+    answers, seen = net
+    ok = {"candidates": [{"content": {"parts": [{"text": '{"ok": 1}'}]}}]}
+    answers["generativelanguage"] = [httpx.Response(503)] * 8 + [httpx.Response(200, json=ok)]
+    assert await models.gemini([{"role": "user", "content": "x"}]) == '{"ok": 1}'
+    assert len(seen) == 9 and all(f"/models/{models.GEMINI_MODEL}:" in u for u in seen)  # no lighter fallback model
 
 
 async def test_gemini_does_not_retry_a_bad_request(net):
