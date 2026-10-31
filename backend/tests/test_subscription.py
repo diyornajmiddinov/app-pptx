@@ -8,7 +8,7 @@ from app.api import main
 from app.bot import handlers as bot
 from app.core import alerts, telegram
 from app.core.auth import make_admin_token
-from app.services import app_settings, billing, subscription
+from app.services import app_settings, billing
 
 CHANNEL = "@slidechi_news"
 
@@ -29,7 +29,6 @@ def channel(tg, monkeypatch):
             return {"ok": True, "result": {"status": "member" if body["user_id"] in members else "left"}}
         return {"ok": True, "result": {}}
     monkeypatch.setattr(telegram, "call", call)
-    subscription.forget()
     return members, state
 
 
@@ -75,14 +74,27 @@ async def test_a_non_member_cannot_use_anything_until_joining(tg, channel):
     await bot.handle(press("balance"))
     assert join_prompt(tg)
     members.add(U)
-    subscription.forget(U)
     tg.calls.clear()
     await bot.handle(msg("/help"))
     await bot.handle(msg("/balance"))
     assert not join_prompt(tg)
     asked = state["asked"]
     await bot.handle(msg("/help"))
-    assert state["asked"] == asked  # a member is remembered for a while: Telegram is not asked on every message
+    assert state["asked"] == asked + 1  # every request is checked with Telegram
+    members.discard(U)  # left the channel: stopped at the very next message
+    tg.calls.clear()
+    await bot.handle(msg("/help"))
+    assert join_prompt(tg)
+
+
+async def test_a_new_user_writing_anything_first_picks_the_language_then_is_asked_in_it(tg, channel):
+    await on()
+    await bot.handle(msg("salom", uid=777))  # never pressed /start, no language yet
+    assert tg.last()["reply_markup"]["inline_keyboard"][0][0]["callback_data"].startswith("lang:")
+    assert not join_prompt(tg)
+    await bot.handle(press("lang:ru", uid=777))
+    prompt = join_prompt(tg)
+    assert "подпишитесь" in prompt["text"] and prompt["reply_markup"]["inline_keyboard"][1][0]["text"] == "✅ Я подписался"
 
 
 async def test_admins_and_a_broken_check_are_never_locked_out(tg, channel, caplog):
@@ -115,7 +127,6 @@ async def test_the_mini_app_refuses_orders_of_non_members_without_charging(tg, c
         assert r.status_code == 403 and r.json()["detail"] == "subscribe"
         assert await billing.balance(MU) == 10000 and join_prompt(tg)
         members.add(MU)
-        subscription.forget(MU)
         assert (await c.post("/api/generate", headers=h(), json=body)).status_code == 202
 
 

@@ -454,7 +454,6 @@ async def put_subscription(req: SubscriptionReq, uid: int = Depends(admin_user))
         title = info.get("title")
     new = {"required_channel": chat, "required_channel_link": link if chat else ""}
     await app_settings.set_many(new, uid)
-    subscription.forget()
     await audit(uid, "subscription", None, before=old, after=new)
     return {**new, "title": title}
 

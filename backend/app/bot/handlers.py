@@ -97,6 +97,15 @@ async def channel_joined(cm: dict):
 
 # ---------------------------------------------------------------- commands and menu buttons
 
+async def not_member(chat_id: int, user_id: int, lang: str):
+    """Not in the mandatory channel: a new user first picks the language (the join message then comes in it),
+    everyone else gets the join message."""
+    if await has_choice(user_id):
+        await subscription.ask(chat_id, lang)
+    else:
+        await send_message(chat_id, CHOOSE, lang_keyboard())
+
+
 async def cmd_start(m: Msg):
     if await has_choice(m.uid):
         if await subscription.is_member(m.uid):
@@ -233,7 +242,6 @@ async def on_callback(q: dict):
         else:
             await subscription.ask(chat_id, lang)
     elif data == "sub_check":
-        subscription.forget(uid)
         if await subscription.is_member(uid):
             await answer_callback(q["id"], t(lang, "sub_thanks"))
             await welcome(chat_id, lang)
@@ -241,7 +249,7 @@ async def on_callback(q: dict):
             await answer_callback(q["id"], t(lang, "sub_not_yet"))
     elif not await subscription.is_member(uid):
         await answer_callback(q["id"])
-        await subscription.ask(chat_id, lang)
+        await not_member(chat_id, uid, lang)
     elif not await money.on_callback(q, data, chat_id, uid, lang):
         await answer_callback(q["id"])
 
@@ -257,7 +265,7 @@ async def on_message(raw: dict):
 
     if route(m) not in (cmd_start, cmd_language) and not await subscription.is_member(uid):
         # not in the channel: nothing works but /start and choosing the language (which then asks to join)
-        await subscription.ask(m.chat_id, m.lang)
+        await not_member(m.chat_id, uid, m.lang)
         return
     if (stage := await pdfs.stage(m.uid)) and await pdf.on_message(m, stage):
         return
