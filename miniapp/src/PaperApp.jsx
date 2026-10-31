@@ -101,7 +101,7 @@ export default function PaperApp() {
     } catch (err) {
       hapticNotify('error');
       showAlert(err.status === 429 ? t('e429paper') : t(err.key || 'eServer', { status: err.status }));
-      if (err.status === 402) tg?.close(); // the bot has just sent the top-up buttons
+      if (err.status === 402 || err.key === 'eSubscribe') tg?.close(); // the bot has just sent the top-up / join buttons
     } finally {
       tg?.MainButton.hideProgress(); busy.current = false; setSubmitting(false);
     }

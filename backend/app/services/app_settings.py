@@ -15,7 +15,7 @@ def defaults() -> dict:
     return {"price_generate": settings.price_generate, "price_restyle": settings.price_restyle, "price_paper": settings.price_paper,
             "topup_amounts": list(settings.topup_amounts), "referral_bonus": settings.referral_bonus,
             "first_generate_price": settings.first_generate_price, "ai_model": models.default_choice(),
-            "custom_emoji": {}}
+            "custom_emoji": {}, "required_channel": "", "required_channel_link": ""}
 
 
 TTL = 5.0  # s

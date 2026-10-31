@@ -30,7 +30,7 @@ from app.core import alerts, telegram
 from app.core.auth import make_admin_token
 from app.core.config import settings
 from app.core.telegram import answer_callback, send_message
-from app.services import app_settings, billing, editor
+from app.services import app_settings, billing, editor, subscription
 from app.services import images_pdf as pdfs
 from app.services.users import has_choice, lang_of, set_lang, touch
 from app.texts import CHOOSE, LANGS, som, t
@@ -82,6 +82,10 @@ async def channel_joined(cm: dict):
     chat, status = cm["chat"], cm["new_chat_member"]["status"]
     if chat["type"] not in ("channel", "supergroup", "group") or cm["from"]["id"] not in settings.admin_ids:
         return
+    # a public chat or the mandatory-subscription channel is never the log channel: database backups go there
+    required = ((await app_settings.get()).get("required_channel") or "").lower()
+    if chat.get("username") or required in (str(chat["id"]), f"@{(chat.get('username') or '').lower()}"):
+        return
     if status == "administrator":
         alerts.set_channel(chat["id"])
         await send_message(chat["id"], "✅ <b>SlideAI log kanali ulandi.</b>\n\nBu yerga keladi:\n• har kuni bazaning zaxira nusxasi\n"
@@ -95,7 +99,10 @@ async def channel_joined(cm: dict):
 
 async def cmd_start(m: Msg):
     if await has_choice(m.uid):
-        await welcome(m.chat_id, m.lang)
+        if await subscription.is_member(m.uid):
+            await welcome(m.chat_id, m.lang)
+        else:
+            await subscription.ask(m.chat_id, m.lang)
     else:
         await send_message(m.chat_id, CHOOSE, lang_keyboard())
 
@@ -221,7 +228,20 @@ async def on_callback(q: dict):
         lang = data[5:]
         await set_lang(uid, lang)
         await answer_callback(q["id"], t(lang, "saved"))
-        await welcome(chat_id, lang)
+        if await subscription.is_member(uid):  # a new user: the channel comes right after the language
+            await welcome(chat_id, lang)
+        else:
+            await subscription.ask(chat_id, lang)
+    elif data == "sub_check":
+        subscription.forget(uid)
+        if await subscription.is_member(uid):
+            await answer_callback(q["id"], t(lang, "sub_thanks"))
+            await welcome(chat_id, lang)
+        else:
+            await answer_callback(q["id"], t(lang, "sub_not_yet"))
+    elif not await subscription.is_member(uid):
+        await answer_callback(q["id"])
+        await subscription.ask(chat_id, lang)
     elif not await money.on_callback(q, data, chat_id, uid, lang):
         await answer_callback(q["id"])
 
@@ -235,6 +255,10 @@ async def on_message(raw: dict):
     uid = user.get("id", raw["chat"]["id"])
     m = Msg(raw, raw["chat"]["id"], uid, user, await lang_of(uid, user.get("language_code")), text, BUTTONS.get(text), doc, image_id, kind)
 
+    if route(m) not in (cmd_start, cmd_language) and not await subscription.is_member(uid):
+        # not in the channel: nothing works but /start and choosing the language (which then asks to join)
+        await subscription.ask(m.chat_id, m.lang)
+        return
     if (stage := await pdfs.stage(m.uid)) and await pdf.on_message(m, stage):
         return
     if str(doc.get("file_name", "")).lower().endswith(editor.IMPORTABLE):

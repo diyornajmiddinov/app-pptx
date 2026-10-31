@@ -26,7 +26,8 @@ async function request(method, path, { initData, payload } = {}) {
     throw new ApiError(err.name === 'AbortError' ? 'eTimeout' : 'eNetwork', 0);
   } finally { clearTimeout(timer); }
   if (!res.ok) {
-    throw new ApiError(keyForStatus(res.status), res.status);
+    const detail = await res.clone().json().then((b) => b?.detail).catch(() => null);
+    throw new ApiError(detail === 'subscribe' ? 'eSubscribe' : keyForStatus(res.status), res.status);
   }
   return res.json().catch(() => ({}));
 }

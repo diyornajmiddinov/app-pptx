@@ -9,12 +9,14 @@ export default function Settings() {
   const { data, error, reload } = useLoad(() => api.settings(), []);
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [sub, setSub] = useState({ channel: '', link: '' });
   const toast = useToast();
   const [confirm, confirmNode] = useConfirm();
 
   useEffect(() => {
     if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, paper: data.values.price_paper, topup: data.values.topup_amounts.join(', '),
       ref: data.values.referral_bonus ?? 0, first: data.values.first_generate_price ?? '' });
+    if (data) setSub({ channel: data.values.required_channel || '', link: data.values.required_channel_link || '' });
   }, [data]);
 
   if (error && !data) return <div className="card"><ErrorBox error={error} retry={reload} /></div>;
@@ -43,6 +45,16 @@ export default function Settings() {
       Bot, Mini App va sayt bir necha soniyada shu modelga o'tadi. Navbatda turgan ishlar ham yangi model bilan yoziladi.</> })) return;
     setBusy(true);
     try { await api.saveAiModel(model); toast('Model almashtirildi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
+  };
+
+  const saveSub = async (off) => {
+    const channel = off ? '' : sub.channel.trim();
+    if (off && !await confirm({ title: "Majburiy obunani o'chirish", body: <>Bot hammaga kanalga a'zo bo'lmasdan ishlaydi.</> })) return;
+    setBusy(true);
+    try {
+      const r = await api.saveSubscription(channel, off ? '' : sub.link.trim());
+      toast(channel ? `Yoqildi: ${r.title || r.required_channel}` : "O'chirildi"); reload();
+    } catch (e) { toast(e.message, true); } finally { setBusy(false); }
   };
 
   const Provider = ({ on, name, note }) => (
@@ -94,6 +106,20 @@ export default function Settings() {
             </tbody></table>
           </div>
           <div className="card">
+            <div className="card-h"><h2>Majburiy obuna</h2>{data.values.required_channel ? <Pill tone="good">Yoqilgan</Pill> : <Pill>O'chiq</Pill>}</div>
+            <div className="card-b stack" style={{ gap: 12 }}>
+              <div className="field"><label htmlFor="s-ch">Kanal</label>
+                <input id="s-ch" className="input" value={sub.channel} onChange={(e) => setSub({ ...sub, channel: e.target.value })} placeholder="@kanal_nomi yoki https://t.me/kanal_nomi" />
+                <span className="help">A'zo bo'lmaganlar botdan (va Mini App'dan) foydalana olmaydi. Avval botni kanalga <b>administrator</b> qilib qo'shing.</span></div>
+              <div className="field"><label htmlFor="s-link">Taklif havolasi (faqat yopiq kanal uchun)</label>
+                <input id="s-link" className="input" value={sub.link} onChange={(e) => setSub({ ...sub, link: e.target.value })} placeholder="https://t.me/+..." /></div>
+              <div className="row" style={{ gap: 8 }}>
+                <button type="button" className="btn primary" disabled={busy || !sub.channel.trim()} onClick={() => saveSub(false)}>Saqlash va tekshirish</button>
+                {data.values.required_channel && <button type="button" className="btn" disabled={busy} onClick={() => saveSub(true)}>O'chirish</button>}
+              </div>
+            </div>
+          </div>
+          <div className="card">
             <div className="card-h"><h2>AI</h2></div>
             <table><tbody>
               <tr><td>Matn yozuvchi model</td><td>
@@ -130,7 +156,7 @@ export default function Settings() {
 }
 
 const ACTIONS = { balance: "Balans o'zgartirildi", message: 'Xabar yuborildi', card_paid: "Karta to'lovi tasdiqlandi",
-  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi' };
+  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi', subscription: "Majburiy obuna o'zgartirildi" };
 
 export function AdminLog() {
   const [page, setPage] = useState(1);

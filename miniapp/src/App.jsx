@@ -126,7 +126,7 @@ export default function App() {
     } catch (err) {
       hapticNotify('error');
       showAlert(t(err.key || 'eServer', { status: err.status }));
-      if (err.status === 402) { loadAccount().catch(() => {}); tg?.close(); } // the bot has just sent the top-up buttons
+      if (err.status === 402 || err.key === 'eSubscribe') { loadAccount().catch(() => {}); tg?.close(); } // the bot sent the top-up / join buttons
     } finally {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);

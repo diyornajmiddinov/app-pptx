@@ -23,7 +23,7 @@ from app.core import db
 from app.core.auth import telegram_user
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_message
-from app.services import app_settings, billing, decks, jobs
+from app.services import app_settings, billing, decks, jobs, subscription
 from app.services.users import avatar, lang_of, set_lang, touch
 from app.texts import t
 
@@ -56,7 +56,10 @@ class LangRequest(BaseModel):
 
 async def _order(user_id: int, lang: str, kind: str, payload: dict, price: int | None = None) -> tuple[int, int, int]:
     """Charge and queue (jobs.order). Balance too low: the bot sends top-up buttons and the API answers 402;
-    MAX_ACTIVE jobs already waiting: 429."""
+    MAX_ACTIVE jobs already waiting: 429. Not in the mandatory channel: the bot sends the join message, 403 subscribe."""
+    if not await subscription.is_member(user_id):
+        await subscription.ask(user_id, lang)
+        raise HTTPException(403, "subscribe")
     try:
         return await jobs.order(kind, user_id, payload, price)
     except jobs.LowBalance:

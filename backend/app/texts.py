@@ -105,6 +105,12 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "editor_bad": "⚠️ Bu faylni ochib bo'lmadi. .pptx, .ppt yoki .odp yuboring.",
         "editor_too_big": "⚠️ Fayl juda katta (botga 20 MB gacha yuborish mumkin). Kattaroq faylni muharrirning o'zida yuklang.",
         "editor_wait": "⏳ Fayl ochilmoqda…",
+        # mandatory channel subscription (services/subscription.py); sub_not_yet / sub_thanks are pop-ups: plain text
+        "sub_required": "📢 <b>Botdan foydalanish uchun kanalimizga a'zo bo'ling</b>\n\nKanalda yangiliklar, chegirmalar va foydali maslahatlar chiqib boradi.\n\n👇 <i>A'zo bo'lgach «✅ A'zo bo'ldim» tugmasini bosing.</i>",
+        "sub_join": "📢 Kanalga a'zo bo'lish",
+        "sub_check": "✅ A'zo bo'ldim",
+        "sub_not_yet": "Siz hali kanalga a'zo emassiz. Avval a'zo bo'ling.",
+        "sub_thanks": "Rahmat! Endi botdan foydalanishingiz mumkin.",
     },
     "ru": {
         # admin
@@ -198,6 +204,12 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "editor_bad": "⚠️ Не удалось открыть файл. Отправьте .pptx, .ppt или .odp.",
         "editor_too_big": "⚠️ Файл слишком большой (боту можно отправить до 20 МБ). Загрузите его в самом редакторе.",
         "editor_wait": "⏳ Открываю файл…",
+        # mandatory channel subscription (services/subscription.py); sub_not_yet / sub_thanks are pop-ups: plain text
+        "sub_required": "📢 <b>Чтобы пользоваться ботом, подпишитесь на наш канал</b>\n\nВ канале — новости, скидки и полезные советы.\n\n👇 <i>После подписки нажмите «✅ Я подписался».</i>",
+        "sub_join": "📢 Подписаться на канал",
+        "sub_check": "✅ Я подписался",
+        "sub_not_yet": "Вы ещё не подписаны на канал. Сначала подпишитесь.",
+        "sub_thanks": "Спасибо! Теперь можно пользоваться ботом.",
     },
     "en": {
         # admin
@@ -291,6 +303,12 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "editor_bad": "⚠️ This file could not be opened. Send a .pptx, .ppt or .odp.",
         "editor_too_big": "⚠️ The file is too large (up to 20 MB can be sent to the bot). Upload it in the editor itself.",
         "editor_wait": "⏳ Opening the file…",
+        # mandatory channel subscription (services/subscription.py); sub_not_yet / sub_thanks are pop-ups: plain text
+        "sub_required": "📢 <b>Join our channel to use the bot</b>\n\nThe channel has news, discounts and useful tips.\n\n👇 <i>After joining, tap «✅ I've joined».</i>",
+        "sub_join": "📢 Join the channel",
+        "sub_check": "✅ I've joined",
+        "sub_not_yet": "You have not joined the channel yet. Please join first.",
+        "sub_thanks": "Thank you! You can use the bot now.",
     },
 }
 CHOOSE = "Tilni tanlang · Выберите язык · Choose a language"

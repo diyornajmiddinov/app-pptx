@@ -34,11 +34,11 @@ from starlette.concurrency import run_in_threadpool
 
 from app.bot.keyboards import open_keyboard
 from app.bot.money import notify_paid
-from app.core import db
+from app.core import alerts, db, telegram
 from app.core.auth import admin_user
 from app.core.config import DATA_DIR, settings
 from app.core.telegram import download_file, send_message
-from app.services import app_settings, billing, growth, payments
+from app.services import app_settings, billing, growth, payments, subscription
 from app.services.ai import models
 from app.services.ai.catalog import TEMPLATE_NAMES
 from app.services.ai.render import render
@@ -422,6 +422,41 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
     await app_settings.set_many(new, uid)
     await audit(uid, "settings", None, before=old, after=new)
     return {"values": await app_settings.get()}
+
+
+class SubscriptionReq(BaseModel):
+    channel: str = Field("", max_length=100)  # @username, t.me link or -100… id; empty: off
+    link: str = Field("", max_length=200)     # how to join a private channel (an invite link)
+
+
+@router.put("/subscription")
+async def put_subscription(req: SubscriptionReq, uid: int = Depends(admin_user)):
+    """Mandatory channel: checked with Telegram before it is saved — the channel exists and the bot is its administrator
+    (without that Telegram does not tell who is a member). A private channel needs its invite link."""
+    old = {k: (await app_settings.get())[k] for k in ("required_channel", "required_channel_link")}
+    chat, link = subscription.normalize(req.channel) if req.channel.strip() else "", req.link.strip()
+    title = None
+    if chat:
+        if chat == str(alerts.channel_id() or ""):
+            raise HTTPException(422, "Bu log kanali (baza nusxalari shu yerga ketadi) — boshqa kanal tanlang")
+        try:
+            info = (await telegram.call("getChat", json={"chat_id": chat}))["result"]
+            me = (await telegram.call("getMe"))["result"]
+            role = (await telegram.call("getChatMember", json={"chat_id": chat, "user_id": me["id"]}))["result"]["status"]
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(422, f"Kanal topilmadi yoki bot unga qo'shilmagan: {_tg_error(e)}") from e
+        if role not in ("administrator", "creator"):
+            raise HTTPException(422, "Botni kanalga administrator qilib qo'shing (a'zolarni ko'rish uchun shu kerak), keyin qayta saqlang")
+        if info.get("username"):
+            chat, link = f"@{info['username']}", link or f"https://t.me/{info['username']}"
+        elif not link.startswith("https://t.me/"):
+            raise HTTPException(422, "Yopiq kanal: taklif havolasini kiriting (https://t.me/+...)")
+        title = info.get("title")
+    new = {"required_channel": chat, "required_channel_link": link if chat else ""}
+    await app_settings.set_many(new, uid)
+    subscription.forget()
+    await audit(uid, "subscription", None, before=old, after=new)
+    return {**new, "title": title}
 
 
 class AiModelReq(BaseModel):
