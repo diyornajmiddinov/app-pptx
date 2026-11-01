@@ -458,6 +458,35 @@ async def put_subscription(req: SubscriptionReq, uid: int = Depends(admin_user))
     return {**new, "title": title}
 
 
+class ArchiveReq(BaseModel):
+    channel: str = Field("", max_length=100)  # @username, t.me link or -100… id; empty: off
+
+
+@router.put("/archive")
+async def put_archive(req: ArchiveReq, uid: int = Depends(admin_user)):
+    """The archive channel (services/archive.py): checked before it is saved — the bot is an administrator that may post
+    there — and a first message is posted to show it works."""
+    old = (await app_settings.get())["archive_channel"]
+    chat, title, public = subscription.normalize(req.channel) if req.channel.strip() else "", None, False
+    if chat:
+        try:
+            info = (await telegram.call("getChat", json={"chat_id": chat}))["result"]
+            me = (await telegram.call("getMe"))["result"]
+            role = (await telegram.call("getChatMember", json={"chat_id": chat, "user_id": me["id"]}))["result"]
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(422, f"Kanal topilmadi yoki bot unga qo'shilmagan: {_tg_error(e)}") from e
+        if role.get("status") not in ("administrator", "creator") or (info["type"] == "channel" and role.get("can_post_messages") is False):
+            raise HTTPException(422, "Botni kanalga xabar yuborish huquqi bilan administrator qiling, keyin qayta saqlang")
+        chat, title, public = str(info["id"]), info.get("title"), bool(info.get("username"))
+        try:
+            await telegram.send_message(chat, "🗂 <b>SlideAI arxiv kanali ulandi.</b>\nBundan buyon yaratilgan har bir fayl shu yerga keladi.")
+        except httpx.HTTPStatusError as e:
+            raise HTTPException(422, f"Kanalga yozib bo'lmadi: {_tg_error(e)}") from e
+    await app_settings.set_many({"archive_channel": chat}, uid)
+    await audit(uid, "archive", None, before=old, after=chat)
+    return {"archive_channel": chat, "title": title, "public": public}
+
+
 class AiModelReq(BaseModel):
     model: str = Field(max_length=80)
 

@@ -17,7 +17,7 @@ from pathlib import Path
 from app.core import db
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_document, send_message
-from app.services import app_settings, billing, decks, papers
+from app.services import app_settings, archive, billing, decks, papers
 from app.services.ai import models, pipeline
 from app.services.ai.render import render
 from app.services.users import lang_of
@@ -154,11 +154,15 @@ async def redraw(content: dict, template_id: int, user_id: int, deck_id: str) ->
     return await pipeline.switch_template(content, template_id)
 
 
-async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".pptx"):  # note is already localized
+async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".pptx", copy: dict | None = None):
+    """Send the file (note is already localized); with `copy` (archive.post's kind / facts / price / via) it also goes
+    to the archive channel — by the sent file's id, or from disk."""
     name = re.sub(r"[^\w\-]+", "_", topic)[:60] + ext
     final = Path(path).with_name(name); Path(path).rename(final)
     try:
-        await send_document(chat_id, str(final), caption=f"<b>{esc(topic)}</b>\n{note}")
+        sent = await send_document(chat_id, str(final), caption=f"<b>{esc(topic)}</b>\n{note}")
+        if copy:
+            await archive.post(user_id=chat_id, sent=sent, path=str(final), topic=topic, **copy)
     finally:
         _drop_tmp(final.parent)
 
@@ -170,7 +174,9 @@ async def run(job: dict):
             req, deck_id = job["payload"], decks.new_id()
             path, content = await asyncio.wait_for(build(req, deck_id, job["user_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, req, deck_id)
-            await deliver(job["user_id"], path, req["topic"], t(await lang_of(job["user_id"]), "slides", n=len(content["slides"])))
+            await deliver(job["user_id"], path, req["topic"], t(await lang_of(job["user_id"]), "slides", n=len(content["slides"])),
+                          copy={"kind": "generate", "facts": [f"{len(content['slides'])} slayd", f"shablon #{req['template_id']}"],
+                                "price": job["price"], "via": req.get("via", "bot")})
         elif job["kind"] == "restyle":
             p = job["payload"]
             deck = await decks.load(job["user_id"], p["deck_id"])
@@ -178,18 +184,22 @@ async def run(job: dict):
                 raise LookupError(f"taqdimot {p['deck_id']} topilmadi")
             path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"]}, p["deck_id"])
-            await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"))
+            await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"),
+                          copy={"kind": "restyle", "facts": [f"shablon #{p['template_id']}"], "price": job["price"], "via": p.get("via", "bot")})
         elif job["kind"] == "paper":
             req = job["payload"]
             _, path, pages = await asyncio.wait_for(papers.make(job["user_id"], req), JOB_TIMEOUT)
             copy = Path(tempfile.mkdtemp(prefix="slideai-")) / "paper.docx"  # the kept file stays; the copy is renamed and sent
             shutil.copy(path, copy)
             lang = await lang_of(job["user_id"])
-            await deliver(job["user_id"], copy, req["topic"], t(lang, "paper_ready", pages=pages or "—"), ".docx")
+            kind = req.get("doc_type", "referat")
+            await deliver(job["user_id"], copy, req["topic"], t(lang, "paper_ready", pages=pages or "—"), ".docx",
+                          copy={"kind": kind, "facts": [f"{pages or '—'} bet", req.get("language", "uz")], "price": job["price"],
+                                "via": req.get("via")})
             if (pdf := path.with_suffix(".pdf")).exists():  # the PDF too: to print or send as it is
                 copy = Path(tempfile.mkdtemp(prefix="slideai-")) / "paper.pdf"
                 shutil.copy(pdf, copy)
-                await deliver(job["user_id"], copy, req["topic"], "PDF", ".pdf")
+                await deliver(job["user_id"], copy, req["topic"], "PDF", ".pdf", copy={"kind": kind, "facts": ["PDF"]})
         else:
             raise ValueError(f"unknown job kind {job['kind']}")
     except TimeoutError:  # wait_for cancelled the work (node is killed): nothing is sent

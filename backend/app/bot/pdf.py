@@ -13,6 +13,7 @@ from pathlib import Path
 from app.bot.keyboards import main_keyboard, pdf_keyboard, pdf_name_keyboard
 from app.core import telegram
 from app.core.telegram import send_document, send_message
+from app.services import archive
 from app.services import images_pdf as pdfs
 from app.texts import t
 
@@ -68,7 +69,8 @@ async def _make(chat_id: int, user_id: int, lang: str, name: str):
                     pdf.close()
             if not pdf.pages:
                 raise ValueError("no readable images")
-            await send_document(chat_id, str(path), caption=t(lang, "pdf_done", name=name, n=len(pdf.pages)))
+            sent = await send_document(chat_id, str(path), caption=t(lang, "pdf_done", name=name, n=len(pdf.pages)))
+            await archive.post("pdf", user_id, sent, str(path), topic=name, facts=[f"{len(pdf.pages)} sahifa"], via="bot")
         if skipped:
             await send_message(chat_id, t(lang, "pdf_skipped", n=skipped))
     except Exception:

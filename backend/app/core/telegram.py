@@ -120,9 +120,9 @@ async def call(method: str, **kw):
     raise AssertionError("unreachable")
 
 
-async def send_message(chat_id: int, text: str, reply_markup: dict | None = None, parse_mode: str | None = "HTML"):
+async def send_message(chat_id: int | str, text: str, reply_markup: dict | None = None, parse_mode: str | None = "HTML"):
     """HTML by default (texts.py); parse_mode=None for text typed by someone (an admin's message) sent as it is."""
-    payload = {"chat_id": chat_id, "text": text}
+    payload: dict = {"chat_id": chat_id, "text": text}
     if reply_markup:
         payload["reply_markup"] = reply_markup
     if parse_mode:
@@ -130,10 +130,10 @@ async def send_message(chat_id: int, text: str, reply_markup: dict | None = None
     return await _send_dressed("sendMessage", payload, "text")
 
 
-async def send_file_id(chat_id: int, file_id: str, kind: str, caption: str = "", reply_markup: dict | None = None):
+async def send_file_id(chat_id: int | str, file_id: str, kind: str, caption: str = "", reply_markup: dict | None = None):
     """Re-send a photo / document the bot has received (by its file_id), e.g. a payment screenshot to the admins."""
     method, field = ("sendPhoto", "photo") if kind == "photo" else ("sendDocument", "document")
-    payload = {"chat_id": chat_id, field: file_id, "caption": caption[:1024], "parse_mode": "HTML"}
+    payload: dict = {"chat_id": chat_id, field: file_id, "caption": caption[:1024], "parse_mode": "HTML"}
     if reply_markup:
         payload["reply_markup"] = reply_markup
     return await _send_dressed(method, payload, "caption")
@@ -158,7 +158,7 @@ async def edit_caption(chat_id: int, message_id: int, caption: str):
                                                  "reply_markup": {"inline_keyboard": []}})
 
 
-async def send_document(chat_id: int, path: str, caption: str = ""):
+async def send_document(chat_id: int | str, path: str, caption: str = ""):
     """The caption is HTML (texts.py)."""
     with open(path, "rb") as f:
         return await call("sendDocument", data={"chat_id": chat_id, "caption": caption[:1024], "parse_mode": "HTML"},

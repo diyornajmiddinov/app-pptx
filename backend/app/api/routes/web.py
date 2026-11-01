@@ -35,7 +35,7 @@ from fastapi import APIRouter, Cookie, Depends, File, Form, Header, HTTPExceptio
 from fastapi.responses import FileResponse
 from PIL import Image
 from pydantic import BaseModel, Field
-from starlette.background import BackgroundTask
+from starlette.background import BackgroundTask, BackgroundTasks
 from starlette.concurrency import run_in_threadpool
 
 from app.api.papers import PaperOutlineRequest, PaperRequest
@@ -45,7 +45,7 @@ from app.core.auth import make_editor_token
 from app.core.config import DATA_DIR, ENGINE_DIR, settings
 from app.core.locks import machine_lock_async
 from app.core.telegram import send_message
-from app.services import app_settings, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
+from app.services import app_settings, archive, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
 from app.services import images_pdf as pdfs
 from app.services.ai import content as ai_content
 from app.services.ai import models
@@ -516,8 +516,11 @@ async def make_pdf(files: list[UploadFile] = File(...), name: str = Form(""), ui
         shutil.rmtree(tmp, ignore_errors=True)
         raise
     await web_auth.note("pdf", uid, None)
+    after = BackgroundTasks()  # after the answer: the copy for the archive channel, then the temp files go
+    after.add_task(archive.post, "pdf", uid, path=str(out), topic=pdfs.clean_name(name) or "rasmlar", facts=[f"{pages} sahifa"], via="web")
+    after.add_task(shutil.rmtree, tmp, ignore_errors=True)
     return FileResponse(out, filename=f"{pdfs.clean_name(name) or 'rasmlar'}.pdf", media_type="application/pdf",
-                        headers={"X-Skipped": str(skipped)}, background=BackgroundTask(shutil.rmtree, tmp, ignore_errors=True))
+                        headers={"X-Skipped": str(skipped)}, background=after)
 
 
 

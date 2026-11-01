@@ -16,7 +16,7 @@ from starlette.concurrency import run_in_threadpool
 from app.bot.keyboards import editor_url
 from app.core.auth import editor_user, telegram_user
 from app.core.telegram import send_document
-from app.services import decks, editor
+from app.services import archive, decks, editor
 from app.services.ai.render import render_sync
 from app.services.users import lang_of
 from app.texts import t
@@ -147,5 +147,6 @@ async def editor_send(doc_id: str, uid: int = Depends(editor_user)):
     with tempfile.TemporaryDirectory() as tmp:
         named = Path(tmp) / f"{re.sub(r'[^\w\-]+', '_', name)[:60]}.pptx"
         shutil.copy(path, named)
-        await send_document(uid, str(named), caption=t(await lang_of(uid), "editor_sent", name=name))
+        sent = await send_document(uid, str(named), caption=t(await lang_of(uid), "editor_sent", name=name))
+        await archive.post("editor", uid, sent, str(named), topic=name)
     return {"ok": True}

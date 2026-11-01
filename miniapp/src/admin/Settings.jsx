@@ -10,6 +10,7 @@ export default function Settings() {
   const [form, setForm] = useState(null);
   const [busy, setBusy] = useState(false);
   const [sub, setSub] = useState({ channel: '', link: '' });
+  const [arch, setArch] = useState('');
   const toast = useToast();
   const [confirm, confirmNode] = useConfirm();
 
@@ -17,6 +18,7 @@ export default function Settings() {
     if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, paper: data.values.price_paper, topup: data.values.topup_amounts.join(', '),
       ref: data.values.referral_bonus ?? 0, first: data.values.first_generate_price ?? '' });
     if (data) setSub({ channel: data.values.required_channel || '', link: data.values.required_channel_link || '' });
+    if (data) setArch(data.values.archive_channel || '');
   }, [data]);
 
   if (error && !data) return <div className="card"><ErrorBox error={error} retry={reload} /></div>;
@@ -54,6 +56,15 @@ export default function Settings() {
     try {
       const r = await api.saveSubscription(channel, off ? '' : sub.link.trim());
       toast(channel ? `Yoqildi: ${r.title || r.required_channel}` : "O'chirildi"); reload();
+    } catch (e) { toast(e.message, true); } finally { setBusy(false); }
+  };
+
+  const saveArch = async (off) => {
+    setBusy(true);
+    try {
+      const r = await api.saveArchive(off ? '' : arch.trim());
+      toast(r.archive_channel ? `Ulandi: ${r.title || r.archive_channel}${r.public ? " — DIQQAT: kanal ochiq, fayllarni hamma ko'radi" : ''}` : "O'chirildi", !!r.public);
+      reload();
     } catch (e) { toast(e.message, true); } finally { setBusy(false); }
   };
 
@@ -120,6 +131,19 @@ export default function Settings() {
             </div>
           </div>
           <div className="card">
+            <div className="card-h"><h2>Arxiv kanali</h2>{data.values.archive_channel ? <Pill tone="good">Ulangan</Pill> : <Pill>O'chiq</Pill>}</div>
+            <div className="card-b stack" style={{ gap: 12 }}>
+              <div className="field"><label htmlFor="a-ch">Kanal</label>
+                <input id="a-ch" className="input" value={arch} onChange={(e) => setArch(e.target.value)} placeholder="@kanal_nomi, https://t.me/... yoki -100..." />
+                <span className="help">Har bir yaratilgan fayl (taqdimot, referat, mustaqil ish, PDF, muharrir) kim yaratgani bilan shu kanalga yuboriladi.
+                  Botni kanalga <b>xabar yuborish huquqi bilan administrator</b> qiling. Fayllarda foydalanuvchi ma'lumotlari bor — <b>yopiq kanal</b> tavsiya etiladi.</span></div>
+              <div className="row" style={{ gap: 8 }}>
+                <button type="button" className="btn primary" disabled={busy || !arch.trim()} onClick={() => saveArch(false)}>Saqlash va tekshirish</button>
+                {data.values.archive_channel && <button type="button" className="btn" disabled={busy} onClick={() => saveArch(true)}>O'chirish</button>}
+              </div>
+            </div>
+          </div>
+          <div className="card">
             <div className="card-h"><h2>AI</h2></div>
             <table><tbody>
               <tr><td>Matn yozuvchi model</td><td>
@@ -156,7 +180,7 @@ export default function Settings() {
 }
 
 const ACTIONS = { balance: "Balans o'zgartirildi", message: 'Xabar yuborildi', card_paid: "Karta to'lovi tasdiqlandi",
-  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi', subscription: "Majburiy obuna o'zgartirildi" };
+  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi', subscription: "Majburiy obuna o'zgartirildi", archive: "Arxiv kanali o'zgartirildi" };
 
 export function AdminLog() {
   const [page, setPage] = useState(1);

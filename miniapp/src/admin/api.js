@@ -76,6 +76,7 @@ export const api = {
   saveSettings: (body) => call('PUT', '/settings', body),
   saveAiModel: (model) => call('PUT', '/ai-model', { model }),
   saveSubscription: (channel, link) => call('PUT', '/subscription', { channel, link }),
+  saveArchive: (channel) => call('PUT', '/archive', { channel }),
   log: (o) => call('GET', `/log${qs(o)}`),
   web: (days) => call('GET', `/web${qs({ days })}`),
   promos: () => call('GET', '/promos'),
