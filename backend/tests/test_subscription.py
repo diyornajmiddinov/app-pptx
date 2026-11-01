@@ -164,13 +164,23 @@ async def test_the_admin_panel_checks_the_channel_before_saving(tg, monkeypatch)
     assert (await app_settings.get())["required_channel"] == ""
 
 
-async def test_a_public_channel_never_becomes_the_log_channel(tg, monkeypatch, tmp_path):
+async def test_an_existing_log_channel_is_never_switched_by_adding_the_bot_elsewhere(tg, monkeypatch, tmp_path):
     monkeypatch.setattr(alerts, "CHANNEL_FILE", tmp_path / "log_channel")
     monkeypatch.setattr(alerts, "DATA", tmp_path)
     monkeypatch.delenv("LOG_CHANNEL_ID", raising=False)
-    joined = lambda chat: {"update_id": 1, "my_chat_member": {"chat": chat, "from": {"id": ADMIN},
-                                                              "new_chat_member": {"status": "administrator"}}}
-    await bot.handle(joined({"id": -1001, "type": "channel", "username": "slidechi_news"}))
-    assert not (tmp_path / "log_channel").exists()
+    def joined(chat, status="administrator"):
+        return {"update_id": 1, "my_chat_member": {"chat": chat, "from": {"id": ADMIN}, "new_chat_member": {"status": status}}}
+    await bot.handle(joined({"id": -1001, "type": "channel", "title": "Ochiq", "username": "slidechi_news"}))
+    assert not (tmp_path / "log_channel").exists()  # public: never
     await bot.handle(joined({"id": -1009, "type": "channel", "title": "log"}))
+    assert (tmp_path / "log_channel").read_text().strip() == "-1009"  # the first private one, while there is none
+    tg.calls.clear()
+    await bot.handle(joined({"id": -1010, "type": "channel", "title": "Taqdimotlar"}))  # meant for the archive
     assert (tmp_path / "log_channel").read_text().strip() == "-1009"
+    told = tg.last()
+    assert told["chat_id"] == ADMIN and "Log kanali o'zgarmadi" in told["text"]
+    await bot.handle(joined({"id": -1009, "type": "channel", "title": "log"}, status="left"))
+    assert not (tmp_path / "log_channel").exists()  # removed from the log channel: no log channel
+    await app_settings.set_many({"archive_channel": "-1010"}, 1)
+    await bot.handle(joined({"id": -1010, "type": "channel", "title": "Taqdimotlar"}))
+    assert not (tmp_path / "log_channel").exists()  # the archive channel never becomes it

@@ -33,7 +33,7 @@ from app.core.telegram import answer_callback, send_message
 from app.services import app_settings, billing, editor, subscription
 from app.services import images_pdf as pdfs
 from app.services.users import has_choice, lang_of, set_lang, touch
-from app.texts import CHOOSE, LANGS, som, t
+from app.texts import CHOOSE, LANGS, esc, som, t
 
 log = logging.getLogger("bot")
 notify_paid = money.notify_paid          # used by the API after Payme / Click / admin-panel payments
@@ -78,21 +78,34 @@ async def receive_presentation(m: Msg):
 
 
 async def channel_joined(cm: dict):
-    """The bot was made an administrator of a channel / group by an admin: that chat becomes the log channel."""
+    """The bot was made an administrator of a channel / group by an admin. It becomes the log channel (database backups,
+    errors) only when there is none yet, and never when it is public, the subscription or the archive channel; otherwise
+    the admin is told it was not taken, so an archive / subscription channel cannot quietly receive the backups."""
     chat, status = cm["chat"], cm["new_chat_member"]["status"]
-    if chat["type"] not in ("channel", "supergroup", "group") or cm["from"]["id"] not in settings.admin_ids:
+    admin = cm["from"]["id"]
+    if chat["type"] not in ("channel", "supergroup", "group") or admin not in settings.admin_ids:
         return
-    # a public chat or the mandatory-subscription channel is never the log channel: database backups go there
-    required = ((await app_settings.get()).get("required_channel") or "").lower()
-    if chat.get("username") or required in (str(chat["id"]), f"@{(chat.get('username') or '').lower()}"):
+    if status in ("left", "kicked"):
+        if alerts.channel_id() == str(chat["id"]):
+            alerts.CHANNEL_FILE.unlink(missing_ok=True)
         return
-    if status == "administrator":
-        alerts.set_channel(chat["id"])
-        await send_message(chat["id"], "✅ <b>SlideAI log kanali ulandi.</b>\n\nBu yerga keladi:\n• har kuni bazaning zaxira nusxasi\n"
-                                       "• bot va backend xatolari\n• xizmatlar qayta ishga tushgani")
-        log.info("log channel set: %s", chat["id"])
-    elif status in ("left", "kicked") and alerts.channel_id() == str(chat["id"]):
-        alerts.CHANNEL_FILE.unlink(missing_ok=True)
+    if status != "administrator":
+        return
+    cfg = await app_settings.get()
+    names = {str(chat["id"]), f"@{(chat.get('username') or '').lower()}"}
+    other_use = {(cfg.get("required_channel") or "").lower(), str(cfg.get("archive_channel") or "")} & names
+    if alerts.channel_id() or chat.get("username") or other_use:
+        try:
+            await send_message(admin, f"ℹ️ Bot «{esc(chat.get('title') or chat['id'])}» ga administrator qilindi. "
+                                      "<b>Log kanali o'zgarmadi.</b>\n\nBu kanalni arxiv yoki majburiy obuna uchun ishlatish: "
+                                      "admin panel → Sozlamalar.")
+        except Exception:  # the admin never opened the bot: nothing to tell
+            pass
+        return
+    alerts.set_channel(chat["id"])
+    await send_message(chat["id"], "✅ <b>SlideAI log kanali ulandi.</b>\n\nBu yerga keladi:\n• har kuni bazaning zaxira nusxasi\n"
+                                   "• bot va backend xatolari\n• xizmatlar qayta ishga tushgani")
+    log.info("log channel set: %s", chat["id"])
 
 
 # ---------------------------------------------------------------- commands and menu buttons
