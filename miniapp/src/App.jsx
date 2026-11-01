@@ -23,6 +23,7 @@ export default function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [slideCount, setSlideCount] = useState(12);
   const [density, setDensity] = useState('balanced'); // how much text on the slides
+  const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   // presentation language follows the interface language until the user picks another one
   const [language, setLanguage] = useState(lang);
   const deckLangTouched = useRef(false);
@@ -118,7 +119,7 @@ export default function App() {
         payload: {
           user_id: user.id, template_id: selectedTemplateId, slide_count: slideCount, language,
           topic: details.topic.trim(), author: details.author.trim(), org: details.org.trim(),
-          loc: details.loc.trim(), year: details.year.trim(), density,
+          loc: details.loc.trim(), year: details.year.trim(), density, wishes: wishes.trim(),
         },
       });
       }
@@ -132,7 +133,7 @@ export default function App() {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);
     }
-  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
+  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
   const price = restyling ? account?.prices?.restyle : account?.prices?.now ?? account?.prices?.generate;
@@ -173,6 +174,13 @@ export default function App() {
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
       {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
         density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }} />}
+      {!restyling && !editorTab && (
+        <section className="pb-6">
+          <label htmlFor="d-wishes" className="mb-1.5 block text-[15px] font-semibold">{t('pWishes')}</label>
+          <textarea id="d-wishes" rows={2} maxLength={600} value={wishes} onChange={(e) => setWishes(e.target.value)} placeholder={t('dWishesPh')}
+            className="w-full resize-none rounded-[10px] bg-tg-secondary-bg px-3 py-2.5 text-[15px] text-tg-text placeholder:text-tg-hint outline-none focus:ring-1 focus:ring-tg-button" />
+        </section>
+      )}
       {!editorTab && <TemplateGallery templates={TEMPLATES} categories={CATEGORIES} selectedId={selectedTemplateId} onSelect={handleSelectTemplate} />}
       {!isTelegram && !editorTab && (
         <div className="sticky bottom-4 mt-4">

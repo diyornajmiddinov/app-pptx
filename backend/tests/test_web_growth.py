@@ -133,7 +133,7 @@ async def test_outline_then_generate_with_titles_and_notes(client, tg, monkeypat
     await named(balance=5000)
     await sign_in(client, tg)
 
-    async def fake_outline(topic, n, lang, tid, source, ask=None):
+    async def fake_outline(topic, n, lang, tid, source, ask=None, wishes=""):
         return [{"type": "cover", "title": topic}] + [{"type": "cards", "title": f"Sarlavha {i}"} for i in range(n - 1)]
     monkeypatch.setattr(web.ai_content, "generate_outline", fake_outline)
     slides = (await client.post("/api/web/outline", json={"template_id": 3, "slide_count": 8, "topic": "Quyosh"})).json()["slides"]

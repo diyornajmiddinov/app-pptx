@@ -235,3 +235,18 @@ async def test_the_chosen_density_is_kept_and_used_again_for_a_new_template(monk
     with pytest.raises(RuntimeError):
         await jobs.redraw({"slides": []}, 4, 1, "d", "detailed")
     assert got["density"] == "detailed"
+
+
+async def test_the_users_wishes_reach_the_prompt_as_data():
+    seen = []
+
+    async def model(messages):
+        seen.append(messages[0]["content"])
+        plan = json.loads(messages[0]["content"].split("tartibda: ")[1].split("\n")[0])
+        return answer_for(plan)
+    await content.generate_content("Mavzu", 8, "uz", 3, ask=model, wishes="  O'zbekistondan misollar  ")
+    await content.generate_content("Mavzu", 8, "uz", 3, ask=model)
+    assert "<<<TALAB\nO'zbekistondan misollar\nTALAB>>>" in seen[0] and "uzunlik chegaralarini o'zgartirmaydi" in seen[0]
+    assert "TALAB" not in seen[1]  # nothing asked: nothing added
+    long = content._wishes("x" * 2000)
+    assert long.count("x") == content.WISHES_MAX

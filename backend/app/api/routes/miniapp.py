@@ -43,6 +43,7 @@ class GenerateRequest(BaseModel):
     loc: str = Field("", max_length=60)
     year: str = Field("", max_length=10)
     density: Literal["concise", "balanced", "detailed"] = "balanced"  # how much text (ai/catalog.py DENSITY)
+    wishes: str = Field("", max_length=600)                           # "what else would you like" (optional)
 
 
 class RestyleRequest(BaseModel):

@@ -70,6 +70,7 @@ export default function Create({ me, refreshMe, go }) {
   const [form, setForm] = useState({ topic: '', slide_count: 10, language: lang, template_id: 1, author: '', org: '', loc: '', year: String(new Date().getFullYear()) });
   const [notes, setNotes] = useState(false);
   const [density, setDensity] = useState('balanced'); // how much text on the slides
+  const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   const [source, setSource] = useState(null);
   const [outline, setOutline] = useState(null); // [{type, title}] once made; dropped when what it was made for changes
   const [busy, setBusy] = useState('');
@@ -84,7 +85,8 @@ export default function Create({ me, refreshMe, go }) {
   const price = me.prices.now ?? me.prices.generate;
   const low = me.balance < price;
   const topic = form.topic.trim();
-  const base = { topic, slide_count: form.slide_count, language: form.language, template_id: form.template_id, ...(source ? { source: source.text } : {}) };
+  const base = { topic, slide_count: form.slide_count, language: form.language, template_id: form.template_id, wishes: wishes.trim(),
+    ...(source ? { source: source.text } : {}) };
 
   const makeOutline = async () => {
     setBusy('outline'); setError('');
@@ -99,7 +101,7 @@ export default function Create({ me, refreshMe, go }) {
       await api.generate({ ...base, author: form.author, org: form.org, loc: form.loc, year: form.year, notes, density,
         ...(outline ? { outline: outline.map((s) => s.title.trim()) } : {}) });
       setDone(true); setJobsKey((k) => k + 1);
-      setForm((f) => ({ ...f, topic: '' })); setOutline(null); setSource(null);
+      setForm((f) => ({ ...f, topic: '' })); setOutline(null); setSource(null); setWishes('');
       refreshMe();
     } catch (err) {
       setError(t(`e_${err.key}`));
@@ -128,6 +130,9 @@ export default function Create({ me, refreshMe, go }) {
               <Segmented value={form.language} onChange={set('language')} label={t('deckLang')} options={LANGS.map((l) => ({ id: l.id, label: l.label }))} />
             </Field>
           </div>
+          <Field label={t('wishes')}>
+            <textarea className={`${inputCls} min-h-[64px] resize-y`} value={wishes} onChange={(e) => setWishes(e.target.value)} placeholder={t('deckWishesPh')} maxLength={600} />
+          </Field>
           <Field label={t('density')} hint={t(`d_${density}_t`)}>
             <Segmented value={density} onChange={setDensity} label={t('density')} options={['concise', 'balanced', 'detailed'].map((d) => ({ id: d, label: t(`d_${d}`) }))} />
           </Field>

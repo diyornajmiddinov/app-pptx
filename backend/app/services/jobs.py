@@ -142,7 +142,7 @@ async def build(req: dict, deck_id: str, user_id: int) -> tuple[Path, dict]:
     else:
         path, content = await pipeline.build_presentation(req["topic"], req["template_id"], req["slide_count"], req.get("language", "uz"), meta=meta,
                                                           outline=req.get("outline"), notes=bool(req.get("notes")), source=req.get("source", ""),
-                                                          density=req.get("density", "balanced"))
+                                                          density=req.get("density", "balanced"), wishes=req.get("wishes", ""))
     await asyncio.to_thread(decks.keep_images, user_id, deck_id, content)
     return path, content
 

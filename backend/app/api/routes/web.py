@@ -206,6 +206,7 @@ class OutlineRequest(BaseModel):
     language: Literal["uz", "ru", "en"] = "uz"
     topic: str = Field(min_length=3, max_length=200)
     source: str = Field("", max_length=ai_content.SOURCE_MAX)
+    wishes: str = Field("", max_length=ai_content.WISHES_MAX)  # "what else would you like" (optional)
 
 
 class GenerateRequest(OutlineRequest):
@@ -253,7 +254,7 @@ async def outline(req: OutlineRequest, uid: int = Depends(web_user)):
     await web_auth.note("outline", uid, None)
     models.usage_context.set({"user_id": uid, "purpose": "outline", "job": None})
     try:
-        slides = await ai_content.generate_outline(req.topic, req.slide_count, req.language, req.template_id, req.source)
+        slides = await ai_content.generate_outline(req.topic, req.slide_count, req.language, req.template_id, req.source, wishes=req.wishes)
     except Exception as e:
         log.warning("outline failed for %s: %s", uid, e)
         raise HTTPException(503, "aiBusy") from e
