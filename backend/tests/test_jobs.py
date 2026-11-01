@@ -60,7 +60,7 @@ async def test_restyle_redraws_the_same_deck(tg, monkeypatch, tmp_path):
     await add_user(1, balance=5000)
     content = {"meta": {"topic": "T"}, "slides": [{"type": "cover"}]}
     did = await decks.save(1, content, {"template_id": 3}, "55")
-    async def fake_redraw(c, template_id, user_id, deck_id):
+    async def fake_redraw(c, template_id, user_id, deck_id, density="balanced"):
         p = tmp_path / "x.pptx"; p.write_bytes(b"x"); return p, c
     monkeypatch.setattr(jobs, "redraw", fake_redraw)
     await jobs.enqueue("restyle", 1, {"deck_id": did, "template_id": 9}, 2000)
