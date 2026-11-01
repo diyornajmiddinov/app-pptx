@@ -22,6 +22,7 @@ export default function App() {
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [slideCount, setSlideCount] = useState(12);
+  const [density, setDensity] = useState('balanced'); // how much text on the slides
   // presentation language follows the interface language until the user picks another one
   const [language, setLanguage] = useState(lang);
   const deckLangTouched = useRef(false);
@@ -117,7 +118,7 @@ export default function App() {
         payload: {
           user_id: user.id, template_id: selectedTemplateId, slide_count: slideCount, language,
           topic: details.topic.trim(), author: details.author.trim(), org: details.org.trim(),
-          loc: details.loc.trim(), year: details.year.trim(),
+          loc: details.loc.trim(), year: details.year.trim(), density,
         },
       });
       }
@@ -131,7 +132,7 @@ export default function App() {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);
     }
-  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
+  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
   const price = restyling ? account?.prices?.restyle : account?.prices?.now ?? account?.prices?.generate;
@@ -170,7 +171,8 @@ export default function App() {
       {editorTab && <EditorPanel tg={tg} initData={initData} isTelegram={isTelegram} />}
       {restyling && <DeckList decks={decks} templates={TEMPLATES} selectedId={deckId} onSelect={(id) => { hapticSelect(); setDeckId(id); }} />}
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
-      {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang} />}
+      {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
+        density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }} />}
       {!editorTab && <TemplateGallery templates={TEMPLATES} categories={CATEGORIES} selectedId={selectedTemplateId} onSelect={handleSelectTemplate} />}
       {!isTelegram && !editorTab && (
         <div className="sticky bottom-4 mt-4">

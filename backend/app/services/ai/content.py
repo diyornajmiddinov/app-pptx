@@ -5,7 +5,18 @@ from typing import Literal
 
 from pydantic import BaseModel, ValidationError
 
-from app.services.ai.catalog import ICONS, LANG, LIMITS, PHOTO_TEMPLATES, SECTION_TITLES, TEMPLATE_INFO, limits_for, plan_for, style_of
+from app.services.ai.catalog import (
+    DENSITY_RULE,
+    ICONS,
+    LANG,
+    LIMITS,
+    PHOTO_TEMPLATES,
+    SECTION_TITLES,
+    TEMPLATE_INFO,
+    limits_for,
+    plan_for,
+    style_of,
+)
 from app.services.ai.models import Ask, Messages, ai
 
 
@@ -110,8 +121,8 @@ def _extras(plan: list[str], outline: list[str] | None, notes: bool, source: str
 
 
 def build_prompt(topic: str, plan: list[str], language: str, photos: bool, template_id: int = 1,
-                 outline: list[str] | None = None, notes: bool = False, source: str = "") -> str:
-    Lm, st = limits_for(template_id), style_of(template_id)
+                 outline: list[str] | None = None, notes: bool = False, source: str = "", density: str = "balanced") -> str:
+    Lm, st = limits_for(template_id, density), style_of(template_id)
     tone = f"\nUslub ({TEMPLATE_INFO.get(template_id, {}).get('name', '')} shabloni): {st['tone']}." if st.get("tone") else ""
     ST = SECTION_TITLES[language]
     extra = f"""
@@ -139,7 +150,7 @@ Qoidalar:
 1. Faqat to'g'ri, tekshirsa bo'ladigan faktlar. Ishonching komil bo'lmagan raqam yoki sanani yozma.
 2. quote: faqat haqiqatan mavjud, muallifi aniq iqtibos; aks holda xalq maqoli.
 3. sources: faqat haqiqatan mavjud hujjat, qonun, rasmiy sayt yoki nashrlar. To'qima manba yozma.
-4. Sarlavhalar nuqta bilan tugamasin. Indekslar Unicode bilan: CO₂.{_extras(plan, outline, notes, source)}
+4. Sarlavhalar nuqta bilan tugamasin. Indekslar Unicode bilan: CO₂.{DENSITY_RULE.get(density, "")}{_extras(plan, outline, notes, source)}
 Javob: FAQAT JSON: {{"slides": [...]}}"""
 
 
@@ -180,13 +191,15 @@ async def until_valid(messages: Messages, plan: list[str], photos: bool, Lm: dic
 
 
 async def generate_content(topic: str, slide_count: int, language: str = "uz", template_id: int = 1, ask: Ask = ai, retries: int = 2,
-                           outline: list[str] | None = None, notes: bool = False, source: str = "") -> dict:
+                           outline: list[str] | None = None, notes: bool = False, source: str = "", density: str = "balanced") -> dict:
     """First generation: plan, tone and limits all come from the chosen template. outline / notes / source are the
     website's options (approved titles, speaker notes, the user's document)."""
     if language not in LANG: raise ValueError("language: uz, ru yoki en")
     photos = template_id in PHOTO_TEMPLATES
     plan = plan_for(slide_count, template_id)
-    messages = [{"role": "user", "content": build_prompt(topic, plan, language, photos, template_id, outline, notes, source)}]
+    messages = [{"role": "user", "content": build_prompt(topic, plan, language, photos, template_id, outline, notes, source, density)}]
+    # the prompt asks for the density's limits; the check allows what the slide holds, so a concise deck a little
+    # longer than asked is still delivered (it fits) instead of failing
     data = await until_valid(messages, plan, photos, limits_for(template_id), ask, retries)
     for s in data["slides"]:  # notes are optional extras: never fail a paid deck over them, just keep them sane
         if not notes or not isinstance(s.get("notes"), str):
@@ -221,20 +234,20 @@ Javob: FAQAT JSON: {{"titles": ["...", ...]}} ({len(plan)} ta)"""
     return [{"type": tp, "title": fixed.get(tp) or titles[i] or (topic if tp == "cover" else "")} for i, tp in enumerate(plan)]
 
 
-async def restyle(content: dict, template_id: int, ask: Ask = ai, retries: int = 2) -> dict:
+async def restyle(content: dict, template_id: int, ask: Ask = ai, retries: int = 2, density: str = "balanced") -> dict:
     """Cheap re-edit when the user switches template: same slides, facts, numbers, sources and
     images; only tone and length are adapted to the new template's passport."""
-    st, Lm, name = style_of(template_id), limits_for(template_id), TEMPLATE_INFO.get(template_id, {}).get("name", "")
+    st, Lm, name = style_of(template_id), limits_for(template_id, density), TEMPLATE_INFO.get(template_id, {}).get("name", "")
     plan = [s["type"] for s in content["slides"]]
     prompt = f"""Quyidagi taqdimot JSON'ini "{name}" shabloniga moslashtir.
 Uslub: {st.get('tone', 'neytral')}.
-Uzunlik chegaralari (belgilarda): {json.dumps(Lm, ensure_ascii=False)}
+Uzunlik chegaralari (belgilarda): {json.dumps(Lm, ensure_ascii=False)}{DENSITY_RULE.get(density, "")}
 QAT'IY: slaydlar soni va tartibi, type, faktlar, raqamlar, sanalar, nomlar, manbalar (sources), image maydonlari va matn TILI O'ZGARMAYDI.
 Faqat matnning ohangi, so'z tanlovi va uzunligini moslashtir. Tilni o'zgartirma.
 Javob: FAQAT JSON: {{"slides": [...]}}
 
 {json.dumps({"slides": content["slides"]}, ensure_ascii=False)}"""
-    out = await until_valid([{"role": "user", "content": prompt}], plan, template_id in PHOTO_TEMPLATES, Lm, ask, retries)
+    out = await until_valid([{"role": "user", "content": prompt}], plan, template_id in PHOTO_TEMPLATES, limits_for(template_id), ask, retries)
     for a, b in zip(content["slides"], out["slides"], strict=True):  # facts that must never drift
         for k in ("image", "items", "notes") if a["type"] == "sources" else ("image", "notes"):
             if k in a: b[k] = a[k]

@@ -215,6 +215,7 @@ class GenerateRequest(OutlineRequest):
     year: str = Field("", max_length=10)
     outline: list[Annotated[str, Field(max_length=80)]] | None = Field(None, max_length=30)  # approved titles, one per slide
     notes: bool = False                                                                       # speaker notes
+    density: Literal["concise", "balanced", "detailed"] = "balanced"                           # how much text on the slides
 
 
 class RestyleRequest(BaseModel):

@@ -219,3 +219,11 @@ async def test_no_photo_is_404_and_telegram_is_not_asked_again(client, tg, monke
     monkeypatch.setattr(telegram, "call", down)
     (tmp_path / f"{U}.none").unlink()
     assert (await client.get("/api/me/photo", headers=h())).status_code == 404  # an error is a missing photo, not a 500
+
+
+async def test_the_mini_app_sends_how_much_text(client, tg):
+    await add_user(U, balance=10000)
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "language": "uz", "topic": "Mavzu", "density": "detailed"}
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
+    assert (await db.pool().fetchval("SELECT payload FROM jobs"))["density"] == "detailed"
+    assert (await client.post("/api/generate", headers=h(), json={**body, "density": "huge"})).status_code == 422

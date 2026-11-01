@@ -198,3 +198,40 @@ async def test_the_provider_is_chosen_by_ai_provider(net, monkeypatch):
     assert "/models/gemini-2.5-flash:" in seen[-1]
     monkeypatch.setenv("GEMINI_API_KEY", "")  # its key removed from .env: back to the .env default
     assert "openai" in await models.ai([{"role": "user", "content": "x"}])
+
+
+# ---------------------------------------------------------------- how much text (density)
+
+def test_density_lowers_running_text_only_when_concise():
+    full, short, detailed = catalog.limits_for(25), catalog.limits_for(25, "concise"), catalog.limits_for(25, "detailed")
+    assert detailed == full  # the template's limits are the most a slide holds
+    assert short["intro"] < full["intro"] * 0.6 and short["card_t3"] < full["card_t3"]
+    assert short["title"] == full["title"] and short["stat_v"] == full["stat_v"]  # titles and numbers keep their room
+
+
+async def test_density_reaches_the_prompt_and_the_checks():
+    seen = []
+
+    async def model(messages):
+        seen.append(messages[0]["content"])
+        plan = json.loads(messages[0]["content"].split("tartibda: ")[1].split("\n")[0])
+        return answer_for(plan)
+    for d in catalog.DENSITY:
+        await content.generate_content("Mavzu", 8, "uz", 3, ask=model, density=d)
+    assert "LO'NDA" in seen[0] and "LO'NDA" not in seen[1] and "BATAFSIL" in seen[2]
+    lim = catalog.limits_for(3, "concise")["intro"]
+    assert f"text ≤{lim}" in seen[0]  # asked for less; the sample answer is longer and still accepted: it fits the slide
+
+
+async def test_the_chosen_density_is_kept_and_used_again_for_a_new_template(monkeypatch):
+    from app.services import jobs
+    from app.services.ai import pipeline
+    got = {}
+
+    async def switch(content, template_id, out_path=None, ask=None, density="balanced"):
+        got["density"] = density
+        raise RuntimeError("stop here")
+    monkeypatch.setattr(pipeline, "switch_template", switch)
+    with pytest.raises(RuntimeError):
+        await jobs.redraw({"slides": []}, 4, 1, "d", "detailed")
+    assert got["density"] == "detailed"

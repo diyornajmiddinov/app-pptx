@@ -141,17 +141,18 @@ async def build(req: dict, deck_id: str, user_id: int) -> tuple[Path, dict]:
         path = await render(content, req["template_id"], pipeline.workdir() / "demo.pptx")
     else:
         path, content = await pipeline.build_presentation(req["topic"], req["template_id"], req["slide_count"], req.get("language", "uz"), meta=meta,
-                                                          outline=req.get("outline"), notes=bool(req.get("notes")), source=req.get("source", ""))
+                                                          outline=req.get("outline"), notes=bool(req.get("notes")), source=req.get("source", ""),
+                                                          density=req.get("density", "balanced"))
     await asyncio.to_thread(decks.keep_images, user_id, deck_id, content)
     return path, content
 
 
-async def redraw(content: dict, template_id: int, user_id: int, deck_id: str) -> tuple[Path, dict]:
+async def redraw(content: dict, template_id: int, user_id: int, deck_id: str, density: str = "balanced") -> tuple[Path, dict]:
     """The same deck in another template (one short AI call adapts the tone)."""
     models.usage_context.set({"user_id": user_id, "purpose": "restyle", "job": deck_id})
     if settings.demo:
         return await render(content, template_id, pipeline.workdir() / "demo.pptx"), content
-    return await pipeline.switch_template(content, template_id)
+    return await pipeline.switch_template(content, template_id, density=density)
 
 
 async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".pptx", copy: dict | None = None):
@@ -182,7 +183,8 @@ async def run(job: dict):
             deck = await decks.load(job["user_id"], p["deck_id"])
             if not deck:
                 raise LookupError(f"taqdimot {p['deck_id']} topilmadi")
-            path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"]), JOB_TIMEOUT)
+            path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"],
+                                                                deck["request"].get("density", "balanced")), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"]}, p["deck_id"])
             await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"),
                           copy={"kind": "restyle", "facts": [f"shablon #{p['template_id']}"], "price": job["price"], "via": p.get("via", "bot")})

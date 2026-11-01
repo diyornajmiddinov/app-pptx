@@ -18,6 +18,9 @@ export const PAPER = {
     pCheck: "Topshirishdan oldin matn va adabiyotlarni o'qib chiqing: AI ba'zan sana yoki nashr ma'lumotida xato qiladi.",
     pBtn: 'Yozish', pConfirm: ({ topic, pages, price }) => `Mavzu: «${topic}»\n\nMavzu to'g'ri yozilganmi?\n\n${pages} bet${price ? ` · ${price}` : ''}`,
     e429paper: 'Oldingi buyurtmalaringiz hali tayyorlanmoqda. Ular tugagach qayta urining.',
+    density: 'Matn hajmi', d_concise: "Lo'nda", d_balanced: 'Muvozanatli', d_detailed: 'Batafsil',
+    d_concise_t: "Qisqa iboralar va kalit fikrlar — ma'ruza uchun tayanch.", d_balanced_t: "Matn va bo'sh joy teng — ko'p hollarda eng qulayi.",
+    d_detailed_t: "To'liq gaplar, izoh va misollar — o'qib tushunsa bo'ladigan slaydlar.",
   },
   ru: {
     pSubtitle: 'Файл Word и PDF по требованиям вуза.', pType: 'Вид работы', dt_referat: 'Реферат', dt_mustaqil: 'Самостоятельная',
@@ -37,6 +40,9 @@ export const PAPER = {
     pCheck: 'Перед сдачей прочитайте текст и список литературы: ИИ иногда ошибается в датах и выходных данных.',
     pBtn: 'Написать', pConfirm: ({ topic, pages, price }) => `Тема: «${topic}»\n\nТема написана правильно?\n\n${pages} стр.${price ? ` · ${price}` : ''}`,
     e429paper: 'Предыдущие заказы ещё готовятся. Попробуйте, когда они будут готовы.',
+    density: 'Объём текста', d_concise: 'Кратко', d_balanced: 'Сбалансированно', d_detailed: 'Подробно',
+    d_concise_t: 'Короткие фразы и ключевые мысли — опора для выступления.', d_balanced_t: 'Текст и свободное место поровну — удобно в большинстве случаев.',
+    d_detailed_t: 'Полные предложения, пояснения и примеры — слайды можно читать.',
   },
   en: {
     pSubtitle: 'Word and PDF laid out to university rules.', pType: 'Type of work', dt_referat: 'Essay', dt_mustaqil: 'Independent work',
@@ -56,5 +62,8 @@ export const PAPER = {
     pCheck: 'Read the text and the references before you hand it in: the AI sometimes gets a date or a publication detail wrong.',
     pBtn: 'Write', pConfirm: ({ topic, pages, price }) => `Topic: «${topic}»\n\nIs the topic spelled correctly?\n\n${pages} pages${price ? ` · ${price}` : ''}`,
     e429paper: 'Your previous orders are still being made. Try again when they are ready.',
+    density: 'Amount of text', d_concise: 'Concise', d_balanced: 'Balanced', d_detailed: 'Detailed',
+    d_concise_t: 'Short phrases and key ideas — a support for your talk.', d_balanced_t: 'Text and space in balance — right for most decks.',
+    d_detailed_t: 'Full sentences, explanations and examples — slides that read on their own.',
   },
 };

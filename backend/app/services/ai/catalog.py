@@ -81,5 +81,22 @@ LIMITS = {  # characters
 }
 
 
-def limits_for(template_id: int) -> dict:
-    return {**LIMITS, **style_of(template_id).get("limits", {})}
+# How much text a deck gets (the user's choice). The template's limits are the most a slide holds (more would not fit),
+# so "detailed" fills them, "balanced" is the usual deck, "concise" asks for lower limits of the running text (the
+# answer is still checked against the full ones: content.py).
+DENSITY = ("concise", "balanced", "detailed")
+BODY_TEXT = ("subtitle", "intro", "image_text", "card_t3", "card_t4", "step_t", "side_item", "stmt", "caption", "event_t", "quote", "note")
+CONCISE = 0.55
+DENSITY_RULE = {
+    "concise": "\nMatn hajmi: LO'NDA — har bir maydonda qisqa ibora va kalit fikrlar, ortiqcha so'zsiz; tomoshabin bir qarashda ilg'ab olsin.",
+    "balanced": "",
+    "detailed": "\nMatn hajmi: BATAFSIL — har bir matn maydonini chegarasining 80–100 foizigacha to'ldir: to'liq gaplar, izoh, misol va "
+                "aniq raqamlar bilan (chegaradan oshma). Kartochka va qadamlar matni ham to'liq gap bo'lsin.",
+}
+
+
+def limits_for(template_id: int, density: str = "balanced") -> dict:
+    Lm = {**LIMITS, **style_of(template_id).get("limits", {})}
+    if density == "concise":
+        Lm = {k: max(20, int(v * CONCISE)) if k in BODY_TEXT else v for k, v in Lm.items()}
+    return Lm

@@ -69,6 +69,7 @@ export default function Create({ me, refreshMe, go }) {
   const { t, money, lang } = useI18n();
   const [form, setForm] = useState({ topic: '', slide_count: 10, language: lang, template_id: 1, author: '', org: '', loc: '', year: String(new Date().getFullYear()) });
   const [notes, setNotes] = useState(false);
+  const [density, setDensity] = useState('balanced'); // how much text on the slides
   const [source, setSource] = useState(null);
   const [outline, setOutline] = useState(null); // [{type, title}] once made; dropped when what it was made for changes
   const [busy, setBusy] = useState('');
@@ -95,7 +96,7 @@ export default function Create({ me, refreshMe, go }) {
     if (busy) return;
     setBusy('create'); setError(''); setDone(false);
     try {
-      await api.generate({ ...base, author: form.author, org: form.org, loc: form.loc, year: form.year, notes,
+      await api.generate({ ...base, author: form.author, org: form.org, loc: form.loc, year: form.year, notes, density,
         ...(outline ? { outline: outline.map((s) => s.title.trim()) } : {}) });
       setDone(true); setJobsKey((k) => k + 1);
       setForm((f) => ({ ...f, topic: '' })); setOutline(null); setSource(null);
@@ -127,6 +128,9 @@ export default function Create({ me, refreshMe, go }) {
               <Segmented value={form.language} onChange={set('language')} label={t('deckLang')} options={LANGS.map((l) => ({ id: l.id, label: l.label }))} />
             </Field>
           </div>
+          <Field label={t('density')} hint={t(`d_${density}_t`)}>
+            <Segmented value={density} onChange={setDensity} label={t('density')} options={['concise', 'balanced', 'detailed'].map((d) => ({ id: d, label: t(`d_${d}`) }))} />
+          </Field>
           <label className="flex items-start gap-3">
             <input type="checkbox" checked={notes} onChange={(e) => setNotes(e.target.checked)} className="mt-1 h-4 w-4 rounded accent-brand-600" />
             <span><span className="block text-sm font-medium text-slate-900 dark:text-white">{t('notes')}</span>

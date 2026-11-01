@@ -16,9 +16,10 @@ def workdir() -> Path:
 
 async def build_presentation(topic: str, template_id: int, slide_count: int = 10, language: str = "uz", meta: dict | None = None,
                              out_path: Path | None = None, ask: Ask = ai, search: Search | None = None,
-                             outline: list[str] | None = None, notes: bool = False, source: str = "") -> tuple[Path, dict]:
+                             outline: list[str] | None = None, notes: bool = False, source: str = "", density: str = "balanced") -> tuple[Path, dict]:
     """Returns (pptx path, content) — the content is kept to switch templates later."""
-    content = await generate_content(topic, slide_count, language, template_id, ask=ask, outline=outline, notes=notes, source=source)
+    content = await generate_content(topic, slide_count, language, template_id, ask=ask, outline=outline, notes=notes, source=source,
+                                     density=density)
     content["meta"] = Meta(topic=topic, **(meta or {})).model_dump()
     work = workdir()
     if template_id in PHOTO_TEMPLATES:
@@ -26,7 +27,8 @@ async def build_presentation(topic: str, template_id: int, slide_count: int = 10
     return await render(content, template_id, out_path or work / f"slideai-{template_id}.pptx"), content
 
 
-async def switch_template(content: dict, template_id: int, out_path: Path | None = None, ask: Ask = ai) -> tuple[Path, dict]:
+async def switch_template(content: dict, template_id: int, out_path: Path | None = None, ask: Ask = ai,
+                          density: str = "balanced") -> tuple[Path, dict]:
     """Same presentation in another template: one short AI call adapts tone and length, then it is drawn again."""
-    new = await restyle(content, template_id, ask=ask)
+    new = await restyle(content, template_id, ask=ask, density=density)
     return await render(new, template_id, out_path or workdir() / f"slideai-{template_id}.pptx"), new

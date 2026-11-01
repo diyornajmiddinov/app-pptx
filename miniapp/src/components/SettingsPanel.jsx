@@ -19,7 +19,9 @@ function Stepper({ value, onChange }) {
   );
 }
 
-export default function SettingsPanel({ slideCount, onSlideCountChange, language, onLanguageChange }) {
+export const DENSITIES = ['concise', 'balanced', 'detailed'];
+
+export default function SettingsPanel({ slideCount, onSlideCountChange, language, onLanguageChange, density, onDensityChange }) {
   const { t } = useI18n();
   return (
     <section className="space-y-4 pb-6" aria-label={t('settings')}>
@@ -32,6 +34,11 @@ export default function SettingsPanel({ slideCount, onSlideCountChange, language
         <h2 className="mb-2 text-[15px] font-semibold">{t('slides')}</h2>
         <Stepper value={slideCount} onChange={onSlideCountChange} />
         <p className="mt-1.5 text-[12px] text-tg-hint">{t('slidesHint')}</p>
+      </div>
+      <div>
+        <h2 className="mb-2 text-[15px] font-semibold">{t('density')}</h2>
+        <SegmentedControl label={t('density')} value={density} onChange={onDensityChange} options={DENSITIES.map((d) => ({ value: d, label: t(`d_${d}`) }))} />
+        <p className="mt-1.5 text-[12px] text-tg-hint">{t(`d_${density}_t`)}</p>
       </div>
     </section>
   );
