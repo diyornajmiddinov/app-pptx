@@ -72,7 +72,7 @@ def payme_link(order_id: int, amount: int, return_url: str = "") -> str:
 
 def click_link(order_id: int, amount: int, return_url: str = "") -> str:
     q = {"service_id": settings.click_service_id, "merchant_id": settings.click_merchant_id,
-         "amount": amount, "transaction_param": order_id}
+         "amount": f"{amount}.00", "transaction_param": order_id}  # amount: N.NN (docs.click.uz/click-button)
     if return_url or settings.return_url:
         q["return_url"] = return_url or settings.return_url
     return "https://my.click.uz/services/pay?" + urlencode(q)
@@ -285,6 +285,9 @@ async def payme_rpc(body: dict, auth_header: str | None) -> tuple[dict, dict | N
 
 
 # ---------- Click SHOP API (Prepare / Complete) ----------
+# docs.click.uz/shop-api: a form (urlencoded) in, JSON out. Codes: -1 sign, -2 amount, -3 action, -4 already paid,
+# -5 no order, -6 no transaction, -8 bad request, -9 cancelled. After a successful Prepare and a withdrawal the
+# Complete answer may be an error only -4 or -9: so money that reached us is always credited.
 
 def _click_sign_ok(f: dict, with_prepare_id: bool) -> bool:
     parts = [f.get("click_trans_id", ""), f.get("service_id", ""), settings.click_secret_key, f.get("merchant_trans_id", "")]
@@ -302,64 +305,83 @@ def _click_amount_ok(f: dict, order: dict) -> bool:
         return False
 
 
+def _click_failed(f: dict) -> bool:
+    """Click itself reports an error (error < 0, e.g. the card was declined): the payment must be cancelled, -9."""
+    try:
+        return int(f.get("error") or 0) < 0
+    except ValueError:
+        return False
+
+
 def _click_reply(f: dict, error: int, note: str, **extra) -> dict:
-    return {"click_trans_id": f.get("click_trans_id"), "merchant_trans_id": f.get("merchant_trans_id"),
+    ctid = f.get("click_trans_id")
+    return {"click_trans_id": int(str(ctid)) if str(ctid or "").isdigit() else ctid, "merchant_trans_id": f.get("merchant_trans_id"),
             "error": error, "error_note": note, **extra}
 
 
-async def click_prepare(f: dict) -> dict:
-    if not _click_sign_ok(f, with_prepare_id=False):
-        return _click_reply(f, -1, "SIGN CHECK FAILED")
-    if f.get("action") != "0":
+def _click_check(f: dict, action: str, with_prepare_id: bool) -> dict | None:
+    """The checks before any lookup: signature, action, our service. None = passed."""
+    if not _click_sign_ok(f, with_prepare_id):
+        return _click_reply(f, -1, "SIGN CHECK FAILED!")
+    if f.get("action") != action:
         return _click_reply(f, -3, "Action not found")
+    if settings.click_service_id and f.get("service_id") != str(settings.click_service_id):
+        return _click_reply(f, -8, "Error in request from click")
+    return None
+
+
+async def click_prepare(f: dict) -> dict:
+    if (bad := _click_check(f, "0", with_prepare_id=False)) is not None:
+        return bad
+    try:
+        ctid = int(f.get("click_trans_id", ""))
+    except ValueError:
+        return _click_reply(f, -8, "Error in request from click")
     async with db.transaction() as con:
         order = await _order(con, f.get("merchant_trans_id"))
         if not order or order["provider"] != "click":
-            return _click_reply(f, -5, "Order does not exist")
+            return _click_reply(f, -5, "User does not exist")
         if order["state"] == "paid":
             return _click_reply(f, -4, "Already paid")
-        if order["state"] != "new":
+        if order["state"] != "new" or _click_failed(f):
             return _click_reply(f, -9, "Transaction cancelled")
         if not _click_amount_ok(f, order):
             return _click_reply(f, -2, "Incorrect parameter amount")
-        try:
-            ctid = int(f.get("click_trans_id", ""))
-        except ValueError:
-            return _click_reply(f, -8, "Error in request from click")
-        prepare_id = await con.fetchval("SELECT id FROM click_txns WHERE click_trans_id = $1", ctid) \
-            or await con.fetchval("INSERT INTO click_txns (click_trans_id, order_id, amount, state) "
-                                  "VALUES ($1, $2, $3, 'prepared') RETURNING id", ctid, order["id"], order["amount"])
+        txn = await con.fetchrow("SELECT id, order_id, state FROM click_txns WHERE click_trans_id = $1", ctid)
+        if txn and (txn["order_id"] != order["id"] or txn["state"] == "cancelled"):
+            return _click_reply(f, -9, "Transaction cancelled")
+        prepare_id = txn["id"] if txn else await con.fetchval(  # a repeated Prepare gets the same id
+            "INSERT INTO click_txns (click_trans_id, order_id, amount, state) VALUES ($1, $2, $3, 'prepared') RETURNING id",
+            ctid, order["id"], order["amount"])
     return _click_reply(f, 0, "Success", merchant_prepare_id=prepare_id)
 
 
 async def click_complete(f: dict) -> tuple[dict, dict | None]:
-    if not _click_sign_ok(f, with_prepare_id=True):
-        return _click_reply(f, -1, "SIGN CHECK FAILED"), None
-    if f.get("action") != "1":
-        return _click_reply(f, -3, "Action not found"), None
+    if (bad := _click_check(f, "1", with_prepare_id=True)) is not None:
+        return bad, None
+    try:
+        prepare_id, ctid = int(f.get("merchant_prepare_id", "")), int(f.get("click_trans_id", ""))
+    except ValueError:
+        return _click_reply(f, -8, "Error in request from click"), None
     async with db.transaction() as con:
-        try:
-            prepare_id, ctid = int(f.get("merchant_prepare_id", "")), int(f.get("click_trans_id", ""))
-        except ValueError:
-            return _click_reply(f, -8, "Error in request from click"), None
         row = await con.fetchrow("SELECT id, order_id, state FROM click_txns WHERE id = $1 AND click_trans_id = $2 FOR UPDATE", prepare_id, ctid)
         if not row:
             return _click_reply(f, -6, "Transaction does not exist"), None
-        order = await _order(con, row[1])
+        order = await _order(con, row["order_id"])
         if not order or str(order["id"]) != str(f.get("merchant_trans_id")):
-            return _click_reply(f, -5, "Order does not exist"), None
-        if row[2] == "paid":
+            return _click_reply(f, -5, "User does not exist"), None
+        if row["state"] == "paid":
             return _click_reply(f, -4, "Already paid", merchant_confirm_id=prepare_id), None
-        if row[2] == "cancelled" or order["state"] == "cancelled":
+        if row["state"] == "cancelled":
             return _click_reply(f, -9, "Transaction cancelled"), None
-        if not _click_amount_ok(f, order):
-            return _click_reply(f, -2, "Incorrect parameter amount"), None
-        if f.get("error", "0") not in ("0", ""):  # Click reports that the payment failed on its side
+        if _click_failed(f):  # Click reports that the payment failed on its side: cancel it, answer -9
             await con.execute("UPDATE click_txns SET state = 'cancelled' WHERE id = $1", prepare_id)
             await con.execute("UPDATE orders SET state = 'cancelled' WHERE id = $1 AND state = 'new'", order["id"])
             return _click_reply(f, -9, "Transaction cancelled"), None
-        if order["state"] == "paid":  # the same order paid through another Click transaction
-            return _click_reply(f, -4, "Already paid"), None
+        if not _click_amount_ok(f, order):
+            return _click_reply(f, -2, "Incorrect parameter amount"), None
+        # The money is taken. Even if the order was paid meanwhile by another Click transaction (two payment pages
+        # open) or was cancelled, this transaction is credited too: its own ledger ref, so never twice.
         await con.execute("UPDATE click_txns SET state = 'paid' WHERE id = $1", prepare_id)
         await con.execute("UPDATE orders SET state = 'paid' WHERE id = $1", order["id"])
         new = await billing.apply_in(con, order["user_id"], order["amount"], "topup:click", f"click:{ctid}", True)

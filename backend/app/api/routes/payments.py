@@ -41,6 +41,9 @@ async def pay_payme(request: Request, background: BackgroundTasks, authorization
 
 
 async def _click_form(request: Request) -> dict:
+    """Click posts application/x-www-form-urlencoded; multipart form-data is read too, just in case."""
+    if request.headers.get("content-type", "").startswith("multipart/"):
+        return {k: v for k, v in (await request.form()).items() if isinstance(v, str)}
     return dict(parse_qsl((await request.body()).decode("utf-8", "replace"), keep_blank_values=True))
 
 
