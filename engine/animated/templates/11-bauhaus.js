@@ -177,5 +177,5 @@ async function build(content, out) {
 const STYLE = {"tone": "dadil va sodda: qisqa, aniq gaplar", "limits": {"card_t4": 60}};
 module.exports = { id: 11, slug: 'bauhaus', name: 'Bauhaus', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'push:l', title: 'wipe:r', body: 'slideRight', item: 'flyUp', image: 'box', number: 'wheel', axis: 'wipe:r', stagger: 0.14, types: { cards: { item: 'flyDown' }, process: { item: 'flyLeft' } } };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['playful', 'bold'], tempo: 0.95 };

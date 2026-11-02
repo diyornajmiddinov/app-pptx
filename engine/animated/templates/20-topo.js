@@ -181,5 +181,5 @@ async function build(content, out) {
 const STYLE = {"tone": "tadqiqot yo'li ohangi: bosqich, yo'nalish va natija; metaforani me'yorida ishlat", "limits": {}};
 module.exports = { id: 20, slug: 'topo', name: 'Xarita', category: 'academic', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'morph', speed: 'slow', title: 'fadeDown', body: 'fadeUp', item: 'riseUp', image: 'dissolve', number: 'growIn', axis: 'wipe:r', tempo: 1.15, stagger: 0.2, kenburns: true };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['calm', 'technical'], kenburns: true, tempo: 1.1 };

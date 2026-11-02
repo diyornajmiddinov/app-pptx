@@ -173,5 +173,5 @@ async function build(content, out) {
 const STYLE = {"tone": "tizimli: o'zaro bog'liqlik, sabab-oqibat va sikllarni ko'rsat", "limits": {}};
 module.exports = { id: 19, slug: 'radial', name: 'Doira', category: 'business', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'circle', title: 'fadeUp', body: 'fade', item: 'wheel', image: 'circle', number: 'zoomIn', stagger: 0.18 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['playful', 'elegant'] };

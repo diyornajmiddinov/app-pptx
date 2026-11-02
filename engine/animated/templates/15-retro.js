@@ -170,5 +170,5 @@ async function build(content, out) {
 const STYLE = {"tone": "iliq, do'stona, hikoya qiluvchi ohang", "limits": {}};
 module.exports = { id: 15, slug: 'retro', name: 'Retro', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'p14:flash', speed: 'fast', title: 'zoomIn', body: 'fadeUp', item: 'popIn', image: 'checker', number: 'zoomIn', stagger: 0.14 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['playful', 'energetic'] };

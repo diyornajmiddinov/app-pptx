@@ -181,33 +181,55 @@ function plan(slide, type, d = {}, idx = -1) {
 const tgt = (spid) => `<p:tgtEl><p:spTgt spid="${spid}"/></p:tgtEl>`;
 const set = (spid, idf) => `<p:set><p:cBhvr><p:cTn id="${idf()}" dur="1" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst></p:cTn>${tgt(spid)}<p:attrNameLst><p:attrName>style.visibility</p:attrName></p:attrNameLst></p:cBhvr><p:to><p:strVal val="visible"/></p:to></p:set>`;
 const filt = (spid, dur, idf, f) => `<p:animEffect transition="in" filter="${f}"><p:cBhvr><p:cTn id="${idf()}" dur="${dur}"/>${tgt(spid)}</p:cBhvr></p:animEffect>`;
-const prop = (spid, dur, idf, attr, from, to, ease = true) => `<p:anim calcmode="lin" valueType="num"><p:cBhvr additive="base"><p:cTn id="${idf()}" dur="${dur}" fill="hold"${ease ? ' decel="100000"' : ''}/>${tgt(spid)}<p:attrNameLst><p:attrName>${attr}</p:attrName></p:attrNameLst></p:cBhvr><p:tavLst><p:tav tm="0"><p:val><p:strVal val="${from}"/></p:val></p:tav><p:tav tm="100000"><p:val><p:strVal val="${to}"/></p:val></p:tav></p:tavLst></p:anim>`;
-const move = (dx, dy, f = 'fade') => (spid, dur, idf) => set(spid, idf) + filt(spid, dur, idf, f)
-  + (dx ? prop(spid, dur, idf, 'ppt_x', `#ppt_x${dx > 0 ? '+' : '-'}${Math.abs(dx)}`, '#ppt_x') : '')
-  + (dy ? prop(spid, dur, idf, 'ppt_y', `#ppt_y${dy > 0 ? '+' : '-'}${Math.abs(dy)}`, '#ppt_y') : '');
+/** a property animated through keyframes [[tm 0..100000, value]...]; strVal formulas (#ppt_x...) or fltVal numbers */
+const keys = (spid, dur, idf, attr, kf, ease = 'decel') => `<p:anim calcmode="lin" valueType="num"><p:cBhvr additive="base"><p:cTn id="${idf()}" dur="${dur}" fill="hold"${ease === 'decel' ? ' decel="100000"' : ease === 'both' ? ' accel="40000" decel="60000"' : ''}/>${tgt(spid)}<p:attrNameLst><p:attrName>${attr}</p:attrName></p:attrNameLst></p:cBhvr><p:tavLst>${kf.map(([tm, v]) => `<p:tav tm="${tm}"><p:val>${typeof v === 'number' ? `<p:fltVal val="${v}"/>` : `<p:strVal val="${v}"/>`}</p:val></p:tav>`).join('')}</p:tavLst></p:anim>`;
+const prop = (spid, dur, idf, attr, from, to, ease = 'decel') => keys(spid, dur, idf, attr, [[0, from], [100000, to]], ease);
+const off = (base, d) => (d ? `#${base}${d > 0 ? '+' : '-'}${Math.abs(d)}` : `#${base}`);
+const move = (dx, dy, f = 'fade') => (spid, dur, idf) => set(spid, idf) + (f ? filt(spid, dur, idf, f) : '')
+  + (dx ? prop(spid, dur, idf, 'ppt_x', off('ppt_x', dx), '#ppt_x') : '') + (dy ? prop(spid, dur, idf, 'ppt_y', off('ppt_y', dy), '#ppt_y') : '');
 const scale = (from, f = 'fade') => (spid, dur, idf) => set(spid, idf) + (f ? filt(spid, dur, idf, f) : '')
   + prop(spid, dur, idf, 'ppt_w', from === 0 ? '0' : `#ppt_w*${from}`, '#ppt_w') + prop(spid, dur, idf, 'ppt_h', from === 0 ? '0' : `#ppt_h*${from}`, '#ppt_h');
+const overshoot = (from, over) => (spid, dur, idf) => set(spid, idf) + filt(spid, Math.round(dur * 0.6), idf, 'fade')
+  + ['ppt_w', 'ppt_h'].map((a) => keys(spid, dur, idf, a, [[0, from === 0 ? '0' : `#${a}*${from}`], [62000, `#${a}*${over}`], [100000, `#${a}`]], 'none')).join('');
+const settle = (dx, dy, f = 'fade') => (spid, dur, idf) => set(spid, idf) + (f ? filt(spid, Math.round(dur * 0.5), idf, f) : '')
+  + (dx ? keys(spid, dur, idf, 'ppt_x', [[0, off('ppt_x', dx)], [70000, off('ppt_x', -dx * 0.06)], [100000, '#ppt_x']], 'none') : '')
+  + (dy ? keys(spid, dur, idf, 'ppt_y', [[0, off('ppt_y', dy)], [70000, off('ppt_y', -dy * 0.06)], [100000, '#ppt_y']], 'none') : '');
+const turn = (from, kf) => (spid, dur, idf) => set(spid, idf) + filt(spid, Math.round(dur * 0.5), idf, 'fade')
+  + keys(spid, dur, idf, 'style.rotation', kf || [[0, from], [100000, 0]]);
+const path = (d) => (spid, dur, idf) => set(spid, idf) + filt(spid, Math.round(dur * 0.6), idf, 'fade')
+  + `<p:animMotion origin="layout" path="${d} E" pathEditMode="relative" ptsTypes=""><p:cBhvr><p:cTn id="${idf()}" dur="${dur}" fill="hold" decel="100000"/>${tgt(spid)}<p:attrNameLst><p:attrName>ppt_x</p:attrName><p:attrName>ppt_y</p:attrName></p:attrNameLst></p:cBhvr></p:animMotion>`;
+const filter = (f) => (spid, dur, idf) => set(spid, idf) + filt(spid, dur, idf, f);
 
-/** name -> [presetID, presetSubtype, behaviours] (presetID is what PowerPoint shows in its Animation pane) */
+/** name -> [presetID, presetSubtype, behaviours, iterate] (presetID is what PowerPoint's Animation pane shows) */
 const EFFECTS = {
-  appear: [1, 0, (s, d, i) => set(s, i)],
-  fade: [10, 0, (s, d, i) => set(s, i) + filt(s, d, i, 'fade')],
+  appear: [1, 0, (s, d, i) => set(s, i)], fade: [10, 0, filter('fade')], dissolve: [9, 0, filter('dissolve')],
   fadeUp: [42, 0, move(0, 0.08)], fadeDown: [47, 0, move(0, -0.08)], fadeLeft: [42, 0, move(0.06, 0)], fadeRight: [42, 0, move(-0.06, 0)],
   flyUp: [2, 4, move(0, 1.1, null)], flyDown: [2, 1, move(0, -1.1, null)], flyLeft: [2, 2, move(1.1, 0, null)], flyRight: [2, 8, move(-1.1, 0, null)],
-  riseUp: [2, 4, move(0, 0.35)], slideLeft: [2, 2, move(0.25, 0)], slideRight: [2, 8, move(-0.25, 0)],
-  'wipe:r': [22, 8, (s, d, i) => set(s, i) + filt(s, d, i, 'wipe(left)')], 'wipe:l': [22, 2, (s, d, i) => set(s, i) + filt(s, d, i, 'wipe(right)')],
-  'wipe:u': [22, 1, (s, d, i) => set(s, i) + filt(s, d, i, 'wipe(down)')], 'wipe:d': [22, 4, (s, d, i) => set(s, i) + filt(s, d, i, 'wipe(up)')],
-  split: [16, 21, (s, d, i) => set(s, i) + filt(s, d, i, 'barn(outVertical)')], splitH: [16, 26, (s, d, i) => set(s, i) + filt(s, d, i, 'barn(outHorizontal)')],
-  circle: [6, 32, (s, d, i) => set(s, i) + filt(s, d, i, 'circle(out)')], diamond: [8, 32, (s, d, i) => set(s, i) + filt(s, d, i, 'diamond(out)')],
-  box: [4, 32, (s, d, i) => set(s, i) + filt(s, d, i, 'box(out)')], wheel: [21, 1, (s, d, i) => set(s, i) + filt(s, d, i, 'wheel(1)')],
-  blinds: [3, 10, (s, d, i) => set(s, i) + filt(s, d, i, 'blinds(horizontal)')], dissolve: [9, 0, (s, d, i) => set(s, i) + filt(s, d, i, 'dissolve')],
-  checker: [5, 10, (s, d, i) => set(s, i) + filt(s, d, i, 'checkerboard(across)')], strips: [18, 12, (s, d, i) => set(s, i) + filt(s, d, i, 'strips(downRight)')],
-  zoomIn: [53, 16, scale(0)], growIn: [53, 16, scale(0.7)], softGrow: [53, 16, scale(0.92)], popIn: [53, 16, scale(1.15)],
+  riseUp: [2, 4, move(0, 0.3)], sinkDown: [2, 1, move(0, -0.3)], slideLeft: [2, 2, move(0.25, 0)], slideRight: [2, 8, move(-0.25, 0)],
+  'wipe:r': [22, 8, filter('wipe(left)')], 'wipe:l': [22, 2, filter('wipe(right)')], 'wipe:u': [22, 1, filter('wipe(down)')], 'wipe:d': [22, 4, filter('wipe(up)')],
+  split: [16, 21, filter('barn(outVertical)')], splitH: [16, 26, filter('barn(outHorizontal)')], splitIn: [16, 37, filter('barn(inVertical)')],
+  circle: [6, 32, filter('circle(out)')], diamond: [8, 32, filter('diamond(out)')], plus: [13, 32, filter('plus(out)')], box: [4, 32, filter('box(out)')],
+  wheel: [21, 1, filter('wheel(1)')], wheel4: [21, 4, filter('wheel(4)')], wedge: [20, 0, filter('wedge')],
+  blinds: [3, 10, filter('blinds(horizontal)')], blindsV: [3, 5, filter('blinds(vertical)')], checker: [5, 10, filter('checkerboard(across)')],
+  strips: [18, 12, filter('strips(downRight)')], bars: [14, 10, filter('randombar(horizontal)')],
+  zoomIn: [53, 16, scale(0)], growIn: [53, 16, scale(0.7)], softGrow: [53, 16, scale(0.92)], popIn: [53, 16, scale(1.15)], focusIn: [53, 16, scale(1.08)],
   stretch: [17, 10, (s, d, i) => set(s, i) + filt(s, d, i, 'fade') + prop(s, d, i, 'ppt_w', '0', '#ppt_w')],
+  unfold: [17, 5, (s, d, i) => set(s, i) + filt(s, d, i, 'fade') + prop(s, d, i, 'ppt_h', '0', '#ppt_h')],
   drop: [2, 1, move(0, -0.4)],
+  popOver: [53, 16, overshoot(0, 1.12)], springIn: [53, 16, overshoot(0.6, 1.06)],
+  bounceDrop: [26, 0, settle(0, -0.6)], riseSettle: [2, 4, settle(0, 0.2)], swingLeft: [2, 2, settle(-0.5, 0)], swingRight: [2, 8, settle(0.5, 0)],
+  spinIn: [15, 0, (s, d, i) => turn(-90)(s, d, i) + prop(s, d, i, 'ppt_w', '#ppt_w*0.4', '#ppt_w') + prop(s, d, i, 'ppt_h', '#ppt_h*0.4', '#ppt_h')],
+  swing: [45, 0, turn(0, [[0, -14], [55000, 5], [80000, -2], [100000, 0]])],
+  curveUp: [42, 0, path('M -0.12 0.16 C -0.08 0.04 -0.03 0.0 0 0')], curveDown: [47, 0, path('M 0.12 -0.16 C 0.08 -0.04 0.03 0.0 0 0')],
+  arcLeft: [2, 2, path('M 0.18 0.1 C 0.1 -0.06 0.04 0 0 0')], arcRight: [2, 8, path('M -0.18 0.1 C -0.1 -0.06 -0.04 0 0 0')],
+  sweepIn: [22, 8, (s, d, i) => set(s, i) + filt(s, d, i, 'wipe(left)') + prop(s, d, i, 'ppt_x', '#ppt_x-0.05', '#ppt_x')],
+  peekUp: [22, 1, (s, d, i) => set(s, i) + filt(s, d, i, 'wipe(down)') + prop(s, d, i, 'ppt_y', '#ppt_y+0.04', '#ppt_y')],
+  typeLetters: [1, 0, (s, d, i) => set(s, i), 'lt'], fadeLetters: [10, 0, filter('fade'), 'lt'], fadeWords: [10, 0, filter('fade'), 'wd'],
+  riseWords: [42, 0, move(0, 0.05), 'wd'], wipeWords: [22, 8, filter('wipe(left)'), 'wd'],
 };
 const EMPH = { // emphasis, played after the entrance
   kenburns: (s, d, i) => `<p:animScale><p:cBhvr><p:cTn id="${i()}" dur="${d}" fill="hold" decel="50000"/>${tgt(s)}</p:cBhvr><p:by x="107000" y="107000"/></p:animScale>`,
+  pulse: (s, d, i) => `<p:animScale><p:cBhvr><p:cTn id="${i()}" dur="260" autoRev="1" fill="hold"/>${tgt(s)}</p:cBhvr><p:by x="110000" y="110000"/></p:animScale>`,
 };
 
 // ---------------------------------------------------------------- slide transitions
@@ -219,17 +241,21 @@ const TR = {
   'split:h': '<p:split orient="horz" dir="out"/>', blinds: '<p:blinds dir="horz"/>', checker: '<p:checker dir="horz"/>', wheel: '<p:wheel spokes="1"/>',
   randomBar: '<p:randomBar dir="vert"/>', strips: '<p:strips dir="rd"/>', wedge: '<p:wedge/>', newsflash: '<p:newsflash/>',
 };
+// PowerPoint 2010 transitions (p14): written with a fade fallback for viewers without them
+const P14T = new Set(['vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'prism', 'doors', 'window', 'ferris', 'gallery', 'conveyor', 'pan', 'glitter',
+  'warp', 'flythrough', 'flash', 'shred', 'reveal', 'wheelReverse']);
 const P14 = 'http://schemas.microsoft.com/office/powerpoint/2010/main', P159 = 'http://schemas.microsoft.com/office/powerpoint/2015/09/main';
 const MC = 'http://schemas.openxmlformats.org/markup-compatibility/2006';
 function transitionXml(name, speed = 'med') {
   const ms = { fast: 500, med: 750, slow: 1000 }[speed] || 750;
-  if (name === 'none') return '';
+  if (!name || name === 'none') return '';
   const fallback = `<mc:Fallback><p:transition spd="${speed}"><p:fade/></p:transition></mc:Fallback>`;
   if (name === 'morph') {
     return `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p159="${P159}" Requires="p159"><p:transition spd="slow" xmlns:p14="${P14}" p14:dur="${Math.max(ms, 900)}"><p159:morph option="byObject"/></p:transition></mc:Choice>${fallback}</mc:AlternateContent>`;
   }
-  if (name.startsWith('p14:')) { // PowerPoint 2010+ effects; older viewers fade
+  if (name.startsWith('p14:')) {
     const [el, attr] = name.slice(4).split('|');
+    if (!P14T.has(el)) return `<p:transition spd="${speed}"><p:fade/></p:transition>`;
     return `<mc:AlternateContent xmlns:mc="${MC}"><mc:Choice xmlns:p14="${P14}" Requires="p14"><p:transition spd="${speed}" p14:dur="${ms}"><p14:${el}${attr ? ` ${attr}` : ''}/></p:transition></mc:Choice>${fallback}</mc:AlternateContent>`;
   }
   return `<p:transition spd="${speed}">${TR[name] || TR.fade}</p:transition>`;
@@ -240,65 +266,15 @@ function timingXml(steps, buildIds) {
   let id = 3;
   const idf = () => ++id;
   const pars = steps.map((st, n) => {
-    const [preset, sub, fn] = EFFECTS[st.effect] || EFFECTS.fade;
+    const [preset, sub, fn, iter] = EFFECTS[st.effect] || EFFECTS.fade;
     const ctn = idf();
     const body = fn(st.spid, st.dur, idf);
-    const em = st.emph && EMPH[st.emph] ? `<p:par><p:cTn id="${idf()}" presetID="6" presetClass="emph" presetSubtype="0" fill="hold" nodeType="withEffect"><p:stCondLst><p:cond delay="${st.delay + st.dur}"/></p:stCondLst><p:childTnLst>${EMPH[st.emph](st.spid, st.emphDur, idf)}</p:childTnLst></p:cTn></p:par>` : '';
-    return `<p:par><p:cTn id="${ctn}" presetID="${preset}" presetClass="entr" presetSubtype="${sub}" fill="hold"${st.text ? ' grpId="0"' : ''} nodeType="${n === 0 ? 'afterEffect' : 'withEffect'}"><p:stCondLst><p:cond delay="${st.delay}"/></p:stCondLst><p:childTnLst>${body}</p:childTnLst></p:cTn></p:par>${em}`;
+    const it = iter && st.text && st.iterPct ? `<p:iterate type="${iter}"><p:tmPct val="${st.iterPct}"/></p:iterate>` : '';
+    const em = st.emph && EMPH[st.emph] ? `<p:par><p:cTn id="${idf()}" presetID="6" presetClass="emph" presetSubtype="0" fill="hold" nodeType="withEffect"><p:stCondLst><p:cond delay="${st.delay + st.span}"/></p:stCondLst><p:childTnLst>${EMPH[st.emph](st.spid, st.emphDur, idf)}</p:childTnLst></p:cTn></p:par>` : '';
+    return `<p:par><p:cTn id="${ctn}" presetID="${preset}" presetClass="entr" presetSubtype="${sub}" fill="hold"${st.text ? ' grpId="0"' : ''} nodeType="${n === 0 ? 'afterEffect' : 'withEffect'}"><p:stCondLst><p:cond delay="${st.delay}"/></p:stCondLst>${it}<p:childTnLst>${body}</p:childTnLst></p:cTn></p:par>${em}`;
   }).join('');
   const bld = buildIds.length ? `<p:bldLst>${buildIds.map((s) => `<p:bldP spid="${s}" grpId="0"/>`).join('')}</p:bldLst>` : '';
   return `<p:timing><p:tnLst><p:par><p:cTn id="1" dur="indefinite" restart="never" nodeType="tmRoot"><p:childTnLst><p:seq concurrent="1" nextAc="seek"><p:cTn id="2" dur="indefinite" nodeType="mainSeq"><p:childTnLst><p:par><p:cTn id="3" fill="hold"><p:stCondLst><p:cond delay="indefinite"/><p:cond evt="onBegin" delay="0"><p:tn val="2"/></p:cond></p:stCondLst><p:childTnLst><p:par><p:cTn id="${idf()}" fill="hold"><p:stCondLst><p:cond delay="0"/></p:stCondLst><p:childTnLst>${pars}</p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn></p:par></p:childTnLst></p:cTn><p:prevCondLst><p:cond evt="onPrev" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:prevCondLst><p:nextCondLst><p:cond evt="onNext" delay="0"><p:tgtEl><p:sldTgt/></p:tgtEl></p:cond></p:nextCondLst></p:seq></p:childTnLst></p:cTn></p:par></p:tnLst>${bld}</p:timing>`;
 }
 
-// ---------------------------------------------------------------- the whole deck
-const DEFAULT = { transition: 'fade', speed: 'med', tempo: 1, stagger: 0.18, title: 'fadeUp', body: 'fadeUp', item: 'riseUp', image: 'softGrow', number: 'popIn', deco: 'fade', axis: 'wipe:r', kenburns: false };
-const DUR = { title: 700, body: 650, item: 600, image: 900, number: 550, deco: 500, axis: 800 };
-
-/**
- * Before writing: name every object uniquely ("!!title" for titles, so Morph carries a title from slide to slide)
- * and work out the steps. Returns per slide: { transition, steps: [{ name, effect, delay, dur, text, emph }] }.
- */
-function prepare(pres, content, spec) {
-  const A = { ...DEFAULT, ...(spec || {}) };
-  return (pres._slides || []).map((slide, i) => {
-    const type = ((content && content.slides && content.slides[i]) || {}).type || '';
-    const S = { ...A, ...((A.types && A.types[type]) || {}) }, T = S.tempo || 1;
-    const { groups } = plan(slide, type, (content && content.slides && content.slides[i]) || {}, i);
-    (slide._slideObjects || []).forEach((o, k) => { o.options = o.options || {}; o.options.objectName = `${o.options.objectName || o._type}~${i}.${k}`; });
-    const steps = [];
-    let t = 0;
-    groups.forEach((g, n) => {
-      const effect = S[g.role] || S.body, dur = Math.round((DUR[g.role] || 600) * T);
-      const delay = Math.round(t);
-      g.els.sort((a, b) => a.k - b.k).forEach((e) => {
-        if (g.role === 'title' && e === g.els[0]) e.o.options.objectName = `!!title~${i}`;
-        steps.push({ name: e.o.options.objectName, effect, delay, dur, text: e.kind === 'text', emph: g.role === 'image' && S.kenburns ? 'kenburns' : null, emphDur: Math.round(7000 * T) });
-      });
-      t += (g.role === 'title' ? 0.35 : S.stagger) * 1000 * T;
-      if (n === 0 && g.role === 'title' && groups.length > 1) t += 50 * T;
-    });
-    return { transition: S.transition, speed: S.speed, steps };
-  });
-}
-
-/** After pptxgenjs wrote the file: add transitions and timing to every slide's XML. */
-async function apply(file, slides) {
-  const fs = require('fs');
-  const zip = await JSZip.loadAsync(fs.readFileSync(file));
-  for (let i = 0; i < slides.length; i++) {
-    const p = `ppt/slides/slide${i + 1}.xml`, f = zip.file(p);
-    if (!f) continue;
-    let xml = await f.async('string');
-    const ids = {};
-    for (const m of xml.matchAll(/<p:cNvPr id="(\d+)" name="([^"]*)"/g)) ids[m[2].replace(/&amp;/g, '&').replace(/&quot;/g, '"').replace(/&apos;/g, "'")] = m[1];
-    const steps = slides[i].steps.map((s) => ({ ...s, spid: ids[s.name] })).filter((s) => s.spid);
-    const textIds = [...new Set(steps.filter((s) => s.text).map((s) => s.spid))];
-    const tr = transitionXml(slides[i].transition, slides[i].speed);
-    const tm = steps.length ? timingXml(steps, textIds) : '';
-    xml = xml.replace('</p:clrMapOvr>', `</p:clrMapOvr>${tr}${tm}`);
-    zip.file(p, xml);
-  }
-  fs.writeFileSync(file, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
-}
-
-module.exports = { plan, prepare, apply, transitionXml, timingXml, EFFECTS, TR, DEFAULT };
+module.exports = { plan, transitionXml, timingXml, EFFECTS, EMPH, TR };

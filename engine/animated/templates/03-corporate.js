@@ -170,5 +170,5 @@ async function build(content, out) {
 const STYLE = {"tone": "biznes-konsalting: har bir sarlavha xulosa bo'lsin (action title), raqam va faktlarga tayan", "limits": {}, "prefer": "data"};
 module.exports = { id: 3, slug: 'corporate', name: 'Korporativ', category: 'business', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'morph', title: 'fadeRight', body: 'fadeUp', item: 'riseUp', image: 'fade', number: 'popIn', axis: 'wipe:r', stagger: 0.14, tempo: 0.9 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['technical', 'elegant'], tempo: 0.9 };

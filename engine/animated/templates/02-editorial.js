@@ -165,5 +165,5 @@ async function build(content, out) {
 const STYLE = {"tone": "jurnalistik: qiziqarli sarlavhalar, tahliliy va ravon matn", "limits": {}, "prefer": "text"};
 module.exports = { id: 2, slug: 'editorial', name: 'Editorial', category: 'academic', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'cover:l', speed: 'slow', title: 'wipe:r', body: 'fade', item: 'fadeUp', image: 'wipe:d', number: 'wipe:u', axis: 'wipe:r', stagger: 0.16 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['elegant', 'calm'] };

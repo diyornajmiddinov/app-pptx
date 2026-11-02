@@ -160,5 +160,5 @@ async function build(content, out) {
 const STYLE = {"tone": "akademik ma'ruza: ta'riflar, atamalar va ilmiy aniqlik", "limits": {"intro": 360}, "prefer": "text"};
 module.exports = { id: 8, slug: 'academic', name: 'Akademik', category: 'academic', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'fade', title: 'fade', body: 'wipe:d', item: 'wipe:d', image: 'fade', number: 'fade', axis: 'wipe:r', tempo: 1.1, stagger: 0.2 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['calm', 'technical'] };

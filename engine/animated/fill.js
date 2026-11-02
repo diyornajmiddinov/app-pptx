@@ -18,7 +18,7 @@ if (require.main === module) {
     if (sl.type === 'stats') (sl.stats || []).forEach((x) => { x.value = keep(x.value); });
     if (sl.type === 'timeline') (sl.items || []).forEach((x) => { x.year = keep(x.year); });
   }
-  global.__SLIDEAI_ANIM = { content, spec: T.anim };
+  global.__SLIDEAI_ANIM = { content, spec: T.anim, id: T.id };
   T.build(content, out || `out/anim-${String(T.id).padStart(2, '0')}-${T.slug}.pptx`).then((p) => {
     console.log(p);
     if (process.env.SLIDEAI_CHECK) { const L = require('../lib.js'); console.error(JSON.stringify({ overflow: L.OVERFLOW, fits: L.FITS })); }

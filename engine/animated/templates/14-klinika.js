@@ -167,5 +167,5 @@ async function build(content, out) {
 const STYLE = {"tone": "xotirjam, ishonchli; sodda va tushunarli tushuntirish", "limits": {}};
 module.exports = { id: 14, slug: 'klinika', name: 'Klinika', category: 'minimalist', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'fade', title: 'fadeUp', body: 'fadeUp', item: 'fadeUp', image: 'softGrow', number: 'growIn', stagger: 0.16 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['calm', 'elegant'] };

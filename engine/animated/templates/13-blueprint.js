@@ -186,5 +186,5 @@ async function build(content, out) {
 const STYLE = {"tone": "muhandislik-texnik: aniq, bosqichma-bosqich, atamalar bilan", "limits": {}, "prefer": "data"};
 module.exports = { id: 13, slug: 'blueprint', name: 'Chizma', category: 'academic', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'wipe:r', title: 'wipe:r', body: 'wipe:r', item: 'wipe:r', image: 'wipe:d', number: 'wipe:r', axis: 'wipe:r', deco: 'wipe:r', tempo: 1.15, stagger: 0.22 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['technical'], tempo: 1.1 };

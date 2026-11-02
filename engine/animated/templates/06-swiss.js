@@ -156,5 +156,5 @@ async function build(content, out) {
 const STYLE = {"tone": "minimal: imkon qadar qisqa, bitta so'z ham ortiqcha bo'lmasin", "limits": {"card_t3": 70, "card_t4": 60, "stmt": 60}};
 module.exports = { id: 6, slug: 'swiss', name: 'Shveytsar', category: 'minimalist', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'push:u', speed: 'fast', title: 'wipe:r', body: 'wipe:r', item: 'fadeUp', image: 'wipe:d', number: 'appear', axis: 'wipe:r', tempo: 0.75, stagger: 0.1 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['bold', 'technical'], tempo: 0.85, speed: 'fast' };

@@ -196,5 +196,5 @@ async function build(content, out) {
 const STYLE = {"tone": "zamonaviy, texnologik va ilhomlantiruvchi; qisqa, aniq jumlalar", "limits": {}};
 module.exports = { id: 1, slug: 'aurora', name: 'Aurora', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'morph', tempo: 1.1, title: 'fadeUp', body: 'fadeUp', item: 'growIn', image: 'softGrow', number: 'zoomIn', kenburns: true, stagger: 0.2 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['elegant', 'technical'], kenburns: true };

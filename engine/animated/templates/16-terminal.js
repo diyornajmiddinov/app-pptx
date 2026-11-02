@@ -156,5 +156,5 @@ async function build(content, out) {
 const STYLE = {"tone": "texnik va lo'nda: dasturchi uslubida aniq", "limits": {"card_t4": 60, "step_t": 70}};
 module.exports = { id: 16, slug: 'terminal', name: 'Terminal', category: 'minimalist', build, style: STYLE };
 
-// animated copy: this template's own motion (animated/anim.js)
-module.exports.anim = { transition: 'cut', title: 'wipe:r', body: 'wipe:r', item: 'wipe:r', image: 'blinds', number: 'wipe:r', deco: 'appear', axis: 'wipe:r', tempo: 0.8, stagger: 0.18 };
+// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
+module.exports.anim = { moods: ['technical', 'bold'], tempo: 0.9 };
