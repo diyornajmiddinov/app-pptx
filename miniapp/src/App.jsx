@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Header from './components/Header.jsx';
 import DetailsForm from './components/DetailsForm.jsx';
-import SettingsPanel from './components/SettingsPanel.jsx';
+import SettingsPanel, { MAX_SLIDES } from './components/SettingsPanel.jsx';
 import TemplateGallery from './components/TemplateGallery.jsx';
 import DeckList from './components/DeckList.jsx';
 import EditorPanel from './components/EditorPanel.jsx';
@@ -127,7 +127,7 @@ export default function App() {
       tg?.close(); // the bot sends the finished .pptx to the chat
     } catch (err) {
       hapticNotify('error');
-      showAlert(t(err.key || 'eServer', { status: err.status }));
+      showAlert(t(err.key || 'eServer', { status: err.status, n: account?.prices?.first_max_slides }));
       if (err.status === 402 || err.key === 'eSubscribe') { loadAccount().catch(() => {}); tg?.close(); } // the bot sent the top-up / join buttons
     } finally {
       tg?.MainButton.hideProgress();
@@ -140,6 +140,8 @@ export default function App() {
   const priceText = price === 0 ? t('free') : price ? money(price, lang) : '';
   const buttonText = `${restyling ? t('restyleBtn') : t('mainBtn')}${priceText ? ` · ${priceText}` : ''}`;
   const firstOffer = !restyling && account?.prices?.now != null && account.prices.now < account.prices.generate;
+  const maxSlides = firstOffer ? account.prices.first_max_slides ?? MAX_SLIDES : MAX_SLIDES; // the first deck's offer is for a short deck
+  useEffect(() => { if (slideCount > maxSlides) setSlideCount(maxSlides); }, [slideCount, maxSlides]);
   const editorTab = mode === 'editor';
   useMainButton({ tg, text: buttonText, active: ready, onClick: handleGenerate, hidden: editorTab });
 
@@ -154,6 +156,7 @@ export default function App() {
       {firstOffer && mode !== 'editor' && (
         <p className="-mt-2 mb-5 rounded-xl bg-tg-secondary-bg px-3 py-2 text-[14px] font-medium text-tg-text">
           {account.prices.now === 0 ? t('firstFree') : t('firstPrice', { price: money(account.prices.now, lang) })}
+          {maxSlides < MAX_SLIDES && ` · ${t('firstMax', { n: maxSlides })}`}
         </p>
       )}
       <div className="mb-5 rounded-xl bg-tg-secondary-bg p-1" role="tablist" aria-label={t('mode')}>
@@ -172,7 +175,7 @@ export default function App() {
       {editorTab && <EditorPanel tg={tg} initData={initData} isTelegram={isTelegram} />}
       {restyling && <DeckList decks={decks} templates={TEMPLATES} selectedId={deckId} onSelect={(id) => { hapticSelect(); setDeckId(id); }} />}
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
-      {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
+      {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} maxSlides={maxSlides} language={language} onLanguageChange={handleDeckLang}
         density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }} />}
       {!restyling && !editorTab && (
         <section className="pb-6">

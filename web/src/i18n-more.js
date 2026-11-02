@@ -22,6 +22,7 @@ export const MORE = {
     legalBack: '← Bosh sahifa', updated: 'Tahrir sanasi', k_promo: 'Promokod', k_referral: 'Taklif bonusi',
     // referat / mustaqil ish
     e_tooManyJobs: "Oldingi buyurtmalaringiz hali tayyorlanmoqda. Ular tugagach qayta urining.",
+    e_firstMaxSlides: "Birinchi taqdimot {n} ta slaydgacha bo'ladi. Slaydlar sonini kamaytiring.", firstMax: '{n} ta slaydgacha',
     deckWishesPh: "Masalan: ko'proq raqam va statistika, O‘zbekistondan misollar, oxirida savollar slaydi",
     density: 'Matn hajmi', d_concise: "Lo'nda", d_balanced: 'Muvozanatli', d_detailed: 'Batafsil',
     d_concise_t: "Qisqa iboralar va kalit fikrlar — ma'ruza uchun tayanch.", d_balanced_t: "Matn va bo'sh joy teng — ko'p hollarda eng qulayi.",
@@ -88,6 +89,7 @@ export const MORE = {
     support: 'Связаться', oferta: 'Публичная оферта', privacy: 'Политика конфиденциальности', legalAgree: 'Входя, вы соглашаетесь с условиями: {oferta} и {privacy}.',
     legalBack: '← На главную', updated: 'Редакция от', k_promo: 'Промокод', k_referral: 'Бонус за приглашение',
     e_tooManyJobs: 'Предыдущие заказы ещё готовятся. Попробуйте, когда они будут готовы.',
+    e_firstMaxSlides: 'Первая презентация — до {n} слайдов. Уменьшите количество слайдов.', firstMax: 'до {n} слайдов',
     deckWishesPh: 'Например: больше цифр и статистики, примеры из Узбекистана, в конце слайд с вопросами',
     density: 'Объём текста', d_concise: 'Кратко', d_balanced: 'Сбалансированно', d_detailed: 'Подробно',
     d_concise_t: 'Короткие фразы и ключевые мысли — опора для выступления.', d_balanced_t: 'Текст и свободное место поровну — удобно в большинстве случаев.',
@@ -154,6 +156,7 @@ export const MORE = {
     support: 'Contact', oferta: 'Public offer', privacy: 'Privacy policy', legalAgree: 'By signing in you agree to the {oferta} and the {privacy}.',
     legalBack: '← Home', updated: 'Version of', k_promo: 'Promo code', k_referral: 'Invite bonus',
     e_tooManyJobs: 'Your previous orders are still being made. Try again when they are ready.',
+    e_firstMaxSlides: 'The first presentation has up to {n} slides. Choose fewer slides.', firstMax: 'up to {n} slides',
     deckWishesPh: 'For example: more numbers and statistics, examples from Uzbekistan, a questions slide at the end',
     density: 'Amount of text', d_concise: 'Concise', d_balanced: 'Balanced', d_detailed: 'Detailed',
     d_concise_t: 'Short phrases and key ideas — a support for your talk.', d_balanced_t: 'Text and space in balance — right for most decks.',

@@ -188,6 +188,7 @@ async def me(uid: int = Depends(web_user)):
     u = await db.pool().fetchrow("SELECT first_name, last_name, username, lang FROM users WHERE id = $1", uid)
     out = {"user": {"id": uid, **dict(u)}, "lang": u["lang"] or "uz", "balance": await billing.balance(uid), **await _prices()}
     out["prices"]["now"] = await jobs.generate_price(uid)  # what "create" costs this user right now
+    out["prices"]["first_max_slides"] = jobs.FIRST_MAX_SLIDES  # at the first-deck price, no more slides than this
     return out
 
 
@@ -232,6 +233,8 @@ async def _order(uid: int, kind: str, payload: dict, price: int | None = None) -
         raise HTTPException(402, "lowBalance") from None
     except jobs.TooMany:
         raise HTTPException(429, "tooManyJobs") from None
+    except jobs.FirstTooLong:
+        raise HTTPException(422, "firstMaxSlides") from None
     return job_id, ahead
 
 

@@ -118,6 +118,8 @@ async def test_first_deck_price_from_the_admin_panel(client, tg, admin):  # noqa
     assert r.status_code == 200 and r.json()["values"]["first_generate_price"] == 1000
     assert (await client.get("/api/web/me")).json()["prices"]["now"] == 1000
     req = {"template_id": 3, "slide_count": 8, "topic": "Quyosh energiyasi"}
+    r = await client.post("/api/web/generate", json={**req, "slide_count": 12})
+    assert r.status_code == 422 and r.json()["detail"] == "firstMaxSlides"  # the first-deck price is for up to 10 slides
     assert (await client.post("/api/web/generate", json=req)).status_code == 202
     assert await billing.balance(U) == 4000
     assert (await client.get("/api/web/me")).json()["prices"]["now"] == 5000  # only the first one

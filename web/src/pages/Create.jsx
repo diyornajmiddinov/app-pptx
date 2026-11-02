@@ -83,9 +83,11 @@ export default function Create({ me, refreshMe, go }) {
     if (['slide_count', 'language', 'template_id'].includes(k)) setOutline(null);
   };
   const price = me.prices.now ?? me.prices.generate;
+  const maxSlides = price < me.prices.generate ? me.prices.first_max_slides ?? 30 : 30; // the first deck's offer is for a short deck
+  const slideCount = Math.min(form.slide_count, maxSlides);
   const low = me.balance < price;
   const topic = form.topic.trim();
-  const base = { topic, slide_count: form.slide_count, language: form.language, template_id: form.template_id, wishes: wishes.trim(),
+  const base = { topic, slide_count: slideCount, language: form.language, template_id: form.template_id, wishes: wishes.trim(),
     ...(source ? { source: source.text } : {}) };
 
   const makeOutline = async () => {
@@ -104,7 +106,7 @@ export default function Create({ me, refreshMe, go }) {
       setForm((f) => ({ ...f, topic: '' })); setOutline(null); setSource(null); setWishes('');
       refreshMe();
     } catch (err) {
-      setError(t(`e_${err.key}`));
+      setError(t(`e_${err.key}`, { n: maxSlides }));
       if (err.key === 'outlineStale') setOutline(null);
     } finally { setBusy(''); }
   };
@@ -121,9 +123,9 @@ export default function Create({ me, refreshMe, go }) {
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label={t('slides')}>
               <div className="flex items-center gap-3">
-                <input type="range" min="6" max="30" value={form.slide_count} onChange={(e) => set('slide_count')(Number(e.target.value))}
+                <input type="range" min="6" max={maxSlides} value={slideCount} onChange={(e) => set('slide_count')(Number(e.target.value))}
                   className="w-full accent-brand-600" aria-label={t('slides')} />
-                <span className="w-24 shrink-0 text-right text-sm font-semibold text-slate-900 dark:text-white">{t('slidesN', { n: form.slide_count })}</span>
+                <span className="w-24 shrink-0 text-right text-sm font-semibold text-slate-900 dark:text-white">{t('slidesN', { n: slideCount })}</span>
               </div>
             </Field>
             <Field label={t('deckLang')}>
@@ -165,7 +167,7 @@ export default function Create({ me, refreshMe, go }) {
             <span className="text-slate-600 dark:text-slate-400">{t('balance')}</span>
             <span className={`font-semibold ${low ? 'text-red-600' : 'text-slate-900 dark:text-white'}`}>{money(me.balance)}</span>
           </div>
-          {price < me.prices.generate && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('firstPrice', { price: price === 0 ? t('free') : money(price) })}</p>}
+          {price < me.prices.generate && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('firstPrice', { price: price === 0 ? t('free') : money(price) })}{maxSlides < 30 && ` · ${t('firstMax', { n: maxSlides })}`}</p>}
           <Alert>{error}</Alert>
           <Alert kind="ok">{done && t('queued')}</Alert>
           {!outline && (

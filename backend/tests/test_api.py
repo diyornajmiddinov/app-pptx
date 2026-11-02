@@ -114,6 +114,22 @@ async def test_first_deck_free_in_the_mini_app_once(client, tg):
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 402  # the second one is paid
 
 
+async def test_the_free_first_deck_has_at_most_ten_slides(client, tg):
+    from app.services import app_settings
+    await app_settings.set_many({"first_generate_price": 0}, 1000)
+    await add_user(U, balance=5000)
+    assert (await client.get("/api/me", headers=h())).json()["prices"]["first_max_slides"] == jobs.FIRST_MAX_SLIDES == 10
+    body = {"user_id": U, "template_id": 3, "slide_count": 11, "language": "uz", "topic": "Mavzu"}
+    r = await client.post("/api/generate", headers=h(), json=body)
+    assert r.status_code == 422 and r.json()["detail"] == "firstMaxSlides"
+    assert await billing.balance(U) == 5000 and not await db.pool().fetchval("SELECT count(*) FROM jobs")  # nothing taken
+    assert (await client.post("/api/generate", headers=h(), json={**body, "slide_count": 10})).status_code == 202
+    assert await billing.balance(U) == 5000  # the free one
+    await db.pool().execute("UPDATE jobs SET state = 'done'")
+    assert (await client.post("/api/generate", headers=h(), json={**body, "slide_count": 30})).status_code == 202  # paid: any size
+    assert await billing.balance(U) == 0 and not await billing.reconcile()
+
+
 async def test_two_requests_at_once_get_one_free_deck(tg):
     import asyncio
 

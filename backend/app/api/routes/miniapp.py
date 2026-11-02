@@ -69,6 +69,8 @@ async def _order(user_id: int, lang: str, kind: str, payload: dict, price: int |
         raise HTTPException(402, "Balans yetarli emas") from None
     except jobs.TooMany:
         raise HTTPException(429, "Oldingi buyurtmalaringiz hali tayyorlanmoqda") from None
+    except jobs.FirstTooLong:
+        raise HTTPException(422, "firstMaxSlides") from None
 
 
 async def _queued(user_id: int, lang: str, text: str, ahead: int):
@@ -145,7 +147,7 @@ async def me(tg_user: dict = Depends(telegram_user)):
     return {"user": {"id": tg_user["id"], **(dict(u) if u else {})},  # the keyboard-opened app knows only the id
             "lang": await lang_of(tg_user["id"], tg_user.get("language_code")), "balance": await billing.balance(tg_user["id"]),
             "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"], "paper": cfg["price_paper"],
-                       "now": await jobs.generate_price(tg_user["id"])}}  # a new deck for this user now (the first may be free)
+                       "now": await jobs.generate_price(tg_user["id"]), "first_max_slides": jobs.FIRST_MAX_SLIDES}}  # a new deck for this user now (the first may be free)
 
 
 @router.post("/api/me")

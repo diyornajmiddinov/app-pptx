@@ -27,7 +27,7 @@ async function request(method, path, { initData, payload } = {}) {
   } finally { clearTimeout(timer); }
   if (!res.ok) {
     const detail = await res.clone().json().then((b) => b?.detail).catch(() => null);
-    throw new ApiError(detail === 'subscribe' ? 'eSubscribe' : keyForStatus(res.status), res.status);
+    throw new ApiError(detail === 'subscribe' ? 'eSubscribe' : detail === 'firstMaxSlides' ? 'eFirstMax' : keyForStatus(res.status), res.status);
   }
   return res.json().catch(() => ({}));
 }
