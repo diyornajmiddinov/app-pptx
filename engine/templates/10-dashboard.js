@@ -120,21 +120,7 @@ async function build(content, out) {
     },
     async timeline(d) {
       const s = page(d), n = d.items.length, rh = 3.75 / n, tx = 2.0, tw = 7.5, seg = tw / n;
-      // where each caption's text really is, so the dashed grid lines can stop around it
-      const boxes = d.items.map((it, i) => {
-        const y = 1.4 + i * rh, bx = tx + i * seg + 0.05, bw = Math.min(seg * 1.6, tw - i * seg) - 0.1;
-        const dw = Math.max(bw, 4.4), dx = Math.min(bx, 9.5 - dw), right = dx < bx;
-        const tw1 = Math.min(dw, L.width(it.t, 14, F.body)), th = L.height(it.t, 14, dw, F.body);
-        const x0 = right ? dx + dw - tw1 : dx;
-        return { x0: x0 - 0.08, x1: x0 + tw1 + 0.08, y0: y + 0.45, y1: y + 0.45 + th + 0.08 };
-      });
-      for (let k = 0; k <= n; k++) {
-        const x = tx + k * seg;
-        const cuts = boxes.filter((b) => b.x0 < x && x < b.x1).sort((a, b) => a.y0 - b.y0);
-        let y = 1.35;
-        for (const b of cuts) { if (b.y0 > y) t.line(s, x, y, 0, b.y0 - y, C.border, 0.5, { dash: 'dash' }); y = Math.max(y, b.y1); }
-        if (y < 5.1) t.line(s, x, y, 0, 5.1 - y, C.border, 0.5, { dash: 'dash' });
-      }
+      for (let k = 0; k <= n; k++) t.line(s, tx + k * seg, 1.35, 0, 3.75, C.border, 0.5, { dash: 'dash' });
       d.items.forEach((it, i) => {
         const y = 1.4 + i * rh;
         t.text(s, it.year, { x: 0.5, y, w: 1.35, h: 0.42, fontSize: L.fit(it.year, 1.35, 0.42, 18, 11, F.head, true), bold: true, color: ACC[i], valign: 'middle' });

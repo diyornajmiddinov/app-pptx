@@ -15,9 +15,7 @@ async function build(content, out) {
   const M = content.meta || {}, meta = L.metaLine(M);
   let idx = 0;
   const footer = (s, dark) => {
-    // the topic gets the room the author line leaves, on one line
-    const room = Math.min(4.6, 9.4 - Math.min(5.0, L.width(meta, 9, F.body)) - 0.3 - 0.6);
-    t.text(s, L.clip(M.topic || '', room, 0.25, 9, F.body, true), { x: 0.6, y: 5.2, w: room, h: 0.25, fontSize: 9, bold: true, color: dark ? C.yellow : C.indigo, noShrink: true });
+    t.text(s, M.topic || '', { x: 0.6, y: 5.2, w: 4.6, h: 0.25, fontSize: 9, bold: true, color: dark ? C.yellow : C.indigo });
     t.text(s, meta, { x: 4.4, y: 5.2, w: 5.0, h: 0.25, fontSize: 9, color: dark ? C.soft : C.muted, align: 'right' });
   };
   const page = (d, bg = C.white) => {
@@ -102,14 +100,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.4;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.7, F.body) : 0))) + 0.22);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.7, F.body, 0.22, 4.85 - 2.25);
       [d.left, d.right].forEach((side, i) => {
         const x = i ? 5.0 : 0.6, fill = i ? C.yellow : C.indigo, fg = i ? C.indigo : C.white;
         t.rect(s, x, 1.35, w, 3.65, fill, { name: 'Panel' });
         t.text(s, side.h, { x: x + 0.35, y: 1.55, w: w - 0.7, h: 0.5, fontSize: 20, bold: true, color: i ? C.indigo : C.yellow });
         let y = 2.25;
-        side.items.forEach((it, k) => { t.text(s, it, { x: x + 0.35, y, w: w - 0.7, h: rows[k], fontSize: 15, color: fg }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, it, { x: x + 0.35, y, w: w - 0.7, h: rows[k], fontSize: CFS, color: fg }); y += rows[k]; });
       });
     },
     async statement(d) {

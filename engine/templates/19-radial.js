@@ -66,7 +66,7 @@ async function build(content, out) {
         t.img(s, await ring('c' + i, 400, [[P[i % 6], 1]], 34), cx - dd / 2, 1.45, dd, dd);
         t.img(s, await L.icon(it.icon, P[i % 6], 2), cx - dd * 0.2, 1.45 + dd * 0.3, dd * 0.4, dd * 0.4);
         t.text(s, it.h, { x: cx - cw / 2 + 0.15, y: 1.6 + dd, w: cw - 0.3, h: 0.45, fontSize: L.fit(it.h, cw - 0.3, 0.45, 18, 12, F.head, true), bold: true, color: C.navy, align: 'center' });
-        t.text(s, it.t, { x: cx - cw / 2 + 0.15, y: 2.1 + dd, w: cw - 0.3, h: 4.95 - (2.1 + dd), fontSize: 14, color: C.gray, align: 'center' });
+        t.text(s, it.t, { x: cx - cw / 2 + 0.15, y: 2.1 + dd, w: cw - 0.3, h: 3.35 - dd - 0.1, fontSize: 14, color: C.gray, align: 'center' });
       }
     },
     async process(d) {
@@ -96,9 +96,8 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.25, h = 3.45, y = 1.5;
-      const cfs = L.colSize(d, w - 0.95, h - 1.1 - 0.1, 0.2, F.body); // items shrink to fit the panel
       const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 0.95, F.body) : 0))));
+        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.95, F.body) : 0))));
       for (const [i, side] of [d.left, d.right].entries()) {
         const x = 0.6 + i * (w + 0.3), col = i ? C.pink : C.blue;
         t.rect(s, x, y, w, h, 'FFFFFF', { r: 0.25, line: { color: C.ring, width: 1 }, name: 'Panel' });
@@ -107,7 +106,7 @@ async function build(content, out) {
         let yy = y + 1.1;
         side.items.forEach((it, k) => {
           t.oval(s, x + 0.4, yy + 0.06, 0.16, 0.16, null, { line: { color: col, width: 2 } });
-          t.text(s, it, { x: x + 0.7, y: yy, w: w - 0.95, h: rows[k] + 0.05, fontSize: cfs, color: C.navy });
+          t.text(s, it, { x: x + 0.7, y: yy, w: w - 0.95, h: rows[k] + 0.05, fontSize: 15, color: C.navy });
           yy += rows[k] + 0.2;
         });
       }

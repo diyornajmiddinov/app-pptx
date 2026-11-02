@@ -202,7 +202,7 @@ async def history(uid: int = Depends(web_user)):
 # ---------------------------------------------------------------- presentations
 
 class OutlineRequest(BaseModel):
-    template_id: int = Field(ge=1, le=40)
+    template_id: int = Field(ge=1, le=200)
     slide_count: int = Field(ge=6, le=30)
     language: Literal["uz", "ru", "en"] = "uz"
     topic: str = Field(min_length=3, max_length=200)
@@ -221,7 +221,7 @@ class GenerateRequest(OutlineRequest):
 
 
 class RestyleRequest(BaseModel):
-    template_id: int = Field(ge=1, le=40)
+    template_id: int = Field(ge=1, le=200)
     deck_id: str = Field(pattern=r"^\d{1,20}$")
 
 

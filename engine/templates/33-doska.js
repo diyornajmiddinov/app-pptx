@@ -19,11 +19,9 @@ const ring = (w, h, color) => { // hand-drawn ellipse that does not quite close
 };
 const arrow = (w, h, color) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><g fill="none" stroke="#${color}" stroke-width="5" stroke-linecap="round" stroke-opacity="0.85"><path d="M6,${h / 2} C${w * 0.35},${h * 0.3} ${w * 0.65},${h * 0.7} ${w - 10},${h / 2}"/><path d="M${w - 30},${h / 2 - 16} L${w - 8},${h / 2} L${w - 30},${h / 2 + 16}"/></g></svg>`;
 const boardSvg = () => {
-  // faint, soft-edged eraser marks kept inside the slate: hard-edged ovals read as a white veil over the text
-  let smudge = ''; for (let i = 0; i < 6; i++) smudge += `<ellipse cx="${100 + rnd() * 1400}" cy="${100 + rnd() * 700}" rx="${150 + rnd() * 200}" ry="${40 + rnd() * 50}" fill="#FFFFFF" opacity="0.025"/>`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><defs><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/></filter>
-  <filter id="soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="40"/></filter><clipPath id="slate"><rect x="26" y="26" width="1548" height="820"/></clipPath></defs>
-  <rect width="1600" height="900" fill="#${C.wood}"/><rect x="26" y="26" width="1548" height="820" fill="#${C.board}"/><rect x="26" y="26" width="1548" height="820" filter="url(#n)"/><g clip-path="url(#slate)"><g filter="url(#soft)">${smudge}</g></g>
+  let smudge = ''; for (let i = 0; i < 9; i++) smudge += `<ellipse cx="${rnd() * 1600}" cy="${rnd() * 900}" rx="${150 + rnd() * 250}" ry="${40 + rnd() * 80}" fill="#FFFFFF" opacity="0.035"/>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><defs><filter id="n"><feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="2"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.06 0"/></filter></defs>
+  <rect width="1600" height="900" fill="#${C.wood}"/><rect x="26" y="26" width="1548" height="820" fill="#${C.board}"/><rect x="26" y="26" width="1548" height="820" filter="url(#n)"/>${smudge}
   <rect x="0" y="846" width="1600" height="54" fill="#${C.wood2}"/><rect x="260" y="852" width="90" height="16" rx="6" fill="#${C.chalk}"/><rect x="380" y="854" width="60" height="14" rx="6" fill="#${C.yellow}"/><rect x="1180" y="850" width="120" height="22" rx="4" fill="#9C8F7A"/></svg>`;
 };
 
@@ -117,14 +115,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = await page(d), w = 4.1;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.4, F.body) : 0))) + 0.22);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.4, F.body, 0.22, 4.85 - 2.05);
       t.line(s, 5.0, 1.45, 0, 3.3, C.chalk, 2, { dash: 'sysDash' });
       [d.left, d.right].forEach((side, i) => {
         const x = i ? 5.35 : 0.6, col = i ? C.blue : C.pink;
         t.text(s, side.h, { x, y: 1.4, w, h: 0.5, fontFace: F.head, fontSize: 20, bold: true, color: col });
         let y = 2.05;
-        side.items.forEach((it, k) => { t.text(s, `\u2014 ${it}`, { x, y, w: w - 0.2, h: rows[k], fontSize: 15, color: C.chalk }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, `\u2014 ${it}`, { x, y, w: w - 0.2, h: rows[k], fontSize: CFS, color: C.chalk }); y += rows[k]; });
       });
     },
     async statement(d) {

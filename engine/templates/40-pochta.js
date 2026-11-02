@@ -111,14 +111,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = await pg(d), w = 4.25;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 14, w - 0.8, F.body) : 0))) + 0.18);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 14, w - 0.8, F.body, 0.18, 4.85 - 2.25);
       for (const [i, side] of [d.left, d.right].entries()) {
         const x = 0.6 + i * (w + 0.3);
         await postcard(s, x, 1.4, w, 3.6);
         t.text(s, side.h, { x: x + 0.35, y: 1.65, w: w - 0.7, h: 0.5, fontFace: F.head, fontSize: 18, bold: true, color: i ? C.blue : C.red });
         let y = 2.25;
-        side.items.forEach((it, k) => { t.text(s, '\u2709', { x: x + 0.35, y, w: 0.3, h: 0.3, fontSize: 12, color: i ? C.blue : C.red }); t.text(s, it, { x: x + 0.7, y, w: w - 1.0, h: rows[k], fontSize: 14, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, '\u2709', { x: x + 0.35, y, w: 0.3, h: 0.3, fontSize: 12, color: i ? C.blue : C.red }); t.text(s, it, { x: x + 0.7, y, w: w - 1.0, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       }
     },
     async statement(d) {

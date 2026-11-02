@@ -112,15 +112,14 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.25;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.6, F.body) : 0))) + 0.22);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.6, F.body, 0.22, 4.85 - 2.2);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.3), col = i ? C.green : C.blue;
         t.rect(s, x, 1.45, w, 0.55, col, { name: 'Header' });
         t.text(s, side.h, { x: x + 0.25, y: 1.45, w: w - 0.5, h: 0.55, fontFace: F.head, fontSize: 18, bold: true, color: C.white, valign: 'middle' });
         t.rect(s, x, 2.0, w, 2.95, C.light, { name: 'Body' });
         let y = 2.2;
-        side.items.forEach((it, k) => { t.oval(s, x + 0.25, y + 0.08, 0.12, 0.12, col); t.text(s, it, { x: x + 0.5, y, w: w - 0.6, h: rows[k], fontSize: 15, color: C.navy }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.oval(s, x + 0.25, y + 0.08, 0.12, 0.12, col); t.text(s, it, { x: x + 0.5, y, w: w - 0.6, h: rows[k], fontSize: CFS, color: C.navy }); y += rows[k]; });
       });
     },
     async statement(d) {

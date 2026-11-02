@@ -96,14 +96,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.15;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.85, F.body) : 0))) + 0.2);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.85, F.body, 0.2, 4.85 - 2.3);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.65 + i * (w + 0.4);
         soft(s, x, 1.45, w, 3.4);
         t.text(s, side.h, { x: x + 0.35, y: 1.65, w: w - 0.7, h: 0.5, fontSize: 19, bold: true, color: i ? C.blue : C.coral });
         let y = 2.3;
-        side.items.forEach((it, k) => { pressed(s, x + 0.35, y + 0.05, 0.2, 0.2, { round: true }); t.text(s, it, { x: x + 0.7, y, w: w - 0.9, h: rows[k], fontSize: 15, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { pressed(s, x + 0.35, y + 0.05, 0.2, 0.2, { round: true }); t.text(s, it, { x: x + 0.7, y, w: w - 0.9, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       });
     },
     async statement(d) {

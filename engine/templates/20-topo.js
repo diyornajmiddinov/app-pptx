@@ -100,9 +100,8 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.25, h = 3.45, y = 1.5;
-      const cfs = L.colSize(d, w - 0.95, h - 1.0 - 0.1, 0.2, F.body); // items shrink to fit the panel
       const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 0.95, F.body) : 0))));
+        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.95, F.body) : 0))));
       for (const [i, side] of [d.left, d.right].entries()) {
         const x = 0.6 + i * (w + 0.3), fg = i ? C.cream : C.ink;
         t.rect(s, x, y, w, h, i ? C.olive : C.sand, { name: 'Panel' });
@@ -110,7 +109,7 @@ async function build(content, out) {
         let yy = y + 1.0;
         for (const [k, it] of side.items.entries()) {
           await pin(s, x + 0.3, yy - 0.01, 0.25, i ? C.cream : C.terra);
-          t.text(s, it, { x: x + 0.65, y: yy, w: w - 0.95, h: rows[k] + 0.05, fontSize: cfs, color: fg });
+          t.text(s, it, { x: x + 0.65, y: yy, w: w - 0.95, h: rows[k] + 0.05, fontSize: 15, color: fg });
           yy += rows[k] + 0.2;
         }
       }

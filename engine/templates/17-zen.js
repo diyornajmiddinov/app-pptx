@@ -85,14 +85,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = (CW - 0.8) / 2;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w, F.body) : 0))) + 0.25);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w, F.body, 0.25, 4.85 - 2.3);
       t.rect(s, X + w + 0.37, 1.7, 0.06, 3.1, C.sand, { name: 'Divider' });
       [d.left, d.right].forEach((side, i) => {
         const x = X + i * (w + 0.8);
         t.text(s, side.h, { x, y: 1.6, w, h: 0.5, fontFace: F.head, italic: true, fontSize: 22, color: i ? C.indigo : C.ink });
         let y = 2.3;
-        side.items.forEach((it, k) => { t.text(s, it, { x, y, w, h: rows[k], fontSize: 15, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, it, { x, y, w, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       });
     },
     async statement(d) {

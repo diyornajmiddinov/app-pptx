@@ -1,11 +1,11 @@
-"""What the engine can draw: the 40 templates, which slide types go where, and how long each text may be."""
+"""What the engine can draw: the 200 templates, which slide types go where, and how long each text may be."""
 import json
 
 from app.core.config import ENGINE_DIR
 
 TEMPLATE_INFO = {t["id"]: t for t in json.loads((ENGINE_DIR / "templates.json").read_text(encoding="utf-8"))}
 TEMPLATE_NAMES = {i: t["name"] for i, t in TEMPLATE_INFO.items()}
-PHOTO_TEMPLATES = range(1, 41)  # every template takes photos
+PHOTO_TEMPLATES = range(1, max(TEMPLATE_INFO) + 1)  # every template takes photos (1–200)
 
 
 def style_of(template_id: int) -> dict:

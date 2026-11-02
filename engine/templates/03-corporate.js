@@ -106,16 +106,14 @@ async function build(content, out) {
     async timeline(d) {
       const s = page(d), n = d.items.length, cw = 8.8 / n, ly = 3.0;
       t.line(s, 0.6, ly, 8.8, 0, C.navy, 1.5, { name: 'Axis' });
-      const bw = cw + 0.6 > 2.8 ? 2.6 : cw + 0.4, room = Math.min(ly - 0.3 - 1.35, 4.95 - (ly + 0.35)) - 0.75; // text room above / below the axis
-      const tfs = Math.min(...d.items.map((it) => L.fit(it.t, bw, room, 14, 9, F.body)));
       d.items.forEach((it, i) => {
-        const x = 0.6 + i * cw, up = i % 2 === 0, w = bw;
+        const x = 0.6 + i * cw, up = i % 2 === 0, w = cw + 0.6 > 2.8 ? 2.6 : cw + 0.4;
         t.shape(s, 'DIAMOND', { x: x + 0.05, y: ly - 0.14, w: 0.28, h: 0.28, fill: { color: up ? C.blue : C.teal }, objectName: `Milestone ${i + 1}` });
-        const th = Math.min(room, L.height(it.t, tfs, w, F.body)), block = 0.4 + 0.35 + th;
+        const th = Math.min(L.height(it.t, 14, w, F.body), up ? 0.62 : 5.0 - ly - 1.1), block = 0.4 + 0.35 + th; // long text shrinks into its box
         const y0 = up ? ly - 0.3 - block : ly + 0.35;
         t.text(s, it.year, { x: x + 0.05, y: y0, w, h: 0.38, fontSize: 18, bold: true, color: up ? C.blue : C.teal });
         t.text(s, it.h, { x: x + 0.05, y: y0 + 0.38, w, h: 0.33, fontSize: 15, bold: true, color: C.navy });
-        t.text(s, it.t, { x: x + 0.05, y: y0 + 0.73, w, h: th + 0.05, fontSize: tfs, color: C.muted });
+        t.text(s, it.t, { x: x + 0.05, y: y0 + 0.73, w, h: th + 0.05, fontSize: 14, color: C.muted });
       });
     },
     async quote(d) {

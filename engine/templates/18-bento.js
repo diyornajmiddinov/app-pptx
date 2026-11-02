@@ -70,7 +70,7 @@ async function build(content, out) {
         t.img(s, await L.icon(it.icon, big ? C.orange : fg, 2), c.x + 0.28, c.y + 0.28, big ? 0.6 : 0.36, big ? 0.6 : 0.36);
         const hy = big ? c.y + c.h - 1.9 : c.y + 0.75;
         t.text(s, it.h, { x: c.x + 0.28, y: hy, w: c.w - 0.56, h: 0.45, fontSize: L.fit(it.h, c.w - 0.56, 0.45, big ? 22 : 17, 12, F.head, true), bold: true, color: fg });
-        t.text(s, it.t, { x: c.x + 0.28, y: hy + 0.48, w: c.w - 0.56, h: big ? 1.25 : c.h - 1.3, fontSize: L.fit(it.t, c.w - 0.56, big ? 1.25 : c.h - 1.3, 14, 11, F.body), color: sub(c.fill) });
+        t.text(s, it.t, { x: c.x + 0.28, y: hy + 0.48, w: c.w - 0.56, h: big ? 1.25 : c.h - 1.3, fontSize: L.fit(it.t, c.w - 0.56, big ? 1.25 : c.h - 1.3, 14, 11, F.body), minFont: 8, color: sub(c.fill) });
       }
     },
     async process(d) {
@@ -92,10 +92,7 @@ async function build(content, out) {
         t.text(s, x.value, { x: c.x + 0.3, y: c.y + 0.2, w: c.w - 0.6, h: c.big ? 1.9 : 0.95, fontSize: L.fit(x.value, c.w - 0.6, c.big ? 1.6 : 0.9, c.big ? 88 : 46, 24, F.head, true), bold: true, valign: c.big ? 'middle' : 'top' });
         t.text(s, x.label, { x: c.x + 0.3, y: c.big ? c.y + c.h - 1.2 : c.y + c.h - 0.65, w: c.w - 0.6, h: c.big ? 1.0 : 0.55, fontSize: c.big ? 17 : 14, bold: c.big, color: C.ink, valign: 'bottom' });
       });
-      if (d.note && d.stats[0]) {
-        const lab = Math.min(1.0, L.height(d.stats[0].label, 17, fw - 0.6, F.body, true)), room = AY + AH - 0.2 - lab - 0.12 - (AY + 2.15);
-        if (room > 0.2) t.text(s, d.note, { x: X0 + 0.3, y: AY + 2.15, w: fw - 0.6, h: Math.min(0.9, room), fontSize: 13, color: '3A2A20' });
-      }
+      if (d.note) t.text(s, d.note, { x: X0 + 0.3, y: AY + 2.12, w: fw - 0.6, h: Math.max(0.4, AH - 1.2 - 2.12 - 0.08), fontSize: 13, color: '3A2A20' });
     },
     async compare(d) {
       const s = page(d), w = (AW - G) / 2;

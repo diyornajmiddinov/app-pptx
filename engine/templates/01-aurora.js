@@ -110,8 +110,7 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = slide('content'); num(s); title(s, d.title);
-      const w = 4.15, cfs = L.colSize(d, w - 1.0, 1.6 + 3.35 - 2.5 - 0.1, 0.2, F.body), rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 1.0, F.body) : 0))));
+      const w = 4.15, { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 1.0, F.body, 0, 4.85 - 2.5 - 0.2 * Math.max(d.left.items.length, d.right.items.length));
       [d.left, d.right].forEach((side, i) => {
         const x = 0.7 + i * 4.45;
         glass(s, x, 1.6, w, 3.35, i ? { border: C.cyan, bw: 1.25 } : {});
@@ -120,7 +119,7 @@ async function build(content, out) {
         side.items.forEach((it, k) => {
           const h = rows[k];
           t.oval(s, x + 0.38, y + 0.1, 0.08, 0.08, i ? C.cyan : C.muted);
-          t.text(s, it, { x: x + 0.6, y, w: w - 1.0, h: h + 0.05, fontSize: cfs });
+          t.text(s, it, { x: x + 0.6, y, w: w - 1.0, h: h + 0.05, fontSize: CFS });
           y += h + 0.2;
         });
       });

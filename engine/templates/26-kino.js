@@ -103,14 +103,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.25, h = 3.5;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 14, w - 0.5, F.body) : 0))) + 0.2);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 14, w - 0.5, F.body, 0.2, 4.85 - 2.35);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.3);
         frameCard(s, x, 1.5, w, h);
         t.text(s, side.h.toUpperCase(), { x: x + 0.25, y: 1.8, w: w - 0.5, h: 0.4, fontSize: 14, bold: true, color: i ? C.yellow : C.text, charSpacing: 2 });
         let y = 2.35;
-        side.items.forEach((it, k) => { t.text(s, it, { x: x + 0.25, y, w: w - 0.5, h: rows[k], fontSize: 14, color: C.text }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, it, { x: x + 0.25, y, w: w - 0.5, h: rows[k], fontSize: CFS, color: C.text }); y += rows[k]; });
       });
     },
     async statement(d) {

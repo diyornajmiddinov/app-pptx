@@ -69,8 +69,8 @@ async def test_webhook_checks_the_secret(client, monkeypatch):
 
 
 async def test_health_and_templates(client):
-    assert (await client.get("/health")).json()["templates"] == 40
-    assert len((await client.get("/api/templates")).json()) == 40
+    assert (await client.get("/health")).json()["templates"] == 200
+    assert len((await client.get("/api/templates")).json()) == 200
 
 
 # ---------------------------------------------------------------- the editor over HTTP

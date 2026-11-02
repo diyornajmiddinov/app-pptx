@@ -21,6 +21,7 @@ const W = 10, H = 5.625;
 const opentype = require('opentype.js');
 const fs_ = require('fs');
 const LIB = '/usr/share/fonts/truetype/liberation/', CX = '/usr/share/fonts/truetype/crosextra/', TG = '/usr/share/texmf/fonts/opentype/public/tex-gyre/';
+const DV = '/usr/share/fonts/truetype/dejavu/';
 const FILES = {
   Arial: [LIB + 'LiberationSans-Regular.ttf', LIB + 'LiberationSans-Bold.ttf', LIB + 'LiberationSans-Italic.ttf'],
   Calibri: [CX + 'Carlito-Regular.ttf', CX + 'Carlito-Bold.ttf', CX + 'Carlito-Italic.ttf'],
@@ -29,10 +30,12 @@ const FILES = {
   'Courier New': [LIB + 'LiberationMono-Regular.ttf', LIB + 'LiberationMono-Bold.ttf', LIB + 'LiberationMono-Italic.ttf'],
   'Bookman Old Style': [TG + 'texgyrebonum-regular.otf', TG + 'texgyrebonum-bold.otf', TG + 'texgyrebonum-italic.otf'],
   'Century Schoolbook': [TG + 'texgyreschola-regular.otf', TG + 'texgyreschola-bold.otf', TG + 'texgyreschola-italic.otf'],
+  // no metric twin of Georgia here; the server draws it with DejaVu Serif, which is wider: measured with it, the text
+  // fits both there and in PowerPoint's real Georgia
+  Georgia: [DV + 'DejaVuSerif.ttf', DV + 'DejaVuSerif-Bold.ttf', DV + 'DejaVuSerif.ttf'],
 };
 // Letters a metric font lacks (TeX Gyre has no Cyrillic, no Uzbek ʻ) are drawn by the system fallback font,
 // DejaVu Sans, which is much wider: measure those letters with it, or the text overflows its box.
-const DV = '/usr/share/fonts/truetype/dejavu/';
 const FALLBACK = [DV + 'DejaVuSans.ttf', DV + 'DejaVuSans-Bold.ttf', DV + 'DejaVuSans.ttf'];
 const cache = {};
 function face(font, bold, italic) {
@@ -142,16 +145,27 @@ function tools(pres, F, C) {
     S,
     text(s, t, o) {
       const opt = { isTextBox: true, margin: 0, valign: 'top', fontFace: F.body, color: C.ink, fontSize: 14, ...o };
-      // shared safety net for all 40 templates: text that does not fit its box shrinks (to 55% at most)
+      // shared safety net for all templates: text that does not fit its box shrinks (to 55% at most)
       // instead of spilling onto the line, picture or text below it
+      // noFit (templates 41-200) = noShrink; minFont: the template's own lowest size for this box
+      if (opt.noFit) opt.noShrink = true;
       if (typeof t === 'string' && opt.w && !opt.noShrink) t = hyphenate(t, opt.w, opt.fontSize * 0.8, opt.fontFace, !!opt.bold, !!opt.italic);
       const str = typeof t === 'string' ? t : Array.isArray(t) ? t.map((r) => r.text).join('') : null;
-      if (str && opt.w && opt.h && !opt.noShrink && !opt.fit) {
-        const fs = fit(str, opt.w, opt.h * 1.02, opt.fontSize, Math.max(7, opt.fontSize * 0.55), opt.fontFace, !!opt.bold, opt.lineSpacingMultiple || 1, !!opt.italic);
-        opt._ofs = opt.fontSize; // remembered so sibling boxes can be given one size at save time (harmonize)
-        if (fs < opt.fontSize) opt.fontSize = fs;
+      if (str && opt.w && opt.h && !opt.noShrink && !opt.fit && !opt.rotate) {
+        const fs0 = opt.fontSize, k = opt.lineSpacingMultiple || 1;
+        // runs that are all bold are measured bold, even when the box itself is not
+        const bold = !!opt.bold || (Array.isArray(t) && t.length > 0 && t.every((r) => r && r.options && r.options.bold));
+        const fs = fit(str, opt.w, opt.h * 1.02, fs0, opt.minFont ?? Math.max(7, fs0 * 0.55), opt.fontFace, bold, k, !!opt.italic);
+        opt._ofs = fs0; // remembered so sibling boxes can be given one size at save time (harmonize)
+        if (fs < fs0) {
+          opt.fontSize = fs;
+          if (Array.isArray(t)) for (const r of t) if (r && r.options && r.options.fontSize) r.options.fontSize = Math.max(6, r.options.fontSize * (fs / fs0));
+          if (process.env.SLIDEAI_CHECK) FITS.push({ slide: s._slideNum, from: fs0, to: fs });
+        }
+        if (process.env.SLIDEAI_CHECK && str.trim().length > 1 && height(str, opt.fontSize, opt.w, opt.fontFace, bold, k, !!opt.italic) > opt.h + 0.05)
+          OVERFLOW.push({ slide: s._slideNum, text: str.slice(0, 50), need: +height(str, opt.fontSize, opt.w, opt.fontFace, bold, k, !!opt.italic).toFixed(2), box: +opt.h.toFixed(2), fs: opt.fontSize });
       }
-      delete opt.noShrink;
+      delete opt.noShrink; delete opt.noFit; delete opt.minFont;
       s.addText(t, opt);
     },
     rect(s, x, y, w, h, fill, o = {}) {
@@ -232,7 +246,19 @@ function colSize(d, w, avail, gap, font, max = 15, min = 10) {
   }
   return min;
 }
-module.exports = { W, H, width, lines, lh, height, fit, clip, colSize, svg, icon, runs, plain, pad2, ROMAN, deck, tools, save };
+/** Row heights for two side-by-side lists (compare slides) that fit `avail` inches:
+ *  shrinks the font from `fs` (down to 10 pt) until all rows fit. Returns { rows, fs }. */
+function rowsFit(lists, fs, w, font, gap, avail) {
+  const n = Math.max(...lists.map((l) => l.length));
+  let f = fs, rows = [];
+  for (; f >= 10; f -= 0.5) {
+    rows = Array.from({ length: n }, (_, k) => Math.max(...lists.map((l) => (l[k] ? height(l[k], f, w, font) : 0))) + gap * (f / fs));
+    if (rows.reduce((a, b) => a + b, 0) <= avail) break;
+  }
+  return { rows, fs: Math.max(f, 10) };
+}
+const OVERFLOW = [], FITS = []; // SLIDEAI_CHECK=1: boxes still too small at their lowest size / boxes that shrank
+module.exports = { W, H, width, lines, lh, height, fit, clip, colSize, rowsFit, OVERFLOW, FITS, svg, icon, runs, plain, pad2, ROMAN, deck, tools, save };
 
 // ======================================================================
 // Photos: load from path / URL / data URI, crop to box ("cover"), optional
@@ -345,13 +371,19 @@ module.exports.heroPhotos = heroPhotos;
 const I18N = {
   uz: { by: 'Bajardi: ', topic: 'Mavzu:', no: 'No.', step: (n) => `${n}-bosqich`, chapter: (n) => `${n}-bob`, figure: (n) => `${n}-rasm. `,
     preface: 'Muqaddima', contents: 'Mundarija', references: 'Adabiyotlar', stop: (n) => `${n}-bekat`, scene: 'SAHNA', sheet: 'LIST',
-    postcard: 'POSTCARD  \u2022  OTKRITKA', thanks: 'RAHMAT!', quote: 'iqtibos', indicator: "Ko'rsatkich", note: 'Izoh', qstep: (n) => `${n}-qadam` },
+    postcard: 'POSTCARD  \u2022  OTKRITKA', thanks: 'RAHMAT!', quote: 'iqtibos', indicator: "Ko'rsatkich", note: 'Izoh', qstep: (n) => `${n}-qadam` ,
+    author_l: 'Muallif', org_l: 'Tashkilot', city_l: 'Shahar', year_l: 'Yil', slide_l: 'Slayd', specimen: 'Namuna', caption: 'Surat',
+    deck_file: 'Taqdimot', end_file: 'Yakun', image_file: 'rasm', next: 'Keyingi >', finish: 'Tayyor', message: 'Xabar', form: 'Shakl', sign: 'Imzo', date_l: 'Sana', basis: 'Asos', approved: 'TASDIQLANDI' },
   ru: { by: 'Выполнил(а): ', topic: 'Тема:', no: '№', step: (n) => `Этап ${n}`, chapter: (n) => `Глава ${n}`, figure: (n) => `Рис. ${n}. `,
     preface: 'Введение', contents: 'Содержание', references: 'Литература', stop: (n) => `Станция ${n}`, scene: 'СЦЕНА', sheet: 'ЛИСТ',
-    postcard: 'ПОЧТОВАЯ ОТКРЫТКА', thanks: 'СПАСИБО!', quote: 'цитата', indicator: 'Показатель', note: 'Пояснение', qstep: (n) => `Шаг ${n}` },
+    postcard: 'ПОЧТОВАЯ ОТКРЫТКА', thanks: 'СПАСИБО!', quote: 'цитата', indicator: 'Показатель', note: 'Пояснение', qstep: (n) => `Шаг ${n}` ,
+    author_l: 'Автор', org_l: 'Организация', city_l: 'Город', year_l: 'Год', slide_l: 'Слайд', specimen: 'Образец', caption: 'Фото',
+    deck_file: 'Презентация', end_file: 'Итог', image_file: 'фото', next: 'Далее >', finish: 'Готово', message: 'Сообщение', form: 'Форма', sign: 'Подпись', date_l: 'Дата', basis: 'Основание', approved: 'УТВЕРЖДЕНО' },
   en: { by: 'Prepared by: ', topic: 'Topic:', no: 'No.', step: (n) => `Step ${n}`, chapter: (n) => `Chapter ${n}`, figure: (n) => `Fig. ${n}. `,
     preface: 'Introduction', contents: 'Contents', references: 'References', stop: (n) => `Stop ${n}`, scene: 'SCENE', sheet: 'SHEET',
-    postcard: 'POSTCARD', thanks: 'THANK YOU!', quote: 'quote', indicator: 'Indicator', note: 'Description', qstep: (n) => `Step ${n}` },
+    postcard: 'POSTCARD', thanks: 'THANK YOU!', quote: 'quote', indicator: 'Indicator', note: 'Description', qstep: (n) => `Step ${n}` ,
+    author_l: 'Author', org_l: 'Organization', city_l: 'City', year_l: 'Year', slide_l: 'Slide', specimen: 'Specimen', caption: 'Photo',
+    deck_file: 'Presentation', end_file: 'Closing', image_file: 'image', next: 'Next >', finish: 'Finish', message: 'Message', form: 'Form', sign: 'Signature', date_l: 'Date', basis: 'Basis', approved: 'APPROVED' },
 };
 /** labels for the deck's language (falls back to Uzbek) */
 module.exports.tr = (content) => I18N[(content && content.language) || 'uz'] || I18N.uz;

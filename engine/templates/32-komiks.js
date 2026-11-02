@@ -122,14 +122,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.4;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 14, w - 0.7, F.body) : 0))) + 0.18);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 14, w - 0.7, F.body, 0.18, 5.0 - 1.45);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.45 + i * (w + 0.3);
         panel(s, x, 1.3, w, 3.75, i ? 'DCEBFA' : 'FDE2E4');
         const ch = caption(s, side.h.toUpperCase(), x, 1.3, w, 14);
         let y = 1.45 + ch;
-        side.items.forEach((it, k) => { t.text(s, i ? '\u2714' : '\u2716', { x: x + 0.2, y, w: 0.3, h: 0.3, fontSize: 13, bold: true, color: i ? C.blue : C.red }); t.text(s, it, { x: x + 0.55, y, w: w - 0.7, h: rows[k], fontSize: 14, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, i ? '\u2714' : '\u2716', { x: x + 0.2, y, w: 0.3, h: 0.3, fontSize: 13, bold: true, color: i ? C.blue : C.red }); t.text(s, it, { x: x + 0.55, y, w: w - 0.7, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       });
       burst(s, 4.55, 4.35, 0.9, 0.8, C.yellow);
       t.text(s, 'VS', { x: 4.55, y: 4.35, w: 0.9, h: 0.8, fontSize: 18, bold: true, color: C.ink, align: 'center', valign: 'middle' });

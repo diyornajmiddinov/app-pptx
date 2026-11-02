@@ -436,5 +436,1775 @@
    "limits": {},
    "prefer": null
   }
+ },
+ {
+  "id": 41,
+  "name": "Gazeta",
+  "category": "academic",
+  "style": {
+   "tone": "gazeta uslubi: sarlavhalar xabar kabi (kim, nima, qachon), matn faktlarga boy, betaraf va aniq",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 42,
+  "name": "Vitraj",
+  "category": "creative",
+  "style": {
+   "tone": "tantanali va yorqin: har bir fikr alohida 'oyna' kabi aniq ajratilgan, qisqa va obrazli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 43,
+  "name": "Kosmos",
+  "category": "creative",
+  "style": {
+   "tone": "ilhomlantiruvchi va keng ko'lamli: kelajakka qaratilgan, aniq maqsad va yo'nalishlar bilan",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 44,
+  "name": "Sintveyv",
+  "category": "creative",
+  "style": {
+   "tone": "energiyali va zamonaviy: qisqa, ta'sirli, shiorga o'xshash iboralar",
+   "limits": {
+    "title": 40,
+    "card_h": 18,
+    "step_h": 18,
+    "event_h": 14,
+    "stmt": 60
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 45,
+  "name": "Memfis",
+  "category": "creative",
+  "style": {
+   "tone": "quvnoq va ijodiy: jonli, qisqa iboralar, lekin faktlar aniq",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 46,
+  "name": "Suzani",
+  "category": "creative",
+  "style": {
+   "tone": "milliy va iliq: hurmatli, ravon o'zbek nutqi; madaniy merosga ehtirom bilan, lekin aniq faktlar",
+   "limits": {
+    "card_h": 20
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 47,
+  "name": "Chipta",
+  "category": "business",
+  "style": {
+   "tone": "yo'lga chiqishdek aniq va tartibli: qisqa, bosqichma-bosqich, 'qayerdan-qayerga' mantig'i",
+   "limits": {
+    "agenda_item": 30,
+    "event_h": 14
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 48,
+  "name": "Marmar",
+  "category": "minimalist",
+  "style": {
+   "tone": "ulug'vor va vazmin: kam so'z, salmoqli fikr, nafis va ishonchli ohang",
+   "limits": {
+    "stmt": 60,
+    "card_t4": 65
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 49,
+  "name": "Shrift",
+  "category": "minimalist",
+  "style": {
+   "tone": "qat'iy va ixcham: sarlavhalar 2–5 so'z, kuchli fe'llar, ortiqcha so'zsiz",
+   "limits": {
+    "title": 40,
+    "stmt": 55,
+    "card_h": 18
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 50,
+  "name": "Gerbariy",
+  "category": "academic",
+  "style": {
+   "tone": "tadqiqotchi kuzatuvi kabi: sinchkov, tasviriy va aniq; ilmiy ehtiyotkorlik bilan",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 51,
+  "name": "Akvarel",
+  "category": "creative",
+  "style": {
+   "tone": "yumshoq va samimiy: ravon, iliq tushuntirish, obrazli lekin aniq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 52,
+  "name": "Konstruktor",
+  "category": "creative",
+  "style": {
+   "tone": "qurilish bloklari kabi: har bir fikr aniq 'g'isht', bosqichma-bosqich, sodda va tushunarli",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 53,
+  "name": "Smartfon",
+  "category": "business",
+  "style": {
+   "tone": "zamonaviy va suhbatdosh: foydalanuvchiga to'g'ridan-to'g'ri murojaat, qisqa xabarlar kabi",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 54,
+  "name": "Op-art",
+  "category": "minimalist",
+  "style": {
+   "tone": "keskin va aniq: qora-oq mantiq, qarama-qarshiliklar ochiq ko'rsatilgan, ixcham",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 55,
+  "name": "Stadion",
+  "category": "business",
+  "style": {
+   "tone": "sport sharhlovchisi kabi jonli: jamoaviy harakat, natija va hisob; qisqa va g'ayratli",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 56,
+  "name": "Pazl",
+  "category": "business",
+  "style": {
+   "tone": "bog'liqlikni ko'rsatuvchi: har bir qism butunning bir bo'lagi, fikrlar bir-biriga ulanadi",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 57,
+  "name": "Aql xaritasi",
+  "category": "academic",
+  "style": {
+   "tone": "tizimli fikrlash: markaziy g'oya va unga bog'langan tarmoqlar, kalit so'zlar bilan aniq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 58,
+  "name": "Jadval",
+  "category": "business",
+  "style": {
+   "tone": "hisobot va tahlil uslubi: aniq ko'rsatkichlar, qisqa xulosalar, jadvaldek tartibli",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 59,
+  "name": "Kalendar",
+  "category": "business",
+  "style": {
+   "tone": "reja va muddatlar tilida: qachon, nima, qanday tartibda; aniq sanalar va bosqichlar",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 60,
+  "name": "Retro OS",
+  "category": "creative",
+  "style": {
+   "tone": "aniq va texnik, biroz o'yinqaroq: tizim xabarlari kabi qisqa va tushunarli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 61,
+  "name": "Origami",
+  "category": "creative",
+  "style": {
+   "tone": "nafis va aniq: har bir fikr tartib bilan 'buklangan', qisqa va ravon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 62,
+  "name": "Neon",
+  "category": "creative",
+  "style": {
+   "tone": "jonli va yorqin: shahar ritmi, qisqa va esda qoladigan iboralar",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 63,
+  "name": "Chek",
+  "category": "business",
+  "style": {
+   "tone": "hisob-kitob kabi aniq: band-band sanab o'tish, raqamlar va yakuniy xulosa, ortiqcha so'zsiz",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 64,
+  "name": "Probka",
+  "category": "creative",
+  "style": {
+   "tone": "tergovchi kabi: dalillar, sabab-oqibat bog'lanishlari va xulosa; qisqa va ishonchli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 65,
+  "name": "Vinil",
+  "category": "creative",
+  "style": {
+   "tone": "ritmik va ilhomli: har bir qism 'trek' kabi tugal, qisqa sarlavhalar va ravon matn",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 66,
+  "name": "Plata",
+  "category": "business",
+  "style": {
+   "tone": "muhandislik tili: komponentlar, ulanishlar va natija; aniq, texnik, lo'nda",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 67,
+  "name": "Shaxmat",
+  "category": "business",
+  "style": {
+   "tone": "strategik fikrlash: maqsad, yurish va natija; mantiqiy, asosli, bosqichma-bosqich",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 68,
+  "name": "Dengiz",
+  "category": "business",
+  "style": {
+   "tone": "yo'nalish va maqsad: 'kurs', 'manzil', 'jamoa' ruhida; ishonchli va aniq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 69,
+  "name": "HUD",
+  "category": "creative",
+  "style": {
+   "tone": "operativ hisobot: holat, ko'rsatkich, keyingi harakat; qisqa, aniq, buyruq ohangida",
+   "limits": {
+    "title": 45,
+    "card_h": 20,
+    "step_h": 20,
+    "event_h": 16
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 70,
+  "name": "Blanka",
+  "category": "academic",
+  "style": {
+   "tone": "rasmiy hujjat tili: aniq bandlar, me'yoriy atamalar, betaraf va qisqa",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 71,
+  "name": "Jinsi",
+  "category": "creative",
+  "style": {
+   "tone": "erkin va ishonchli: kundalik tilga yaqin, sodda va mustahkam iboralar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 72,
+  "name": "Sahro",
+  "category": "creative",
+  "style": {
+   "tone": "sabrli va keng nafasli: yo'l, manzil, bosqich obrazlari; iliq va aniq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 73,
+  "name": "Muz",
+  "category": "minimalist",
+  "style": {
+   "tone": "sovuqqon va aniq: faktlar, raqamlar va tiniq xulosalar, ortiqcha his-tuyg'usiz",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 74,
+  "name": "O'rmon",
+  "category": "academic",
+  "style": {
+   "tone": "o'sish va ildizlar tili: sabab, rivojlanish va barqarorlik; sokin, asosli",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 75,
+  "name": "Okean",
+  "category": "creative",
+  "style": {
+   "tone": "chuqur va sokin: mavzuning qatlamlarini ochib boruvchi, ravon tushuntirish",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 76,
+  "name": "Tog'",
+  "category": "business",
+  "style": {
+   "tone": "maqsadga intilish: cho'qqi, bosqich va natija; qat'iy va ilhomlantiruvchi",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 77,
+  "name": "Shahar",
+  "category": "business",
+  "style": {
+   "tone": "zamonaviy shahar ritmi: dinamik, amaliy, natijaga yo'naltirilgan",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 78,
+  "name": "Javon",
+  "category": "academic",
+  "style": {
+   "tone": "kutubxonachi kabi: bilimli, tartibli, manbalarga tayangan ravon matn",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 79,
+  "name": "Papka",
+  "category": "business",
+  "style": {
+   "tone": "ish yuritish uslubi: tartibli bo'limlar, aniq faktlar va qisqa xulosalar",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 80,
+  "name": "Teatr",
+  "category": "creative",
+  "style": {
+   "tone": "sahna asari kabi: kirish, rivojlanish, avj nuqta va xulosa; ta'sirli va jonli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 81,
+  "name": "Televizor",
+  "category": "creative",
+  "style": {
+   "tone": "ko'rsatuv boshlovchisi kabi: tomoshabinga murojaat, qiziqarli va tushunarli",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 82,
+  "name": "Kasseta",
+  "category": "creative",
+  "style": {
+   "tone": "nostalgik va samimiy: hikoya kabi oqim, A va B tomonlari kabi aniq bo'limlar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 83,
+  "name": "Kamera",
+  "category": "creative",
+  "style": {
+   "tone": "reportaj kabi: kadrdagi fakt, aniq tafsilot va qisqa sharh",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 84,
+  "name": "Laboratoriya",
+  "category": "academic",
+  "style": {
+   "tone": "tajriba bayoni kabi: maqsad, usul, natija va xulosa; ilmiy aniq",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 85,
+  "name": "Formula",
+  "category": "academic",
+  "style": {
+   "tone": "matematik aniqlik: ta'rif, bog'liqlik va isbotga o'xshash mantiqiy ketma-ketlik",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 86,
+  "name": "Nota",
+  "category": "creative",
+  "style": {
+   "tone": "ohangdor va ravon: fikrlar bir-biriga ulanib boradigan, ritmli jumlalar",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 87,
+  "name": "Atlas",
+  "category": "creative",
+  "style": {
+   "tone": "milliy ruhda yorqin: an'ana va zamonaviylik uyg'unligi, iliq va g'ururli",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 88,
+  "name": "Hologramma",
+  "category": "creative",
+  "style": {
+   "tone": "zamonaviy va o'ynoqi: yangi avlod tili, qisqa va yorqin iboralar",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 89,
+  "name": "Graffiti",
+  "category": "creative",
+  "style": {
+   "tone": "ko'cha ovozi: dadil, qisqa, shiorlarga yaqin; lekin hurmatli va faktlarga tayangan",
+   "limits": {
+    "title": 40,
+    "card_h": 18,
+    "step_h": 18
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 90,
+  "name": "Eskiz",
+  "category": "minimalist",
+  "style": {
+   "tone": "g'oya chizgisi kabi: sodda, tushuntiruvchi, qadam-baqadam; murakkabni oddiy qilib",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 91,
+  "name": "Wireframe",
+  "category": "minimalist",
+  "style": {
+   "tone": "loyiha hujjati kabi: struktura, funksiya va izohlar; aniq va amaliy",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 92,
+  "name": "Kanban",
+  "category": "business",
+  "style": {
+   "tone": "loyiha boshqaruvi tili: vazifa, holat, mas'uliyat va muddat; qisqa va amaliy",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 93,
+  "name": "Stiker",
+  "category": "creative",
+  "style": {
+   "tone": "quvnoq va do'stona: yosh auditoriyaga mos, sodda va esda qoladigan",
+   "limits": {},
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 94,
+  "name": "Qo'lyozma",
+  "category": "academic",
+  "style": {
+   "tone": "tarixiy bitik ohangi: salobatli, ravon, an'anaviy ifoda; faktlarga sodiq",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 95,
+  "name": "Metall",
+  "category": "business",
+  "style": {
+   "tone": "sanoat tili: mustahkam, aniq, texnik; qisqa jumlalar va o'lchanadigan natijalar",
+   "limits": {
+    "title": 40,
+    "card_h": 18,
+    "step_h": 18
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 96,
+  "name": "Yog'och",
+  "category": "creative",
+  "style": {
+   "tone": "hunarmand kabi: puxta, tabiiy, qo'l mehnatiga hurmat; sodda va iliq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 97,
+  "name": "Klaviatura",
+  "category": "business",
+  "style": {
+   "tone": "raqamli dunyo tili: aniq buyruqlar, qisqa jumlalar, texnologik va amaliy",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 98,
+  "name": "Karta",
+  "category": "creative",
+  "style": {
+   "tone": "strategiya va imkoniyat tili: tanlov, xavf va yutuq; ishonchli va qiziqarli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 99,
+  "name": "Osmon",
+  "category": "minimalist",
+  "style": {
+   "tone": "yengil va ochiq: keng ufq, umid va imkoniyat; sodda, tiniq tushuntirish",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 100,
+  "name": "Termal",
+  "category": "business",
+  "style": {
+   "tone": "diagnostika tili: 'issiq nuqtalar', muammo va yechim; aniq, raqamlarga tayangan",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 101,
+  "name": "Vertikal",
+  "category": "minimalist",
+  "style": {
+   "tone": "aniq va tartibli: qisqa sarlavhalar, bandma-band ochiq matn",
+   "limits": {
+    "title": 45
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 102,
+  "name": "Pastki",
+  "category": "business",
+  "style": {
+   "tone": "dadil va to'g'ridan-to'g'ri: avval asosiy fikr, keyin dalil; qisqa jumlalar",
+   "limits": {
+    "title": 45
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 103,
+  "name": "Markaz",
+  "category": "minimalist",
+  "style": {
+   "tone": "muvozanatli va xotirjam: markaziy g'oya va unga bog'langan teng qismlar",
+   "limits": {
+    "card_t4": 60,
+    "card_t3": 75
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 104,
+  "name": "Rangli maydon",
+  "category": "creative",
+  "style": {
+   "tone": "baland ovozli va qisqa: har slaydda bitta kuchli fikr, katta harflarga mos ixcham matn",
+   "limits": {
+    "title": 45,
+    "stmt": 60
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 105,
+  "name": "Chiziqlar",
+  "category": "business",
+  "style": {
+   "tone": "tartibli va ravshan: har bir band bitta to'liq fikr, ketma-ket va izchil",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 106,
+  "name": "Maktub",
+  "category": "academic",
+  "style": {
+   "tone": "rasmiy maktub uslubi: bog'langan to'liq gaplar, hurmatli murojaat, mantiqiy izchillik",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 107,
+  "name": "Suhbat",
+  "category": "creative",
+  "style": {
+   "tone": "intervyu shakli: kartochka sarlavhalari savol kabi, matn esa aniq javob; jonli va ochiq",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 108,
+  "name": "Lug'at",
+  "category": "academic",
+  "style": {
+   "tone": "lug'at maqolasi kabi: aniq ta'riflar, atamalar va izohlar; ixcham va ilmiy",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 109,
+  "name": "Buklet",
+  "category": "business",
+  "style": {
+   "tone": "axborot bukleti: o'quvchiga qulay, qisqa bo'limlar, aniq va amaliy ma'lumot",
+   "limits": {
+    "title": 45
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 110,
+  "name": "Mondrian",
+  "category": "creative",
+  "style": {
+   "tone": "toza va tuzilgan: har bir fikr o'z 'katagida', qisqa va aniq",
+   "limits": {
+    "title": 45
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 111,
+  "name": "Piktogramma",
+  "category": "minimalist",
+  "style": {
+   "tone": "vizual-qisqa: har bir g'oya bitta tasvir va bir-ikki jumla bilan",
+   "limits": {
+    "card_t3": 80,
+    "card_t4": 60
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 112,
+  "name": "Ufq",
+  "category": "creative",
+  "style": {
+   "tone": "istiqbolli va ilhomli: katta maqsad tepada, aniq qadamlar pastda",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 113,
+  "name": "Chorak",
+  "category": "creative",
+  "style": {
+   "tone": "ixcham va dinamik: qisqa sarlavha, aniq bandlar",
+   "limits": {
+    "title": 40
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 114,
+  "name": "Efir",
+  "category": "business",
+  "style": {
+   "tone": "jonli efir tili: yangilik kabi qisqa, aniq va dolzarb, sarlavhalar xabar shaklida",
+   "limits": {
+    "title": 50
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 115,
+  "name": "Qatlam",
+  "category": "business",
+  "style": {
+   "tone": "tartibli hujjat jamlanmasi: bo'limlarga ajratilgan, aniq va izchil",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 116,
+  "name": "Zinapoya",
+  "category": "business",
+  "style": {
+   "tone": "o'sish va taraqqiyot: har bir band oldingisidan bir pog'ona yuqori, ketma-ket va aniq",
+   "limits": {
+    "card_t3": 80,
+    "card_t4": 60,
+    "step_t": 70
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 117,
+  "name": "Doira kadr",
+  "category": "creative",
+  "style": {
+   "tone": "jamlangan va ixcham: har slayd bitta 'kadr' ichida, qisqa bandlar",
+   "limits": {
+    "card_t4": 90,
+    "card_t3": 120,
+    "step_t": 100,
+    "event_t": 90,
+    "side_item": 50
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 118,
+  "name": "Ilon yo'l",
+  "category": "business",
+  "style": {
+   "tone": "sayohat kabi: yo'l, bekat va manzil; ketma-ket va qiziqarli bayon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 119,
+  "name": "Hoshiya",
+  "category": "academic",
+  "style": {
+   "tone": "ilmiy esse: asosiy matn ravon, izohlar qisqa va aniq; dalillarga tayangan",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 120,
+  "name": "Banner",
+  "category": "creative",
+  "style": {
+   "tone": "tantanali va ko'rkam: shior kabi sarlavhalar, qisqa va salobatli matn",
+   "limits": {
+    "card_t4": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 121,
+  "name": "Oltin kesim",
+  "category": "luxury",
+  "style": {
+   "tone": "nafis va ierarxik: eng muhim fikr birinchi va eng katta, qolganlari uni to'ldiradi",
+   "limits": {
+    "card_t4": 90,
+    "step_t": 100
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 122,
+  "name": "Tablo",
+  "category": "business",
+  "style": {
+   "tone": "e'lon tablosi kabi: lo'nda nomlar, aniq holat va raqamlar; ortiqcha so'zsiz",
+   "limits": {
+    "title": 45,
+    "card_h": 18,
+    "step_h": 18
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 123,
+  "name": "Venn",
+  "category": "creative",
+  "style": {
+   "tone": "bog'liqliklar tili: umumiy jihatlar, kesishmalar va farqlar; qisqa, tushunarli",
+   "limits": {
+    "card_t3": 110,
+    "card_t4": 70,
+    "step_t": 70,
+    "event_t": 70,
+    "side_item": 50
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 124,
+  "name": "Piramida",
+  "category": "business",
+  "style": {
+   "tone": "ierarxiya tili: asosdan cho'qqigacha, eng muhimi tepada; aniq va tartibli",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 125,
+  "name": "Krossvord",
+  "category": "creative",
+  "style": {
+   "tone": "jumboq kabi qiziqarli: kalit so'zlar, aniq ta'riflar, o'quvchini o'ylashga undovchi",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 126,
+  "name": "Gant",
+  "category": "business",
+  "style": {
+   "tone": "loyiha rejasi tili: ish, muddat, bosqich va natija; qisqa, amaliy",
+   "limits": {
+    "card_t4": 100,
+    "card_t3": 120,
+    "step_t": 100,
+    "event_t": 100
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 127,
+  "name": "O'rgimchak",
+  "category": "business",
+  "style": {
+   "tone": "ko'p o'lchovli tahlil: har bir yo'nalish alohida, lekin umumiy markazga bog'langan",
+   "limits": {
+    "card_t4": 110,
+    "card_t3": 120,
+    "side_item": 50
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 128,
+  "name": "Shajara",
+  "category": "academic",
+  "style": {
+   "tone": "tuzilma va kelib chiqish: umumiydan xususiyga, har bir tarmoq aniq nomlangan",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 129,
+  "name": "Lupa",
+  "category": "minimalist",
+  "style": {
+   "tone": "diqqat markazi: bitta asosiy fikr chuqur, qolganlari qisqa kontekst sifatida",
+   "limits": {
+    "card_t3": 150,
+    "card_t4": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 130,
+  "name": "Domino",
+  "category": "creative",
+  "style": {
+   "tone": "zanjir reaksiya: har bir fikr keyingisini boshlaydi; aniq, ketma-ket, sabab-oqibatli",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 131,
+  "name": "Chizg'ich",
+  "category": "academic",
+  "style": {
+   "tone": "o'lchanadigan aniqlik: raqamlar, me'yorlar va solishtirma; qisqa va texnik",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 132,
+  "name": "Kompas",
+  "category": "business",
+  "style": {
+   "tone": "strategik yo'nalish: har bir band bitta yo'nalish yoki tanlov; aniq va mo'ljalli",
+   "limits": {
+    "card_t4": 100,
+    "card_t3": 110,
+    "step_t": 100,
+    "event_t": 100,
+    "side_item": 50
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 133,
+  "name": "Kesim",
+  "category": "academic",
+  "style": {
+   "tone": "chuqurlashib boruvchi tahlil: sirtdan ildizgacha, qatlam-qatlam ochib beriladi",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 134,
+  "name": "Kvadrant",
+  "category": "business",
+  "style": {
+   "tone": "konsalting tahlili: toifalash, ustuvorlik va xulosa; aniq va qisqa",
+   "limits": {},
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 135,
+  "name": "Fasad",
+  "category": "academic",
+  "style": {
+   "tone": "poydevor va ustunlar: tayanch tamoyillar, mustahkam dalillar, salobatli til",
+   "limits": {
+    "card_t4": 100,
+    "step_t": 100
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 136,
+  "name": "Poyezd",
+  "category": "creative",
+  "style": {
+   "tone": "harakat va ketma-ketlik: har bir band keyingisini tortadi; aniq, qisqa, dinamik",
+   "limits": {
+    "card_t4": 100,
+    "card_t3": 120,
+    "step_t": 100,
+    "event_t": 90
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 137,
+  "name": "Prizma",
+  "category": "creative",
+  "style": {
+   "tone": "bitta g'oyani ko'p qirralarga ajratish: umumiydan alohida jihatlarga, yorqin va aniq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 138,
+  "name": "Tangram",
+  "category": "creative",
+  "style": {
+   "tone": "bo'laklardan butun: har bir qism o'z o'rniga ega, birgalikda to'liq manzara",
+   "limits": {
+    "card_t4": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 139,
+  "name": "Zanjir",
+  "category": "luxury",
+  "style": {
+   "tone": "uzviylik: har bir bo'g'in oldingisiga bog'langan; izchil, mustahkam mantiq",
+   "limits": {
+    "card_t4": 90,
+    "card_t3": 120,
+    "step_t": 90,
+    "event_t": 80
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 140,
+  "name": "Tarozi",
+  "category": "academic",
+  "style": {
+   "tone": "adolatli muvozanat: ikki tomon dalillari, xolis tortish va asosli xulosa",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 141,
+  "name": "Labirint",
+  "category": "creative",
+  "style": {
+   "tone": "muammodan yechimgacha yo'l: har bir qadam keyingisiga olib boradi; aniq va qiziqarli",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 142,
+  "name": "Tarkib",
+  "category": "minimalist",
+  "style": {
+   "tone": "tarkib yorlig'i kabi: band nomi va qiymati, quruq va aniq; ortiqcha so'zsiz",
+   "limits": {
+    "title": 45
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 143,
+  "name": "Pasport",
+  "category": "creative",
+  "style": {
+   "tone": "sayohat va tajriba: har bir band yangi 'muhr' — qisqa, aniq, esda qoladigan",
+   "limits": {
+    "card_h": 22,
+    "step_h": 22
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 144,
+  "name": "Banknota",
+  "category": "luxury",
+  "style": {
+   "tone": "qiymat va ishonch: iqtisodiy natijalar, aniq raqamlar, salobatli til",
+   "limits": {
+    "card_t4": 100,
+    "step_t": 100
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 145,
+  "name": "Printer",
+  "category": "business",
+  "style": {
+   "tone": "rasmiy hisobot chiqishi: jadvaldagi kabi qisqa qatorlar, aniq raqamlar va kodlar",
+   "limits": {
+    "title": 45,
+    "card_h": 18,
+    "step_h": 18
+   },
+   "prefer": "data"
+  }
+ },
+ {
+  "id": 146,
+  "name": "Bitiktosh",
+  "category": "academic",
+  "style": {
+   "tone": "tarixiy bitik: abadiy haqiqatlar kabi qisqa, salobatli, aniq iboralar",
+   "limits": {
+    "card_t4": 100,
+    "step_t": 100,
+    "event_t": 90
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 147,
+  "name": "Bloklar",
+  "category": "creative",
+  "style": {
+   "tone": "o'yin ruhi: har bir yutuq 'to'ldirilgan qator', qisqa va g'ayratli",
+   "limits": {
+    "title": 45,
+    "card_h": 18,
+    "step_h": 18
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 148,
+  "name": "Katalog",
+  "category": "academic",
+  "style": {
+   "tone": "kutubxona kartotekasi: tasniflangan, aniq yozuvlar; ilmiy va ixcham",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 149,
+  "name": "Yo'l belgilari",
+  "category": "business",
+  "style": {
+   "tone": "yo'riqnoma ohangi: aniq yo'nalish, qisqa ko'rsatma va ogohlantirish; tez o'qiladigan",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 100,
+    "side_item": 55
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 150,
+  "name": "Fotolaboratoriya",
+  "category": "creative",
+  "style": {
+   "tone": "asta-sekin ochiladigan rasm: g'oyalar 'chiqib keladi', hissiyotli va aniq kadrlar",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": "visual"
+  }
+ },
+ {
+  "id": 151,
+  "name": "Ensiklopediya",
+  "category": "academic",
+  "style": {
+   "tone": "ensiklopedik maqola: betaraf, faktlarga asoslangan, aniq ta'rif va manbalar bilan",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 152,
+  "name": "Retsept",
+  "category": "creative",
+  "style": {
+   "tone": "amaliy qo'llanma: nima kerak, qanday qilinadi, natija; sodda va iliq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 153,
+  "name": "DNK",
+  "category": "academic",
+  "style": {
+   "tone": "asosiy kod: har bir band tizimning tarkibiy qismi; ilmiy, aniq va izchil",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 154,
+  "name": "Molekula",
+  "category": "academic",
+  "style": {
+   "tone": "tarkibiy bog'lanish: har bir element boshqalari bilan bog'langan; qisqa va ilmiy",
+   "limits": {
+    "card_t3": 90,
+    "card_t4": 80,
+    "step_t": 80,
+    "event_t": 70,
+    "side_item": 50
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 155,
+  "name": "Titrlar",
+  "category": "luxury",
+  "style": {
+   "tone": "yakuniy titr ohangi: rol va hissa, minnatdorlik; vazmin, qisqa va hurmatli",
+   "limits": {},
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 156,
+  "name": "Telegramma",
+  "category": "business",
+  "style": {
+   "tone": "telegraf uslubi: o'ta ixcham, faqat eng muhim so'zlar, har gap alohida xabar",
+   "limits": {
+    "title": 40
+   },
+   "prefer": "text"
+  }
+ },
+ {
+  "id": 157,
+  "name": "Quti",
+  "category": "business",
+  "style": {
+   "tone": "yetkazib berish tili: nima, qayerga, qachon; aniq va amaliy, ro'yxatga mos",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 158,
+  "name": "Asboblar devori",
+  "category": "creative",
+  "style": {
+   "tone": "amaliy vositalar: har bir band ishga yaraydigan 'asbob'; aniq, qo'llanmaga o'xshash",
+   "limits": {
+    "card_t4": 100,
+    "step_t": 100
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 159,
+  "name": "Pleer",
+  "category": "business",
+  "style": {
+   "tone": "video darslik: boblarga bo'lingan, har bob qisqa sarlavha va lo'nda izoh bilan",
+   "limits": {
+    "card_t4": 100,
+    "step_t": 100,
+    "event_t": 90
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 160,
+  "name": "Nard",
+  "category": "creative",
+  "style": {
+   "tone": "strategik o'yin: imkoniyat va tanlov, har bir yurish o'ylangan; qiziqarli va aniq",
+   "limits": {
+    "card_t4": 110,
+    "step_t": 110
+   },
+   "prefer": null
+  }
+ },
+ {
+  "id": 161,
+  "name": "Tong",
+  "category": "minimalist",
+  "style": {
+   "tone": "tong kabi yumshoq va ochiq: sodda gaplar, bir slaydda bir fikr",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 162,
+  "name": "Shom",
+  "category": "minimalist",
+  "style": {
+   "tone": "kechki osoyishtalik: mulohazali, ravon va qisqa iboralar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 163,
+  "name": "Tuman",
+  "category": "minimalist",
+  "style": {
+   "tone": "tumandagi aniqlik: sokin, vazmin, keraksiz so'zlarsiz",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 164,
+  "name": "Qum",
+  "category": "minimalist",
+  "style": {
+   "tone": "issiq va tabiiy: sokin bayon, tabiiy obrazlar, aniq xulosalar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 165,
+  "name": "Moviy",
+  "category": "minimalist",
+  "style": {
+   "tone": "chuqur va ishonchli: aniq dalillar, xotirjam ohang",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 166,
+  "name": "Yashil choy",
+  "category": "minimalist",
+  "style": {
+   "tone": "osoyishta va tabiiy: sog'lom muvozanat, sodda tushuntirish",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 167,
+  "name": "Ko'mir",
+  "category": "minimalist",
+  "style": {
+   "tone": "qat'iy va lo'nda: kuchli sarlavhalar, kam so'z, aniq raqamlar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 168,
+  "name": "Qor",
+  "category": "minimalist",
+  "style": {
+   "tone": "toza va tiniq: oddiy so'zlar, ochiq tuzilma",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 169,
+  "name": "Shaftoli",
+  "category": "minimalist",
+  "style": {
+   "tone": "iliq va do'stona: yengil ohang, ijobiy va sodda bayon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 170,
+  "name": "Lavanda",
+  "category": "minimalist",
+  "style": {
+   "tone": "nafis va mayin: o'ylangan, ravon jumlalar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 171,
+  "name": "Limon",
+  "category": "minimalist",
+  "style": {
+   "tone": "tetik va yorqin: qisqa, g'ayratli, ijobiy",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 172,
+  "name": "Bordo",
+  "category": "minimalist",
+  "style": {
+   "tone": "salobatli va ko'rkam: tanlangan so'zlar, nafis bayon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 173,
+  "name": "Zaytun",
+  "category": "minimalist",
+  "style": {
+   "tone": "barqaror va tinch: puxta, ishonchli, sodda til",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 174,
+  "name": "Muzlik",
+  "category": "minimalist",
+  "style": {
+   "tone": "sovuqqon va aniq: faktlar va tiniq xulosalar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 175,
+  "name": "Terrakota",
+  "category": "minimalist",
+  "style": {
+   "tone": "tuproqdek mustahkam: tabiiy, iliq va ishonchli bayon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 176,
+  "name": "Siyoh",
+  "category": "minimalist",
+  "style": {
+   "tone": "chuqur mulohaza: sokin, falsafiy, ravon jumlalar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 177,
+  "name": "Pushti",
+  "category": "minimalist",
+  "style": {
+   "tone": "mehrli va yumshoq: g'amxo'rlik, iliq va sodda til",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 178,
+  "name": "Kofe",
+  "category": "minimalist",
+  "style": {
+   "tone": "samimiy suhbat: iliq, bemalol, tushunarli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 179,
+  "name": "Mineral",
+  "category": "minimalist",
+  "style": {
+   "tone": "toshdek mustahkam: tahliliy, aniq va xolis",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 180,
+  "name": "Yalpiz",
+  "category": "minimalist",
+  "style": {
+   "tone": "yangi va tetik: qisqa, aniq, tushunarli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 181,
+  "name": "Oltin soat",
+  "category": "minimalist",
+  "style": {
+   "tone": "ilhomli va iliq: orzu va natija, jonli ifoda",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 182,
+  "name": "Tungi osmon",
+  "category": "minimalist",
+  "style": {
+   "tone": "keng ufq: orzuli, sokin va chuqur fikrli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 183,
+  "name": "Kraft",
+  "category": "minimalist",
+  "style": {
+   "tone": "hunarmandona: sodda, amaliy va samimiy",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 184,
+  "name": "Kanop",
+  "category": "minimalist",
+  "style": {
+   "tone": "nafis va tabiiy: sokin, mukammal tanlangan so'zlar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 185,
+  "name": "Beton",
+  "category": "minimalist",
+  "style": {
+   "tone": "industrial va lo'nda: qisqa, kuchli, aniq",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 186,
+  "name": "Neon tuman",
+  "category": "minimalist",
+  "style": {
+   "tone": "zamonaviy va jasur: yangi g'oyalar, dinamik ifoda",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 187,
+  "name": "Ikki rang",
+  "category": "minimalist",
+  "style": {
+   "tone": "aniq qarama-qarshilik: asosiy fikr chapda, dalillar o'ngda",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 188,
+  "name": "Gorizont",
+  "category": "minimalist",
+  "style": {
+   "tone": "istiqbolli: maqsad va yo'l, tiniq va umidli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 189,
+  "name": "Akva",
+  "category": "minimalist",
+  "style": {
+   "tone": "tiniq va yengil: sodda, oqimli tushuntirish",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 190,
+  "name": "Qahrabo",
+  "category": "minimalist",
+  "style": {
+   "tone": "iliq va boy: chuqur mazmun, mulohazali bayon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 191,
+  "name": "Grafit",
+  "category": "minimalist",
+  "style": {
+   "tone": "toza grafika: faqat mazmun, ortiqcha bezaksiz",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 192,
+  "name": "Kungaboqar",
+  "category": "minimalist",
+  "style": {
+   "tone": "baland ovoz: shiorga yaqin, quvnoq va qisqa",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 193,
+  "name": "Kobalt",
+  "category": "minimalist",
+  "style": {
+   "tone": "aniq va kuchli: rasmiy-zamonaviy, raqamlarga tayangan",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 194,
+  "name": "Marjon",
+  "category": "minimalist",
+  "style": {
+   "tone": "jonli va samimiy: hissiyotli, qisqa iboralar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 195,
+  "name": "Yengil aurora",
+  "category": "minimalist",
+  "style": {
+   "tone": "yangi tong: optimistik, aniq va tartibli",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 196,
+  "name": "Soya",
+  "category": "minimalist",
+  "style": {
+   "tone": "yorug'lik va soya: muhim va ikkinchi darajalini ajratadigan bayon",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 197,
+  "name": "Gilos",
+  "category": "minimalist",
+  "style": {
+   "tone": "ehtirosli va ko'rkam: qisqa, ta'sirli jumlalar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 198,
+  "name": "Pista",
+  "category": "minimalist",
+  "style": {
+   "tone": "yengil va tabiiy: sodda, tushunarli, ijobiy",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 199,
+  "name": "Tun yarmi",
+  "category": "minimalist",
+  "style": {
+   "tone": "jiddiy va aniq: ortiqchasiz, kuchli ta'kidlar",
+   "limits": {},
+   "prefer": null
+  }
+ },
+ {
+  "id": 200,
+  "name": "Sabo",
+  "category": "minimalist",
+  "style": {
+   "tone": "yengil shabada: ravon, bemalol, aniq",
+   "limits": {},
+   "prefer": null
+  }
  }
 ]

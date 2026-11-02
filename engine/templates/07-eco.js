@@ -116,9 +116,7 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = await page(d), w = 4.2, h = 3.45, y = 1.5;
-      const cfs = L.colSize(d, w - 1.0, h - 1.05 - 0.1, 0.2, F.body); // items shrink to fit the panel
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 1.0, F.body) : 0))));
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 1.0, F.body, 0, h - 1.2 - 0.2 * Math.max(d.left.items.length, d.right.items.length));
       for (const [i, side] of [d.left, d.right].entries()) {
         const x = 0.6 + i * (w + 0.3), fg = i ? C.white : C.ink;
         card(s, x, y, w, h, i ? C.forest : C.sand);
@@ -126,7 +124,7 @@ async function build(content, out) {
         let yy = y + 1.05;
         for (const [k, it] of side.items.entries()) {
           t.img(s, await L.icon('FiCheck', i ? C.moss : C.leaf, 3), x + 0.38, yy + 0.02, 0.2, 0.2);
-          t.text(s, it, { x: x + 0.7, y: yy, w: w - 1.0, h: rows[k] + 0.05, fontSize: cfs, color: fg });
+          t.text(s, it, { x: x + 0.7, y: yy, w: w - 1.0, h: rows[k] + 0.05, fontSize: CFS, color: fg });
           yy += rows[k] + 0.2;
         }
       }

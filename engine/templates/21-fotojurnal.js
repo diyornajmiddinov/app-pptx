@@ -87,17 +87,16 @@ async function build(content, out) {
       });
     },
     async process(d) {
-      // same rhythm as the timeline: number above the line, dot on it, text below
-      const s = page(d), n = d.steps.length, cw = 8.8 / n, ly = 2.55;
-      t.line(s, 0.6, ly, 8.8, 0, C.ink, 1.5);
+      const s = page(d), n = d.steps.length, cw = 8.8 / n;
+      t.line(s, 0.6, 2.05, 8.8, 0, C.ink, 1.5);
       const hfs = Math.min(...d.steps.map((st) => L.fit(st.h, cw - 0.35, 0.75, 18, 13, F.head, true)));
       const hh = Math.max(...d.steps.map((st) => L.height(st.h, hfs, cw - 0.35, F.head, true)));
       d.steps.forEach((st, i) => {
         const x = 0.6 + i * cw;
-        t.text(s, `${i + 1}`, { x, y: 1.75, w: cw - 0.35, h: 0.6, fontSize: 28, bold: true, color: i === n - 1 ? C.accent : C.ink, valign: 'bottom' });
-        t.oval(s, x, ly - 0.15, 0.3, 0.3, i === n - 1 ? C.accent : C.ink);
-        t.text(s, st.h, { x, y: 2.85, w: cw - 0.35, h: hh + 0.05, fontSize: hfs, bold: true });
-        t.text(s, st.t, { x, y: 3.0 + hh, w: cw - 0.35, h: 1.95 - hh, fontSize: 14, color: C.gray });
+        t.oval(s, x, 1.9, 0.3, 0.3, i === n - 1 ? C.accent : C.ink);
+        t.text(s, `${i + 1}`, { x: x + 0.45, y: 1.72, w: 1, h: 0.66, fontSize: 30, bold: true, color: C.line, valign: 'middle' });
+        t.text(s, st.h, { x, y: 2.55, w: cw - 0.35, h: hh + 0.05, fontSize: hfs, bold: true });
+        t.text(s, st.t, { x, y: 2.7 + hh, w: cw - 0.35, h: 2.2 - hh, fontSize: 14, color: C.gray });
       });
     },
     async stats(d) {

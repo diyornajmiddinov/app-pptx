@@ -102,14 +102,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 3.9;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.45, F.body) : 0))) + 0.2);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.45, F.body, 0.2, 4.85 - 2.0);
       [d.left, d.right].forEach((side, i) => {
         const x = X0 + i * (w + 0.35);
         t.text(s, side.h, { x, y: 1.3, w, h: 0.5, fontSize: 20, bold: true, color: i ? C.pen : C.red });
         t.line(s, x, 1.82, Math.min(w, L.width(side.h, 20, F.head, true) + 0.1), 0, i ? C.pen : C.red, 2);
         let y = 2.0;
-        side.items.forEach((it, k) => { t.text(s, i ? '+' : '\u2212', { x, y, w: 0.35, h: 0.3, fontSize: 17, bold: true, color: i ? C.pen : C.red }); t.text(s, it, { x: x + 0.4, y, w: w - 0.45, h: rows[k], fontSize: 15, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, i ? '+' : '\u2212', { x, y, w: 0.35, h: 0.3, fontSize: 17, bold: true, color: i ? C.pen : C.red }); t.text(s, it, { x: x + 0.4, y, w: w - 0.45, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       });
     },
     async statement(d) {

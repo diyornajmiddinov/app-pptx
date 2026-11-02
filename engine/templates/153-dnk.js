@@ -1,0 +1,30 @@
+/** 153 DNK — a vertical DOUBLE HELIX rises along the left edge on deep navy; each rung extends into one idea on the right, coloured by base pair (cyan/pink, lime/amber). */
+const { kit, L, rowsFit } = require('../free.js');
+const C = { bg: '0A1128', ink: 'EAF2FF', muted: '9FB3D1', a: '00E5FF', b: 'FF4FD8', pairs: [['00E5FF', 'FF4FD8'], ['B8F24A', 'FFB020'], ['00E5FF', 'FFB020'], ['B8F24A', 'FF4FD8']] };
+const F = { head: 'Arial', body: 'Calibri' };
+const HX = 0.5, HW = 1.5, HY = 1.0, HH = 4.2;
+async function build(content, out) {
+  const k = kit(content, F, C), { t } = k;
+  const helix = async (s, turns = 2.2) => { const W2 = HW * 100, H2 = HH * 100; let s1 = '', s2 = ''; for (let y = 0; y <= H2; y += 4) { const ph = (y / H2) * turns * 2 * Math.PI; s1 += `${(W2 / 2 + Math.sin(ph) * W2 * 0.42).toFixed(1)},${y} `; s2 += `${(W2 / 2 - Math.sin(ph) * W2 * 0.42).toFixed(1)},${y} `; }
+    t.img(s, await k.svg('hx' + turns, `<svg xmlns="http://www.w3.org/2000/svg" width="${W2}" height="${H2}"><polyline points="${s1}" fill="none" stroke="#${C.a}" stroke-width="6"/><polyline points="${s2}" fill="none" stroke="#${C.b}" stroke-width="6" opacity="0.85"/></svg>`, W2, H2), HX, HY, HW, HH); };
+  const rungs = async (s, n, draw) => { await helix(s); const rh = HH / n; for (let i = 0; i < n; i++) { const y = HY + rh * (i + 0.5), [c1, c2] = C.pairs[i % 4]; t.line(s, HX + 0.15, y, HW / 2 - 0.15, 0, c1, 4); t.line(s, HX + HW / 2, y, HW / 2 - 0.15, 0, c2, 4); t.line(s, HX + HW, y, 0.45, 0, c2, 1.25, { dash: 'dash' }); t.oval(s, HX + HW + 0.42, y - 0.08, 0.16, 0.16, c2); draw(i, 2.75, HY + i * rh, 6.85, rh, c1); } };
+  const page = (d) => { const s = k.slide(C.bg); if (d.title) k.head(s, d.title, 2.75, 0.2, 6.2, 0.7, { max: 24, min: 13, color: C.ink }); k.txt(s, `${String(k.idx).padStart(2, '0')}`, 9.0, 0.2, 0.6, 0.7, { size: 16, bold: true, color: C.b, align: 'right', valign: 'middle' }); k.foot(s, { x: 2.75, y: 5.32, w: 6.85, size: 7.5, color: C.muted }); return s; };
+  const R = {
+    async cover(d) { const s = k.slide(C.bg); await helix(s); if (d.image) await k.photo(s, d.image, 6.9, 0.9, 2.7, 2.7, { mask: 'circle' }); k.txt(s, k.org3, 2.75, 0.9, 4.0, 0.35, { size: 12, bold: true, color: C.a }); k.head(s, d.title, 2.75, 1.3, 4.0, 2.4, { max: 34, min: 16, color: C.ink, valign: 'top' }); k.txt(s, d.subtitle || '', 2.75, 3.75, 6.8, 0.6, { max: 12, color: C.muted }); k.txt(s, k.M.author || '', 2.75, 4.4, 6.8, 0.45, { size: 15, bold: true, color: C.b }); k.foot(s, { x: 2.75, y: 5.32, w: 6.85, size: 7.5, color: C.muted }); },
+    async intro(d) { const s = page(d); await helix(s); await k.photo(s, d.image, 2.75, 1.05, 2.8, 4.0, { mask: { r: 0.1 } }); k.txt(s, d.text, 5.8, 1.05, 3.8, 4.0, { max: 14, min: 9.5, color: C.ink, ls: 1.3, valign: 'middle' }); },
+    async image(d) { return R.intro(d); },
+    async agenda(d) { const s = page(d); await rungs(s, d.items.length, (i, x, y, w, h, c) => k.head(s, `${i + 1}. ${d.items[i]}`, x, y, w, h, { max: 16, color: C.ink })); },
+    async cards(d) { const s = page(d); await rungs(s, d.items.length, (i, x, y, w, h, c) => { k.head(s, d.items[i].h, x, y, 2.3, h, { max: 14, color: c }); k.txt(s, d.items[i].t, x + 2.4, y, w - 2.4, h, { max: 12, color: C.ink, valign: 'middle' }); }); },
+    async process(d) { const s = page(d); await rungs(s, d.steps.length, (i, x, y, w, h, c) => { k.head(s, `${i + 1}. ${d.steps[i].h}`, x, y, 2.4, h, { max: 14, color: c }); k.txt(s, d.steps[i].t, x + 2.5, y, w - 2.5, h, { max: 12, color: C.ink, valign: 'middle' }); }); },
+    async stats(d) { const s = page(d); await rungs(s, d.stats.length + (d.note ? 1 : 0), (i, x, y, w, h, c) => { if (i === d.stats.length) return k.txt(s, d.note, x, y, w, h, { max: 10, color: C.muted, valign: 'middle' }); k.head(s, d.stats[i].value, x, y, 2.0, h, { max: 36, min: 14, color: c }); k.txt(s, d.stats[i].label, x + 2.1, y, w - 2.1, h, { max: 13, color: C.ink, valign: 'middle' }); }); },
+    async compare(d) { const s = page(d); await helix(s); const w = 3.3, { rows: rr, fs } = rowsFit([d.left.items, d.right.items], 12, w, F.body, 0.08, 3.5); [d.left, d.right].forEach((sd, i) => { const x = 2.75 + i * 3.55, c = i ? C.b : C.a; t.rect(s, x, 1.05, w, 0.06, c, { name: 'Strand' }); k.head(s, sd.h, x, 1.15, w, 0.45, { max: 15, color: c }); let y = 1.65; sd.items.forEach((it, j) => { k.txt(s, it, x, y, w, rr[j], { size: fs, color: C.ink }); y += rr[j]; }); }); },
+    async statement(d) { const s = page(d); await helix(s, 3); k.head(s, L.runs(d.text), 2.75, 1.2, 6.85, 2.5, { max: 30, min: 14, color: C.ink }); if (d.caption) k.txt(s, d.caption, 2.75, 3.85, 6.85, 1.2, { max: 12, color: C.muted }); },
+    async timeline(d) { const s = page(d); await rungs(s, d.items.length, (i, x, y, w, h, c) => { k.head(s, d.items[i].year, x, y, 1.1, h, { max: 18, min: 10, color: c }); k.head(s, d.items[i].h, x + 1.2, y, 2.0, h, { max: 13, color: C.ink }); k.txt(s, d.items[i].t, x + 3.3, y, w - 3.3, h, { max: 11, color: C.muted, valign: 'middle' }); }); },
+    async quote(d) { const s = page({}); await helix(s, 3); k.head(s, `\u201C${d.text}\u201D`, 2.75, 1.0, 6.85, 2.9, { max: 26, min: 13, italic: true, color: C.ink }); if (d.author) k.txt(s, `\u2014 ${d.author}`, 2.75, 4.0, 6.85, 0.45, { size: 14, bold: true, color: C.b }); },
+    async sources(d) { const s = page(d); await rungs(s, d.items.length, (i, x, y, w, h) => k.txt(s, d.items[i], x, y, w, h, { max: 11, color: C.ink, valign: 'middle' })); },
+  };
+  R.closing = R.cover;
+  for (const d of content.slides) await R[d.type](d);
+  return L.save(k.pres, out, { name: 'SlideAI DNK', colors: { dk1: C.bg, lt1: C.ink, dk2: '13204A', lt2: C.muted, accent1: C.a, accent2: C.b, accent3: 'B8F24A', accent4: 'FFB020', accent5: C.muted, accent6: '3A4D7A', hlink: C.a, folHlink: C.muted } });
+}
+module.exports = { id: 153, slug: 'dnk', name: 'DNK', category: 'academic', photos: true, build, style: { tone: "asosiy kod: har bir band tizimning tarkibiy qismi; ilmiy, aniq va izchil", limits: {}, prefer: null } };

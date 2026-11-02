@@ -1,6 +1,7 @@
 /**
- * fill.js — fill one of the 40 templates with content.
- *   node fill.js <templateId 1-40> <content.json> [out.pptx]
+ * fill.js — fill one of the templates with content.
+ *   node fill.js <templateId 1-200> <content.json> [out.pptx]
+ *   SLIDEAI_CHECK=1 node fill.js ...   -> also prints text boxes that still overflow (JSON, stderr)
  */
 const fs = require('fs');
 const path = require('path');
@@ -17,5 +18,8 @@ if (require.main === module) {
     if (sl.type === 'stats') (sl.stats || []).forEach((x) => { x.value = keep(x.value); });
     if (sl.type === 'timeline') (sl.items || []).forEach((x) => { x.year = keep(x.year); });
   }
-  T.build(content, out || `out/${String(T.id).padStart(2, '0')}-${T.slug}-${content.file}.pptx`).then((p) => console.log(p)).catch((e) => { console.error(e); process.exit(1); });
+  T.build(content, out || `out/${String(T.id).padStart(2, '0')}-${T.slug}-${content.file}.pptx`).then((p) => {
+    console.log(p);
+    if (process.env.SLIDEAI_CHECK) { const L = require('./lib.js'); console.error(JSON.stringify({ overflow: L.OVERFLOW, fits: L.FITS })); }
+  }).catch((e) => { console.error(e); process.exit(1); });
 }

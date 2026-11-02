@@ -102,14 +102,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.35;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 13, w - 0.7, F.body) : 0))) + 0.18);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 13, w - 0.7, F.body, 0.18, 4.85 - 2.0);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.5 + i * (w + 0.3), col = i ? C.cyan : C.red;
         panel(s, x, 1.2, w, 3.8, col);
         t.text(s, `P${i + 1}: ${UP(side.h)}`, { x: x + 0.25, y: 1.35, w: w - 0.5, h: 0.5, fontSize: 14, bold: true, color: col });
         let y = 2.0;
-        side.items.forEach((it, k) => { t.rect(s, x + 0.3, y + 0.08, 0.14, 0.14, col, { name: 'Pixel bullet' }); t.text(s, it, { x: x + 0.55, y, w: w - 0.75, h: rows[k], fontSize: 13, color: C.white }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.rect(s, x + 0.3, y + 0.08, 0.14, 0.14, col, { name: 'Pixel bullet' }); t.text(s, it, { x: x + 0.55, y, w: w - 0.75, h: rows[k], fontSize: CFS, color: C.white }); y += rows[k]; });
       });
     },
     async statement(d) {

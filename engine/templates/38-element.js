@@ -71,12 +71,10 @@ async function build(content, out) {
     },
     async cards(d) {
       const s = page(d), n = d.items.length, rh = (3.6 - 0.15 * (n - 1)) / n, dd = Math.min(rh, 0.95);
-      const hx = 0.6 + dd + 0.3, hw = 3.3 - hx; // headings end before the connector line (3.4) and the text (3.65)
-      const hfs = Math.min(...d.items.map((it) => L.fit(it.h, hw, dd, 17, 10, F.head, true))); // one size for all headings
       d.items.forEach((it, i) => {
         const y = 1.35 + i * (rh + 0.15);
         tile(s, 0.6, y, dd, { num: i + 1, sym: symbolOf(it.h), color: C.groups[i % 6] });
-        t.text(s, it.h, { x: hx, y, w: hw, h: dd, fontSize: hfs, bold: true, color: C.ink, valign: 'middle' });
+        t.text(s, it.h, { x: 0.6 + dd + 0.3, y, w: 2.4, h: dd, fontSize: L.fit(it.h, 2.4, dd, 17, 11, F.head, true), bold: true, color: C.ink, valign: 'middle' });
         t.text(s, it.t, { x: 3.65, y, w: 5.75, h: dd, fontSize: L.fit(it.t, 5.75, dd, 15, 10, F.body), color: C.muted, valign: 'middle' });
         t.line(s, 3.4, y + dd / 2, 0.15, 0, C.line, 1);
       });
@@ -102,14 +100,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.2;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.75, F.body) : 0))) + 0.2);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.75, F.body, 0.2, 4.85 - 2.25);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.4), col = C.groups[i ? 2 : 0];
         tile(s, x, 1.35, 0.7, { num: i + 1, sym: symbolOf(side.h), color: col });
         t.text(s, side.h, { x: x + 0.85, y: 1.35, w: w - 0.9, h: 0.7, fontSize: 19, bold: true, color: C.ink, valign: 'middle' });
         let y = 2.25;
-        side.items.forEach((it, k) => { t.rect(s, x, y + 0.04, 0.24, 0.24, col, { line: { color: C.ink, width: 0.75 }, name: 'Mini tile' }); t.text(s, it, { x: x + 0.4, y, w: w - 0.45, h: rows[k], fontSize: 15, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.rect(s, x, y + 0.04, 0.24, 0.24, col, { line: { color: C.ink, width: 0.75 }, name: 'Mini tile' }); t.text(s, it, { x: x + 0.4, y, w: w - 0.45, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       });
     },
     async statement(d) {

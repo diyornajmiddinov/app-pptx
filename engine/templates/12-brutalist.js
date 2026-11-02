@@ -88,9 +88,8 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.15, h = 3.35, y = 1.6;
-      const cfs = L.colSize(d, w - 0.85, h - 0.85 - 0.1, 0.18, F.body); // items shrink to fit the panel
       const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 0.85, F.body) : 0))));
+        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.85, F.body) : 0))));
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.4);
         hard(s, x, y, w, h, C.white);
@@ -99,7 +98,7 @@ async function build(content, out) {
         let yy = y + 0.85;
         side.items.forEach((it, k) => {
           t.text(s, '\u2192', { x: x + 0.25, y: yy, w: 0.35, h: 0.3, fontFace: F.mono, fontSize: 15, bold: true });
-          t.text(s, it, { x: x + 0.6, y: yy, w: w - 0.85, h: rows[k] + 0.05, fontSize: cfs });
+          t.text(s, it, { x: x + 0.6, y: yy, w: w - 0.85, h: rows[k] + 0.05, fontSize: 15 });
           yy += rows[k] + 0.18;
         });
       });

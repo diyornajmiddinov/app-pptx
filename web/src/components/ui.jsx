@@ -116,7 +116,7 @@ const Thumb = memo(function Thumb({ tpl, selected, onSelect, name, sample }) {
   return <div className="group">{body}</div>;
 });
 
-/** The 40 templates with category tabs; selectable when onSelect is given. */
+/** The templates with category tabs; selectable when onSelect is given. */
 export function TemplateGrid({ value, onSelect, exclude, compact, sampleLinks }) {
   const { t, templateName } = useI18n();
   const [cat, setCat] = useState('all');

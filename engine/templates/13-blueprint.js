@@ -34,7 +34,7 @@ async function build(content, out) {
   const titleBlock = (s) => {
     t.rect(s, 6.4, 4.85, 3.0, 0.48, null, { line: { color: C.line, width: 0.75 }, name: 'Title block' });
     t.line(s, 8.2, 4.85, 0, 0.48, C.line, 0.75);
-    t.text(s, L.clip((content.meta && content.meta.topic) || content.slides[0].title, 1.65, 0.48, 8, F.mono), { x: 6.5, y: 4.85, w: 1.65, h: 0.48, fontFace: F.mono, fontSize: 8, color: C.muted, valign: 'middle', noShrink: true });
+    t.text(s, (content.meta && content.meta.topic) || content.slides[0].title, { x: 6.5, y: 4.85, w: 1.65, h: 0.48, fontFace: F.mono, fontSize: 8, color: C.muted, valign: 'middle' });
     t.text(s, `${TR.sheet} ${L.pad2(idx)}/${L.pad2(total)}`, { x: 8.2, y: 4.85, w: 1.2, h: 0.48, fontFace: F.mono, fontSize: 10, bold: true, color: C.text, align: 'center', valign: 'middle' });
   };
   const page = (d) => {
@@ -57,9 +57,8 @@ async function build(content, out) {
     const s = pres.addSlide(); s.background = { data: grid }; idx++;
     crosshair(s, 7.6, 2.4, 1.55);
     dim(s, 6.05, 4.35, 3.1);
-    // the title ends before the crosshair's horizontal line (it starts at x = 5.66)
-    const fs = L.fit(d.title, 4.9, 2.4, 44, 26, F.head, true);
-    t.text(s, d.title, { x: 0.6, y: 0.9, w: 4.9, h: 2.5, fontFace: F.head, bold: true, fontSize: fs, color: C.text, valign: 'bottom' });
+    const fs = L.fit(d.title, 5.2, 2.4, 44, 26, F.head, true);
+    t.text(s, d.title, { x: 0.6, y: 0.9, w: 5.2, h: 2.5, fontFace: F.head, bold: true, fontSize: fs, color: C.text, valign: 'bottom' });
     if (d.subtitle) t.text(s, d.subtitle, { x: 0.6, y: 3.6, w: 5.0, h: 1.1, fontFace: F.mono, fontSize: 14, color: C.cyan });
     titleBlock(s);
   };
@@ -112,9 +111,8 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.2, h = 3.15, y = 1.5;
-      const cfs = L.colSize(d, w - 0.85, h - 0.85 - 0.1, 0.16, F.body); // items shrink to fit the panel
       const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 0.85, F.body) : 0))));
+        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.85, F.body) : 0))));
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.4);
         box(s, x, y, w, h, { color: i ? C.cyan : C.line });
@@ -122,7 +120,7 @@ async function build(content, out) {
         let yy = y + 0.85;
         side.items.forEach((it, k) => {
           t.text(s, i ? '+' : '\u2013', { x: x + 0.3, y: yy, w: 0.3, h: 0.3, fontFace: F.mono, fontSize: 15, bold: true, color: i ? C.cyan : C.muted });
-          t.text(s, it, { x: x + 0.6, y: yy, w: w - 0.85, h: rows[k] + 0.05, fontSize: cfs, color: C.text });
+          t.text(s, it, { x: x + 0.6, y: yy, w: w - 0.85, h: rows[k] + 0.05, fontSize: 15, color: C.text });
           yy += rows[k] + 0.16;
         });
       });

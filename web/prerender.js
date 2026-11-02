@@ -13,9 +13,9 @@ const template = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
 const SITE = 'https://slidechi.uz';
 
 const META = {
-  uz: ["SlideAI — sun'iy intellekt bilan taqdimot yaratish", "Mavzuni yozing — SlideAI bir necha daqiqada tayyor PowerPoint (.pptx) taqdimot tayyorlaydi: matn, rasmlar, 40 ta shablon, o'zbek, rus va ingliz tillarida."],
-  ru: ['SlideAI — создание презентаций с искусственным интеллектом', 'Напишите тему — SlideAI за пару минут подготовит готовую презентацию PowerPoint (.pptx): текст, изображения, 40 шаблонов, на узбекском, русском и английском.'],
-  en: ['SlideAI — AI presentation maker', 'Type a topic — SlideAI builds a ready PowerPoint (.pptx) presentation in minutes: text, images, 40 templates, in Uzbek, Russian and English.'],
+  uz: ["SlideAI — sun'iy intellekt bilan taqdimot yaratish", "Mavzuni yozing — SlideAI bir necha daqiqada tayyor PowerPoint (.pptx) taqdimot tayyorlaydi: matn, rasmlar, 200 ta shablon, o'zbek, rus va ingliz tillarida."],
+  ru: ['SlideAI — создание презентаций с искусственным интеллектом', 'Напишите тему — SlideAI за пару минут подготовит готовую презентацию PowerPoint (.pptx): текст, изображения, 200 шаблонов, на узбекском, русском и английском.'],
+  en: ['SlideAI — AI presentation maker', 'Type a topic — SlideAI builds a ready PowerPoint (.pptx) presentation in minutes: text, images, 200 templates, in Uzbek, Russian and English.'],
 };
 const PAGES = [
   { url: '/', page: 'home', lang: 'uz' },

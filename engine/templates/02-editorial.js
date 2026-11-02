@@ -82,9 +82,7 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.1;
-      const cfs = L.colSize(d, w, 4.95 - 2.3, 0.3, F.body); // items shrink to fit the panel
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w, F.body) : 0))) + 0.3);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w, F.body, 0.3, 4.85 - 2.3 - 0 * Math.max(d.left.items.length, d.right.items.length));
       vrule(s, 5.0, 1.75, 3.3);
       [d.left, d.right].forEach((side, i) => {
         const x = i ? 5.3 : 0.6;
@@ -92,7 +90,7 @@ async function build(content, out) {
         let y = 2.3;
         side.items.forEach((it, k) => {
           t.line(s, x, y, w, 0, C.hair, 0.75);
-          t.text(s, it, { x, y: y + 0.15, w, h: rows[k] - 0.2, fontSize: cfs });
+          t.text(s, it, { x, y: y + 0.15, w, h: rows[k] - 0.2, fontSize: CFS });
           y += rows[k];
         });
       });

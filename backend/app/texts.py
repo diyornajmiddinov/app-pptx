@@ -49,7 +49,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "pdf_need_name": "✏️ Avval PDF fayl nomini yozing (yoki «❌ Bekor qilish»).",
         "pdf_cancelled": "❌ Bekor qilindi.",
         # start, help
-        "welcome": "👋 <b>Assalomu alaykum! Men — SlideAI.</b>\nSun'iy intellekt yordamida bir necha daqiqada tayyorlab beraman:\n\n📊 <b>Taqdimot</b> — 40 ta shablon, mavzuga mos rasmlar bilan\n📝 <b>Referat</b> va 📘 <b>Mustaqil ish</b> — institut talablari bo'yicha, Word + PDF\n🖼 <b>Rasmdan PDF</b> — rasmlarni bitta faylga jamlash\n\n👇 <i>Pastdagi tugmalardan birini tanlang.</i>",
+        "welcome": "👋 <b>Assalomu alaykum! Men — SlideAI.</b>\nSun'iy intellekt yordamida bir necha daqiqada tayyorlab beraman:\n\n📊 <b>Taqdimot</b> — 200 ta shablon, mavzuga mos rasmlar bilan\n📝 <b>Referat</b> va 📘 <b>Mustaqil ish</b> — institut talablari bo'yicha, Word + PDF\n🖼 <b>Rasmdan PDF</b> — rasmlarni bitta faylga jamlash\n\n👇 <i>Pastdagi tugmalardan birini tanlang.</i>",
         "open": "Taqdimot yaratish",
         "saved": "Til: O'zbekcha",
         "help": "❓ <b>Qanday ishlaydi</b>\n\n1️⃣ Pastdan tanlang: <b>Taqdimot</b>, <b>Referat</b> yoki <b>Mustaqil ish</b>.\n2️⃣ Mavzuni yozing va sozlamalarni tanlang.\n3️⃣ Tayyor fayl 1–3 daqiqada shu chatga keladi.\n\n<b>Buyruqlar</b>\n/taqdimot — taqdimot yaratish\n/referat — referat yozish\n/mustaqil — mustaqil ish yozish\n/pdf — rasmlardan PDF\n/balance — balans va to'ldirish\n/editor — taqdimot muharriri\n/language — tilni o'zgartirish\n\n<blockquote>Buyurtma bajarilmasa, pul balansingizga avtomatik qaytadi.</blockquote>",
@@ -148,7 +148,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "pdf_need_name": "✏️ Сначала напишите название PDF-файла (или «❌ Отмена»).",
         "pdf_cancelled": "❌ Отменено.",
         # start, help
-        "welcome": "👋 <b>Здравствуйте! Я — SlideAI.</b>\nС помощью искусственного интеллекта за несколько минут подготовлю:\n\n📊 <b>Презентацию</b> — 40 шаблонов, подходящие фото\n📝 <b>Реферат</b> и 📘 <b>Самостоятельную работу</b> — по требованиям вуза, Word + PDF\n🖼 <b>PDF из фото</b> — несколько фото в одном файле\n\n👇 <i>Выберите раздел кнопками внизу.</i>",
+        "welcome": "👋 <b>Здравствуйте! Я — SlideAI.</b>\nС помощью искусственного интеллекта за несколько минут подготовлю:\n\n📊 <b>Презентацию</b> — 200 шаблонов, подходящие фото\n📝 <b>Реферат</b> и 📘 <b>Самостоятельную работу</b> — по требованиям вуза, Word + PDF\n🖼 <b>PDF из фото</b> — несколько фото в одном файле\n\n👇 <i>Выберите раздел кнопками внизу.</i>",
         "open": "Создать презентацию",
         "saved": "Язык: Русский",
         "help": "❓ <b>Как это работает</b>\n\n1️⃣ Выберите внизу: <b>Презентация</b>, <b>Реферат</b> или <b>Самостоятельная работа</b>.\n2️⃣ Напишите тему и выберите настройки.\n3️⃣ Готовый файл придёт в этот чат через 1–3 минуты.\n\n<b>Команды</b>\n/taqdimot — создать презентацию\n/referat — написать реферат\n/mustaqil — самостоятельная работа\n/pdf — PDF из фото\n/balance — баланс и пополнение\n/editor — редактор презентаций\n/language — сменить язык\n\n<blockquote>Если заказ не выполнен, деньги автоматически вернутся на баланс.</blockquote>",
@@ -247,7 +247,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "pdf_need_name": "✏️ First type a name for the PDF file (or «❌ Cancel»).",
         "pdf_cancelled": "❌ Cancelled.",
         # start, help
-        "welcome": "👋 <b>Hello! I'm SlideAI.</b>\nWith AI I prepare in a few minutes:\n\n📊 <b>Presentations</b> — 40 templates, matching photos\n📝 <b>Essays</b> and 📘 <b>Independent work</b> — to university rules, Word + PDF\n🖼 <b>Images to PDF</b> — many images in one file\n\n👇 <i>Pick a section with the buttons below.</i>",
+        "welcome": "👋 <b>Hello! I'm SlideAI.</b>\nWith AI I prepare in a few minutes:\n\n📊 <b>Presentations</b> — 200 templates, matching photos\n📝 <b>Essays</b> and 📘 <b>Independent work</b> — to university rules, Word + PDF\n🖼 <b>Images to PDF</b> — many images in one file\n\n👇 <i>Pick a section with the buttons below.</i>",
         "open": "Create presentation",
         "saved": "Language: English",
         "help": "❓ <b>How it works</b>\n\n1️⃣ Pick below: <b>Presentation</b>, <b>Essay</b> or <b>Independent work</b>.\n2️⃣ Type the topic and choose the settings.\n3️⃣ The finished file arrives in this chat in 1–3 minutes.\n\n<b>Commands</b>\n/taqdimot — create a presentation\n/referat — write an essay\n/mustaqil — write independent work\n/pdf — images to PDF\n/balance — balance and top-up\n/editor — presentation editor\n/language — change language\n\n<blockquote>If an order fails, the money returns to your balance automatically.</blockquote>",

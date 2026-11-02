@@ -111,14 +111,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.25;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.8, F.body) : 0))) + 0.22);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.8, F.body, 0.22, 4.85 - 2.15);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.3), fill = i ? C.dark : C.white, fg = i ? C.white : C.dark;
         t.rect(s, x, 1.35, w, 3.55, fill, { line: { color: C.honey, width: 1 }, name: 'Panel' });
         t.text(s, side.h, { x: x + 0.3, y: 1.5, w: w - 0.6, h: 0.5, fontSize: 19, bold: true, color: i ? C.amber : C.brown });
         let y = 2.15;
-        side.items.forEach((it, k) => { hex(s, x + 0.3, y + 0.05, 0.2, C.amber); t.text(s, it, { x: x + 0.65, y, w: w - 0.8, h: rows[k], fontSize: 15, color: fg }); y += rows[k]; });
+        side.items.forEach((it, k) => { hex(s, x + 0.3, y + 0.05, 0.2, C.amber); t.text(s, it, { x: x + 0.65, y, w: w - 0.8, h: rows[k], fontSize: CFS, color: fg }); y += rows[k]; });
       });
     },
     async statement(d) {

@@ -106,14 +106,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = await page(d), w = 4.1;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.6, F.body) : 0))) + 0.2);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.6, F.body, 0.2, 4.85 - 2.2);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.75 + i * (w + 0.3), dark = i === 1;
         t.rect(s, x, 1.4, w, 3.5, dark ? C.em : 'EDE3CB', { name: 'Panel' });
         t.text(s, caps(side.h), { x: x + 0.3, y: 1.55, w: w - 0.6, h: 0.5, fontFace: F.head, fontSize: 15, bold: true, color: dark ? C.gold : C.em, charSpacing: 2 });
         let y = 2.2;
-        side.items.forEach((it, k) => { t.shape(s, 'DIAMOND', { x: x + 0.3, y: y + 0.08, w: 0.13, h: 0.13, fill: { color: C.gold }, objectName: 'Bullet' }); t.text(s, it, { x: x + 0.55, y, w: w - 0.8, h: rows[k], fontSize: 15, color: dark ? C.cream : C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.shape(s, 'DIAMOND', { x: x + 0.3, y: y + 0.08, w: 0.13, h: 0.13, fill: { color: C.gold }, objectName: 'Bullet' }); t.text(s, it, { x: x + 0.55, y, w: w - 0.8, h: rows[k], fontSize: CFS, color: dark ? C.cream : C.ink }); y += rows[k]; });
       });
     },
     async statement(d) {

@@ -1,0 +1,31 @@
+/** 145 Printer — continuous-form DOT-MATRIX paper: tractor-feed holes down both edges, pale green bars, perforations; everything printed in monospace as a report table. */
+const { kit, L, rowsFit } = require('../free.js');
+const C = { paper: 'FBFBF6', bar: 'DDEFD9', ink: '2B2B2B', muted: '5A5A5A', hole: 'D9D9D2', accent: '1B5E20' };
+const F = { head: 'Courier New', body: 'Courier New' };
+async function build(content, out) {
+  const k = kit(content, F, C), { t } = k;
+  const paper = (s) => { for (let y = 0; y < 5.625; y += 0.72) t.rect(s, 0.6, y + 0.36, 8.8, 0.36, C.bar, { name: 'Green bar' }); for (let y = 0.15; y < 5.6; y += 0.25) { t.oval(s, 0.18, y, 0.14, 0.14, C.hole); t.oval(s, 9.68, y, 0.14, 0.14, C.hole); } t.line(s, 0.5, 0, 0, 5.625, 'C8C8C0', 0.75, { dash: 'dash' }); t.line(s, 9.5, 0, 0, 5.625, 'C8C8C0', 0.75, { dash: 'dash' }); };
+  const page = (d) => { const s = k.slide(C.paper); paper(s); k.txt(s, `${(k.M.org || 'SLIDEAI').toUpperCase().slice(0, 30)}   REPORT ${k.M.year || ''}`, 0.75, 0.12, 6.0, 0.25, { size: 9, color: C.muted }); k.txt(s, `PAGE ${String(k.idx).padStart(3, '0')}`, 7.6, 0.12, 1.7, 0.25, { size: 9, color: C.muted, align: 'right' }); if (d.title) k.head(s, d.title.toUpperCase(), 0.75, 0.4, 8.5, 0.55, { max: 20, min: 11 }); k.txt(s, '='.repeat(70), 0.75, 0.95, 8.5, 0.2, { size: 9, color: C.ink }); k.foot(s, { x: 0.75, y: 5.32, w: 8.5, size: 7.5, font: F.body }); return s; };
+  const X = 0.75, W = 8.5, Y = 1.2, Hc = 3.95;
+  // report table: columns with '|' separators and a header line
+  const table = (s, n, cols, draw) => { let x = X; cols.forEach(([wd], c) => { if (c) t.line(s, x, Y, 0, Hc, C.ink, 0.5); x += wd; }); const rh = Hc / n; for (let i = 0; i < n; i++) { const y = Y + i * rh; let cx = X; cols.forEach(([wd], c) => { draw(i, c, cx + 0.08, y, wd - 0.16, rh); cx += wd; }); t.line(s, X, y + rh, W, 0, C.ink, 0.3, { dash: 'sysDot' }); } };
+  const R = {
+    async cover(d) { const s = k.slide(C.paper); paper(s); k.txt(s, '*'.repeat(60), 0.75, 0.5, 8.5, 0.25, { size: 10 }); k.head(s, d.title.toUpperCase(), 0.75, 0.85, 5.5, 2.3, { max: 28, min: 13, valign: 'top' }); if (d.image) await k.photo(s, d.image, 6.6, 0.85, 2.6, 2.3, { gray: true });
+      [[k.TR.author_l, k.M.author], [k.TR.org_l, k.M.org], [k.TR.city_l, k.M.loc], [k.TR.year_l, k.M.year]].forEach(([a, v], i) => k.txt(s, `${String(a).toUpperCase().padEnd(14, '.')} ${v || ''}`, 0.75, 3.35 + i * 0.36, 8.5, 0.34, { size: 12, valign: 'middle' })); k.txt(s, '*'.repeat(60), 0.75, 4.85, 8.5, 0.25, { size: 10 }); k.foot(s, { x: 0.75, y: 5.32, w: 8.5, size: 7.5, font: F.body }); },
+    async intro(d) { const s = page(d); await k.photo(s, d.image, X, Y, 3.3, Hc, { gray: true }); k.txt(s, d.text, X + 3.55, Y, W - 3.55, Hc, { max: 13, min: 9.5, ls: 1.3, valign: 'middle' }); },
+    async image(d) { return R.intro(d); },
+    async agenda(d) { const s = page(d); table(s, d.items.length, [[0.8], [7.7]], (i, c, x, y, w, h) => k.txt(s, c ? d.items[i].toUpperCase() : String(i + 1).padStart(2, '0'), x, y, w, h, { max: 15, bold: !!c, valign: 'middle' })); },
+    async cards(d) { const s = page(d); table(s, d.items.length, [[0.6], [2.6], [5.3]], (i, c, x, y, w, h) => k.txt(s, [String(i + 1).padStart(2, '0'), d.items[i].h.toUpperCase(), d.items[i].t][c], x, y, w, h, { max: c === 2 ? 12 : 13, bold: c === 1, valign: 'middle' })); },
+    async process(d) { const s = page(d); table(s, d.steps.length, [[0.6], [2.6], [5.3]], (i, c, x, y, w, h) => k.txt(s, [String(i + 1).padStart(2, '0'), d.steps[i].h.toUpperCase(), d.steps[i].t][c], x, y, w, h, { max: c === 2 ? 12 : 13, bold: c === 1, valign: 'middle' })); },
+    async stats(d) { const s = page(d); const n = d.stats.length + (d.note ? 1 : 0); table(s, n, [[2.6], [5.9]], (i, c, x, y, w, h) => { if (i === d.stats.length) return c ? k.txt(s, d.note, x, y, w, h, { max: 10, valign: 'middle', color: C.muted }) : null; k.txt(s, c ? d.stats[i].label : d.stats[i].value, x, y, w, h, c ? { max: 13, valign: 'middle' } : { max: 34, min: 14, bold: true, align: 'right', valign: 'middle', color: C.accent }); }); },
+    async compare(d) { const s = page(d), w = W / 2, { rows: rr, fs } = rowsFit([d.left.items, d.right.items], 12, w - 0.3, F.body, 0.08, Hc - 0.5); t.line(s, X + w, Y, 0, Hc, C.ink, 0.5); [d.left, d.right].forEach((sd, i) => { const x = X + i * w + 0.1; k.txt(s, `[ ${sd.h.toUpperCase()} ]`, x, Y, w - 0.2, 0.4, { max: 13, bold: true }); let y = Y + 0.48; sd.items.forEach((it, j) => { k.txt(s, `${i ? '+' : '-'} ${it}`, x, y, w - 0.25, rr[j], { size: fs }); y += rr[j]; }); }); },
+    async statement(d) { const s = page(d); k.txt(s, '>>> ', X, Y + 0.3, 0.8, 0.5, { size: 18, bold: true, color: C.accent }); k.head(s, L.runs(d.text.toUpperCase()), X + 0.8, Y + 0.2, W - 0.8, 2.4, { max: 24, min: 12 }); if (d.caption) k.txt(s, d.caption, X + 0.8, Y + 2.7, W - 0.8, 1.2, { max: 11, color: C.muted }); },
+    async timeline(d) { const s = page(d); table(s, d.items.length, [[1.3], [2.4], [4.8]], (i, c, x, y, w, h) => k.txt(s, [d.items[i].year, d.items[i].h.toUpperCase(), d.items[i].t][c], x, y, w, h, { max: c === 2 ? 11 : 13, bold: c < 2, valign: 'middle', color: c === 0 ? C.accent : C.ink })); },
+    async quote(d) { const s = page({}); k.head(s, `"${d.text}"`, X + 0.4, Y + 0.3, W - 0.8, 2.6, { max: 22, min: 11, align: 'center' }); if (d.author) k.txt(s, `-- ${d.author.toUpperCase()} --`, X, Y + 3.0, W, 0.45, { size: 12, bold: true, align: 'center' }); },
+    async sources(d) { const s = page(d); table(s, d.items.length, [[0.7], [7.8]], (i, c, x, y, w, h) => k.txt(s, c ? d.items[i] : `[${i + 1}]`, x, y, w, h, { max: 11, valign: 'middle' })); },
+  };
+  R.closing = R.cover;
+  for (const d of content.slides) await R[d.type](d);
+  return L.save(k.pres, out, { name: 'SlideAI Printer', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: '3A3A3A', lt2: C.bar, accent1: C.accent, accent2: '2E7D32', accent3: '8D6E63', accent4: '546E7A', accent5: C.muted, accent6: C.hole, hlink: C.accent, folHlink: C.muted } });
+}
+module.exports = { id: 145, slug: 'printer', name: 'Printer', category: 'business', photos: true, build, style: { tone: "rasmiy hisobot chiqishi: jadvaldagi kabi qisqa qatorlar, aniq raqamlar va kodlar", limits: { title: 45, card_h: 18, step_h: 18 }, prefer: 'data' } };

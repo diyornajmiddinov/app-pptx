@@ -84,8 +84,7 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.2, y = 1.65;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 14, w - 0.6, M) : 0))) + 0.12);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 14, w - 0.6, M, 0.12, 5.0 - y - 0.6 - 0.06 * Math.max(d.left.items.length, d.right.items.length));
       [d.left, d.right].forEach((side, i) => {
         const x = 0.7 + i * (w + 0.2), col = i ? C.green : C.amber, sign = '>';
         t.text(s, `### ${side.h}`, { x, y, w, h: 0.45, fontSize: 16, bold: true, color: col });
@@ -93,7 +92,7 @@ async function build(content, out) {
         side.items.forEach((it, k) => {
           t.rect(s, x, yy, w, rows[k], col, { t: 88, name: 'Diff line' });
           t.text(s, sign, { x: x + 0.12, y: yy + 0.06, w: 0.3, h: 0.3, fontSize: 14, bold: true, color: col });
-          t.text(s, it, { x: x + 0.45, y: yy + 0.06, w: w - 0.6, h: rows[k] - 0.06, fontSize: 14, color: C.text });
+          t.text(s, it, { x: x + 0.45, y: yy + 0.06, w: w - 0.6, h: rows[k] - 0.06, fontSize: CFS, color: C.text });
           yy += rows[k] + 0.06;
         });
       });

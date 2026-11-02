@@ -18,8 +18,7 @@ async function build(content, out) {
   const footer = (s, dark, left = M.topic || '') => {
     t.rect(s, 0, 5.15, W, 0.475, dark ? C.char2 : C.char, { name: 'Footer bar' });
     para(s, 0.35, 5.15, 0.9, 0.475, C.orange);
-    const room = Math.min(4.2, 9.4 - Math.min(4.4, L.width(meta, 9, F.body)) - 0.3 - 1.45); // one line, never under the author line
-    t.text(s, L.clip(left, room, 0.25, 9, F.body, true, true), { x: 1.45, y: 5.15, w: room, h: 0.475, fontSize: 9, bold: true, italic: true, color: C.white, valign: 'middle', noShrink: true });
+    t.text(s, left, { x: 1.45, y: 5.15, w: 4.2, h: 0.475, fontSize: 9, bold: true, italic: true, color: C.white, valign: 'middle' });
     t.text(s, meta, { x: 5.0, y: 5.15, w: 4.4, h: 0.475, fontSize: 9, color: 'C9CACE', align: 'right', valign: 'middle' });
   };
   const page = (d, bg = C.light) => {
@@ -104,14 +103,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.0;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.5, F.body) : 0))) + 0.22);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.5, F.body, 0.22, 4.85 - 2.0);
       para(s, 4.55, 1.3, 0.6, 3.6, C.orange, 0.5);
       [d.left, d.right].forEach((side, i) => {
         const x = i ? 5.4 : 0.6;
         t.text(s, side.h, { x, y: 1.3, w, h: 0.5, fontSize: 20, bold: true, italic: true, color: i ? C.orange : C.char });
         let y = 2.0;
-        side.items.forEach((it, k) => { para(s, x, y + 0.07, 0.22, 0.16, i ? C.orange : C.char, 0.4); t.text(s, it, { x: x + 0.4, y, w: w - 0.5, h: rows[k], fontSize: 15, color: C.char }); y += rows[k]; });
+        side.items.forEach((it, k) => { para(s, x, y + 0.07, 0.22, 0.16, i ? C.orange : C.char, 0.4); t.text(s, it, { x: x + 0.4, y, w: w - 0.5, h: rows[k], fontSize: CFS, color: C.char }); y += rows[k]; });
       });
     },
     async statement(d) {

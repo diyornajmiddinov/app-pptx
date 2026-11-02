@@ -92,8 +92,7 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 3.9;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.35, F.body) : 0))));
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.35, F.body, 0, 4.85 - 2.5 - 0.22 * Math.max(d.left.items.length, d.right.items.length));
       t.line(s, W / 2, 1.8, 0, 3.0, C.gold, 0.75);
       [d.left, d.right].forEach((side, i) => {
         const x = i ? 5.4 : 0.7;
@@ -101,7 +100,7 @@ async function build(content, out) {
         let y = 2.5;
         side.items.forEach((it, k) => {
           dia(s, x, y + 0.07, 0.11);
-          t.text(s, it, { x: x + 0.3, y, w: w - 0.35, h: rows[k] + 0.05, fontSize: 15, color: C.white });
+          t.text(s, it, { x: x + 0.3, y, w: w - 0.35, h: rows[k] + 0.05, fontSize: CFS, color: C.white });
           y += rows[k] + 0.22;
         });
       });

@@ -116,16 +116,14 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = await page(d), w = 4.25;
-      const cfs = L.colSize(d, w - 0.85, 4.95 - 2.2, 0.2, F.body); // items shrink to fit the panel
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], cfs, w - 0.85, F.body) : 0))) + 0.2);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.85, F.body, 0.2, 4.85 - 2.2);
       for (const [i, side] of [d.left, d.right].entries()) {
         const x = 0.6 + i * (w + 0.3), f = i ? AMBER : TEAL;
         t.rect(s, x, 1.4, w, 3.45, C.white, { shadow: 0.15, blur: 8, offset: 3, name: 'Panel' });
         await C3(s, x + 0.25, 1.55, 0.6, 0.2, f);
         t.text(s, side.h, { x: x + 1.0, y: 1.5, w: w - 1.2, h: 0.5, fontSize: 19, bold: true, color: f[2], valign: 'middle' });
         let y = 2.2;
-        side.items.forEach((it, k) => { t.rect(s, x + 0.35, y + 0.08, 0.12, 0.12, f[1], { rotate: 45, name: 'Bullet' }); t.text(s, it, { x: x + 0.6, y, w: w - 0.85, h: rows[k], fontSize: cfs, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.rect(s, x + 0.35, y + 0.08, 0.12, 0.12, f[1], { rotate: 45, name: 'Bullet' }); t.text(s, it, { x: x + 0.6, y, w: w - 0.85, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
       }
     },
     async statement(d) {

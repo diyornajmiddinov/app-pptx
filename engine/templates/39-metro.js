@@ -111,14 +111,13 @@ async function build(content, out) {
     },
     async compare(d) {
       const s = page(d), w = 4.2;
-      const rows = Array.from({ length: Math.max(d.left.items.length, d.right.items.length) }, (_, k) =>
-        Math.max(...[d.left, d.right].map((sd) => (sd.items[k] ? L.height(sd.items[k], 15, w - 0.75, F.body) : 0))) + 0.25);
+      const { rows, fs: CFS } = L.rowsFit([d.left.items, d.right.items], 15, w - 0.75, F.body, 0.25, 4.85 - 2.2);
       [d.left, d.right].forEach((side, i) => {
         const x = 0.6 + i * (w + 0.4), col = C.lines[i ? 1 : 0];
         badge(s, x, 1.45, 0.5, col, i ? 'B' : 'A');
         t.text(s, side.h, { x: x + 0.65, y: 1.45, w: w - 0.7, h: 0.5, fontSize: 18, bold: true, color: C.ink, valign: 'middle' });
         let y = 2.2; const top = y;
-        side.items.forEach((it, k) => { t.text(s, it, { x: x + 0.6, y, w: w - 0.7, h: rows[k], fontSize: 15, color: C.ink }); y += rows[k]; });
+        side.items.forEach((it, k) => { t.text(s, it, { x: x + 0.6, y, w: w - 0.7, h: rows[k], fontSize: CFS, color: C.ink }); y += rows[k]; });
         vLine(s, x + 0.25, top + 0.12, y - top - rows[rows.length - 1] + 0.01, col);
         let yy = top; side.items.forEach((_, k) => { station(s, x + 0.25, yy + 0.13, 0.26); yy += rows[k]; });
       });

@@ -24,7 +24,7 @@ def sample():
     return c
 
 
-@pytest.mark.parametrize("template_id", range(1, 41))
+@pytest.mark.parametrize("template_id", range(1, 201))
 def test_template_renders(template_id, sample, tmp_path):
     out = render_sync(sample, template_id, tmp_path / "t.pptx")
     prs = Presentation(out)
