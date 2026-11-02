@@ -142,7 +142,14 @@ def build_prompt(topic: str, plan: list[str], language: str, photos: bool, templ
 - image: title ≤{Lm['title']}, text ≤{Lm['image_text']}, image
 - sources: title = "{ST['sources']}", items: 3–6 ta, har biri ≤{Lm['source']}
 - cover va closing ham image oladi.
-image formati: {{"query": "2–5 so'zli INGLIZCHA qidiruv, masalan 'tax office documents'"}}. Fotostokdan qidiriladi, URL yozma.""" if photos else ""
+image formati: {{"query": "3–5 so'zli INGLIZCHA qidiruv"}}. Fotostokdan (Pexels) qidiriladi, URL yozma.
+image.query qoidalari — rasm aynan shu slayd mavzusini KO'RSATSIN:
+  • suratda ko'rinadigan aniq narsa, joy, odamlar yoki harakatni yoz: 'doctor listening heart stethoscope', 'wheat field harvest combine';
+  • mavhum so'z yozma (theory, concept, types, importance, development, role, features) — ular stokda tasodifiy rasm beradi;
+  • HAR BIR query'da mavzu sohasining so'zi bo'lsin: tilshunoslik — 'grammar textbook sentence', psixologiya — 'psychologist therapy session';
+  • slayd matnidagi MISOLNI rasmga olma (gap misoli "Kuz." — kuz manzarasi EMAS), mavzuning o'zini ko'rsat;
+  • mavzu O'zbekiston, shahar yoki tarixiy shaxs haqida bo'lsa — joy nomini yoz: 'samarkand registan square', 'tashkent city';
+  • har bir slayd query'si boshqacha bo'lsin, bir xil rasm takrorlanmasin.""" if photos else ""
     lang_rule = f"\nMUHIM: ko'rsatmalar o'zbekcha yozilgan, lekin JAVOBDAGI BARCHA MATN (sarlavhalar, matn, manbalar nomi, iqtibos) faqat {LANG[language]} bo'lsin. agenda sarlavhasi: \"{SECTION_TITLES[language]['agenda']}\"."
     return f"""Sen professional taqdimot muallifisan. Mavzu: "{topic}". Barcha matnni {LANG[language]} yoz.{tone}{lang_rule}
 Slaydlar soni {len(plan)} ta, turlari AYNAN shu tartibda: {json.dumps(plan)}

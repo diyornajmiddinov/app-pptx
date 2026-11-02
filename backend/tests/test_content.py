@@ -96,6 +96,33 @@ async def test_photos_come_from_pexels_or_fall_back(net, tmp_path):
     assert deck["slides"][1]["image"]["src"].endswith(".jpg") and deck["slides"][1]["image"]["credit"] == ""  # sample picture
 
 
+def test_the_photo_that_matches_the_query_is_picked_and_never_twice():
+    photos = [{"id": 1, "alt": "Woman reading a book in a cafe"}, {"id": 2, "alt": "Doctor listening to heart with stethoscope"},
+              {"id": 3, "alt": "Stethoscope on a desk"}]
+    assert images.pick(photos, "doctor stethoscope heart", set())["id"] == 2     # most words in common, not Pexels' first
+    assert images.pick(photos, "doctor stethoscope heart", {2})["id"] == 3       # already on another slide
+    assert images.pick(photos, "mountain lake", set())["id"] == 1                # nothing matches: Pexels' order
+    assert images.pick(photos, "x", {1, 2, 3})["id"] == 1 and images.pick([], "x", set()) is None
+
+
+async def test_a_deck_never_gets_one_photo_twice_and_a_long_query_is_retried_shorter(net, tmp_path, monkeypatch):
+    answers, seen = net
+    monkeypatch.setenv("PEXELS_API_KEY", "k")
+    found = {"photos": [{"id": 7, "alt": "samarkand registan", "src": {"large2x": "https://images.pexels.com/7.jpg"}, "photographer": "A", "url": "u7"},
+                        {"id": 8, "alt": "samarkand mosaic", "src": {"large2x": "https://images.pexels.com/8.jpg"}, "photographer": "B", "url": "u8"}]}
+    answers["api.pexels.com"] = [httpx.Response(200, json=found), httpx.Response(200, json=found),
+                                 httpx.Response(200, json={"photos": []}), httpx.Response(200, json=found)]
+    answers["images.pexels.com"] = [httpx.Response(200, content=b"jpg")] * 3
+    deck = {"slides": [{"type": "cover", "image": {"query": "samarkand registan"}}, {"type": "image", "image": {"query": "samarkand registan"}}]}
+    await images.resolve_images(deck, tmp_path)
+    assert sorted(s["image"]["credit"] for s in deck["slides"]) == ["Photo: A / Pexels", "Photo: B / Pexels"]  # two different photos
+    deck = {"slides": [{"type": "image", "image": {"query": "old samarkand madrasa tiles"}}]}
+    await images.resolve_images(deck, tmp_path)
+    assert deck["slides"][0]["image"]["credit"].endswith("/ Pexels")
+    asked = [u for u in seen if "api.pexels.com" in u][-2:]
+    assert "tiles" in asked[0] and "tiles" not in asked[1]  # nothing for the full query: asked again without its last word
+
+
 # ---------------------------------------------------------------- the whole pipeline with a fake model
 
 SAMPLE = json.loads((catalog.ENGINE_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))
