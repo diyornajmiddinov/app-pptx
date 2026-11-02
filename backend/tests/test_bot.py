@@ -122,7 +122,7 @@ async def test_admin_adds_bot_to_a_channel(tg, tmp_path, monkeypatch):
 async def test_the_menu_has_referat_and_mustaqil_ish_buttons(tg):
     from app.bot.keyboards import main_keyboard
     rows = main_keyboard("uz", U)["keyboard"]
-    papers = rows[1]
+    papers = rows[2]
     assert [b["text"] for b in papers] == ["📝 Referat", "📘 Mustaqil ish"]
     assert "mode=paper&type=referat" in papers[0]["web_app"]["url"] and "&t=" in papers[0]["web_app"]["url"]
     assert "type=mustaqil" in papers[1]["web_app"]["url"]
@@ -141,7 +141,7 @@ async def test_menu_commands_open_the_forms(tg):
 
 async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_users(tg):
     from app.bot.keyboards import main_keyboard
-    assert main_keyboard("uz", U)["keyboard"][0][1]["text"] == "✨ Animatsiyali taqdimot"
+    assert main_keyboard("uz", U)["keyboard"][1][0]["text"] == "✨ Animatsiyali taqdimot"
     await add_user(U)
     await bot.handle(msg("✨ Animatsiyali taqdimot"))
     assert "tez orada" in tg.texts()[-1] and "reply_markup" not in tg.last()
@@ -153,9 +153,9 @@ async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_use
 async def test_invite_button_gives_the_link_and_a_friend_by_it_is_counted(tg):
     from app.bot.keyboards import main_keyboard
     from app.services import growth
-    assert any(b["text"] == "🎁 Do'stlarni taklif qilish" for row in main_keyboard("uz", U)["keyboard"] for b in row)
+    assert [b["text"] for b in main_keyboard("uz", U)["keyboard"][4]] == ["💰 Balans", "🎁 Taklif qilish"]
     await add_user(U)
-    await bot.handle(msg("🎁 Do'stlarni taklif qilish"))
+    await bot.handle(msg("🎁 Do'stlarni taklif qilish"))  # the earlier label still works
     code = await growth.ref_code(U)
     assert f"t.me/testbot?start=ref_{code}" in tg.texts()[-1] and "1 000" in tg.texts()[-1].replace("\xa0", " ")
     assert "t.me/share/url" in tg.last()["reply_markup"]["inline_keyboard"][0][0]["url"]

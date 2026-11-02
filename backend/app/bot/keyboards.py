@@ -14,7 +14,9 @@ def _bare(text: str) -> str:
 
 # reply-keyboard text -> key, any language; with and without the leading emoji (telegram.emoji_buttons)
 _KB = [(str(T[lang][k]), k) for lang in LANGS for k in T[lang] if k.startswith("kb_")]
-BUTTONS: dict[str, str] = {**{_bare(text): k for text, k in _KB}, **dict(_KB)}
+# earlier labels of a button: a keyboard the user still has keeps working
+_OLD = {"🎁 Do'stlarni taklif qilish": "kb_invite", "🎁 Пригласить друзей": "kb_invite", "🎁 Invite friends": "kb_invite"}
+BUTTONS: dict[str, str] = {**{_bare(text): k for text, k in [*_KB, *_OLD.items()]}, **dict(_KB), **_OLD}
 
 
 PRIMARY, SUCCESS, DANGER = "primary", "success", "danger"  # button colours (Bot API "style"): blue, green, red
@@ -62,9 +64,10 @@ def main_keyboard(lang: str, user_id: int) -> dict:
     def app(key, url, style):
         return {**b(key), "web_app": {"url": url}, "style": style} if has_webapp() else b(key)
     create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}", PRIMARY)
-    anim = {**b("kb_anim"), "style": PRIMARY}  # a plain button: the bot answers (open for this user, or "coming soon")
+    anim = {**b("kb_anim"), "style": SUCCESS}  # a plain button: the bot answers (open for this user, or "coming soon")
     papers = [app(f"kb_{d}", paper_url(lang, d, user_id), SUCCESS) for d in ("referat", "mustaqil")]
-    return {"keyboard": [[create, anim], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_invite"), b("kb_editor")], [b("kb_lang"), b("kb_help")]],
+    # by importance: the deck, the animated deck, the papers, the tools, money, settings
+    return {"keyboard": [[create], [anim], papers, [b("kb_pdf"), b("kb_editor")], [b("kb_balance"), b("kb_invite")], [b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 
