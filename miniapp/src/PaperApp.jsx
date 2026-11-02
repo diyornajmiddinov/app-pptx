@@ -1,5 +1,5 @@
 /**
- * Referat / mustaqil ish form: opened by the bot's two bottom buttons (?mode=paper&type=referat|mustaqil).
+ * Referat / mustaqil ish form: opened by the bot's "Referat / Mustaqil ish" button (?mode=paper; the type is chosen here, or given as &type=).
  * Topic, length, language, the title page and the teacher's layout rules -> /api/paper (charged now); the worker
  * writes it and the bot sends the Word and PDF files to the chat. The title page and layout are remembered in
  * Telegram CloudStorage (Bot API 6.9+), so the next paper needs only a topic.

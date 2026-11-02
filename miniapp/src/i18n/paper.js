@@ -1,4 +1,4 @@
-/** Texts of the referat / mustaqil ish form (PaperApp.jsx, opened by the bot's two buttons); merged into MESSAGES. */
+/** Texts of the referat / mustaqil ish form (PaperApp.jsx, opened by the bot's Referat / Mustaqil ish button); merged into MESSAGES. */
 export const PAPER = {
   uz: {
     pSubtitle: "Institut talablariga mos Word va PDF fayl.", pType: 'Ish turi', dt_referat: 'Referat', dt_mustaqil: 'Mustaqil ish',

@@ -31,9 +31,10 @@ def app_url(lang: str) -> str:
     return f"{settings.webapp_url}{sep}lang={lang}"
 
 
-def paper_url(lang: str, doc_type: str, user_id: int | None = None) -> str:
-    """The Mini App's referat form (main.jsx: mode=paper); with user_id, signed for the bottom keyboard."""
-    return f"{app_url(lang)}&mode=paper&type={doc_type}" + (f"&t={make_app_token(user_id)}" if user_id else "")
+def paper_url(lang: str, doc_type: str | None = None, user_id: int | None = None) -> str:
+    """The Mini App's referat / mustaqil ish form (main.jsx: mode=paper; the type is chosen there unless given);
+    with user_id, signed for the bottom keyboard."""
+    return f"{app_url(lang)}&mode=paper" + (f"&type={doc_type}" if doc_type else "") + (f"&t={make_app_token(user_id)}" if user_id else "")
 
 
 def anim_url(lang: str) -> str:
@@ -65,9 +66,9 @@ def main_keyboard(lang: str, user_id: int) -> dict:
         return {**b(key), "web_app": {"url": url}, "style": style} if has_webapp() else b(key)
     create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}", PRIMARY)
     anim = {**b("kb_anim"), "style": SUCCESS}  # a plain button: the bot answers (open for this user, or "coming soon")
-    papers = [app(f"kb_{d}", paper_url(lang, d, user_id), SUCCESS) for d in ("referat", "mustaqil")]
+    paper = app("kb_paper", paper_url(lang, None, user_id), SUCCESS)  # referat or mustaqil ish: chosen in the form
     # by importance: the deck, the animated deck, the papers, the tools, money, settings
-    return {"keyboard": [[create], [anim], papers, [b("kb_pdf"), b("kb_editor")], [b("kb_balance"), b("kb_invite")], [b("kb_lang"), b("kb_help")]],
+    return {"keyboard": [[create], [anim], [paper], [b("kb_pdf"), b("kb_editor")], [b("kb_balance"), b("kb_invite")], [b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 

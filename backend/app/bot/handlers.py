@@ -194,11 +194,12 @@ async def cmd_anim(m: Msg):
 
 
 async def cmd_paper(m: Msg):
-    """/referat, /mustaqil (the Menu), or an old keyboard without the buttons' web_app: the form as an inline button."""
-    doc_type = "mustaqil" if m.key == "kb_mustaqil" or m.text.lower().startswith("/mustaqil") else "referat"
+    """/referat, /mustaqil (the Menu), or a keyboard button without web_app (an old one, or no HTTPS yet): the form as
+    an inline button. The one "Referat / Mustaqil ish" button lets the form ask which."""
+    doc_type = "mustaqil" if m.key == "kb_mustaqil" or m.text.lower().startswith("/mustaqil") else None if m.key == "kb_paper" else "referat"
     if has_webapp():
         await send_message(m.chat_id, t(m.lang, "create_open"),
-                           {"inline_keyboard": [[{"text": t(m.lang, f"kb_{doc_type}"), "web_app": {"url": paper_url(m.lang, doc_type)}, "style": PRIMARY}]]})
+                           {"inline_keyboard": [[{"text": t(m.lang, f"kb_{doc_type or 'paper'}"), "web_app": {"url": paper_url(m.lang, doc_type)}, "style": PRIMARY}]]})
     else:
         await send_message(m.chat_id, t(m.lang, "hint"))
 
@@ -275,7 +276,7 @@ Handler = Callable[[Msg], Awaitable[None]]
 ROUTES: list[tuple[tuple[str, ...], tuple[str, ...], bool, Handler]] = [
     (("/start",), (), False, cmd_start),
     (("/taqdimot",), ("kb_create",), False, cmd_create),
-    (("/referat", "/mustaqil"), ("kb_referat", "kb_mustaqil"), False, cmd_paper),
+    (("/referat", "/mustaqil"), ("kb_referat", "kb_mustaqil", "kb_paper"), False, cmd_paper),
     (("/animatsiya", "/anim"), ("kb_anim",), False, cmd_anim),
     (("/taklif", "/invite"), ("kb_invite",), False, cmd_invite),
     (("/pdf",), ("kb_pdf",), False, cmd_pdf),

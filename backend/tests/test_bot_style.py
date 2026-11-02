@@ -50,7 +50,7 @@ def test_values_are_escaped_but_markup_stays():
 
 def test_buttons_have_colours():
     rows = main_keyboard("uz", U)["keyboard"]
-    assert rows[0][0]["style"] == "primary" and {b["style"] for b in rows[2]} == {"success"}
+    assert rows[0][0]["style"] == "primary" and rows[2][0]["style"] == "success"
     pdf = pdf_keyboard("uz")["keyboard"]
     assert pdf[0][0]["style"] == "success" and pdf[1][0]["style"] == "danger"
 

@@ -21,6 +21,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         # bottom (reply) keyboard and buttons
         "kb_create": "📊 Taqdimot yaratish",
         "kb_referat": "📝 Referat",
+        "kb_paper": "📝 Referat / Mustaqil ish",
         "kb_mustaqil": "📘 Mustaqil ish",
         "paper_queued": "✍️ <b>«{topic}»</b> yozilmoqda…\n<i>Odatda 1–3 daqiqa vaqt oladi. Tayyor bo'lgach Word va PDF fayllarini shu yerga yuboraman.</i>",
         "create_open": "👇 <b>Ilovani ochish uchun tugmani bosing:</b>",
@@ -131,6 +132,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         # bottom (reply) keyboard and buttons
         "kb_create": "📊 Создать презентацию",
         "kb_referat": "📝 Реферат",
+        "kb_paper": "📝 Реферат / Самостоятельная",
         "kb_mustaqil": "📘 Самостоятельная работа",
         "paper_queued": "✍️ <b>«{topic}»</b> пишется…\n<i>Обычно это занимает 1–3 минуты. Готовые файлы Word и PDF пришлю сюда.</i>",
         "create_open": "👇 <b>Нажмите кнопку, чтобы открыть приложение:</b>",
@@ -241,6 +243,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         # bottom (reply) keyboard and buttons
         "kb_create": "📊 Create presentation",
         "kb_referat": "📝 Essay",
+        "kb_paper": "📝 Essay / Independent work",
         "kb_mustaqil": "📘 Independent work",
         "paper_queued": "✍️ <b>“{topic}”</b> is being written…\n<i>It usually takes 1–3 minutes. I will send the Word and PDF files here.</i>",
         "create_open": "👇 <b>Tap the button to open the app:</b>",
