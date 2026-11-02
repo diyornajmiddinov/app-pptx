@@ -166,5 +166,5 @@ async function build(content, out) {
 const STYLE = {"tone": "nafis, premium ohang: kam so'z, salmoqli iboralar", "limits": {"stmt": 60}};
 module.exports = { id: 9, slug: 'luxe', name: 'Lyuks', category: 'business', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['elegant'], kenburns: true, tempo: 1.3, speed: 'slow' };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["elegant"], "transitions": ["fade", "p14:doors|dir=\"horz\"", "dissolve"], "cover": ["fadeLetters", "fadeLetters"], "mark": "diamond", "deco": "dissolve", "sig": {"title": "fadeLetters", "body": "fadeWords", "item": "focusIn", "image": "dissolve", "number": "diamond", "order": "together", "stagger": 0.28}, "tempo": 1.45, "kenburns": true};

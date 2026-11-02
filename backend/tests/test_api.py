@@ -265,7 +265,7 @@ async def test_animated_decks_are_for_admins_until_opened_and_cost_extra(client,
     from app.core.config import settings
     from app.services import app_settings
     from app.services.ai.render import ANIMATED
-    assert set(range(1, 21)) <= ANIMATED
+    assert set(range(1, 201)) == ANIMATED  # every template has its animated copy
     await add_user(U, balance=20000)
     me = (await client.get("/api/me", headers=h())).json()["animation"]
     assert me["open"] is False and me["price"] == 3000 and 1 in me["templates"]
@@ -275,8 +275,11 @@ async def test_animated_decks_are_for_admins_until_opened_and_cost_extra(client,
     assert await billing.balance(U) == 20000
     monkeypatch.setattr(settings, "admin_ids", {U})
     assert (await client.get("/api/me", headers=h())).json()["animation"]["open"] is True
-    r = await client.post("/api/generate", headers=h(), json={**body, "template_id": 150})
+    from app.services import animation
+    monkeypatch.setattr(animation, "ANIMATED", frozenset({1}))  # a template without an animated copy
+    r = await client.post("/api/generate", headers=h(), json=body)
     assert r.status_code == 422 and r.json()["detail"] == "animTemplate"
+    monkeypatch.setattr(animation, "ANIMATED", ANIMATED)
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
     assert await db.pool().fetchval("SELECT price FROM jobs") == 5000 + 3000 and await billing.balance(U) == 12000
     monkeypatch.setattr(settings, "admin_ids", set())

@@ -177,5 +177,5 @@ async function build(content, out) {
 const STYLE = {"tone": "dadil va sodda: qisqa, aniq gaplar", "limits": {"card_t4": 60}};
 module.exports = { id: 11, slug: 'bauhaus', name: 'Bauhaus', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['playful', 'bold'], tempo: 0.95 };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["playful", "bold"], "transitions": ["push:l", "p14:ferris|dir=\"l\"", "cut"], "cover": ["spinIn", "bounceDrop"], "mark": "spinIn", "deco": "popOver", "sig": {"title": "bounceDrop", "body": "fadeUp", "item": ["spinIn", "popOver"], "image": "circle", "number": "spinIn", "order": "alternate", "stagger": 0.12}, "tempo": 0.95, "kenburns": false};

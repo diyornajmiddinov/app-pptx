@@ -170,5 +170,5 @@ async function build(content, out) {
 const STYLE = {"tone": "iliq, do'stona, hikoya qiluvchi ohang", "limits": {}};
 module.exports = { id: 15, slug: 'retro', name: 'Retro', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['playful', 'energetic'] };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["playful", "energetic"], "transitions": ["p14:flash", "p14:ferris|dir=\"r\"", "zoom"], "cover": ["popOver", "wheel"], "mark": "wheel", "deco": "popOver", "sig": {"title": "popOver", "body": "fadeUp", "item": "bounceDrop", "image": "checker", "number": "wheel", "order": "seq", "stagger": 0.12}, "tempo": 0.9, "kenburns": false};

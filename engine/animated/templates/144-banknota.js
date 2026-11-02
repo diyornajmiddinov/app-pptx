@@ -1,0 +1,38 @@
+/** 144 Banknota — every slide is a BANKNOTE: guilloche rosettes and an ornamental border, red serial number, denomination (slide number) in the corners, a portrait oval for photos, engraved serif type. */
+const { kit, L, rowsFit } = require('../free.js');
+const C = { paper: 'F2EFE3', ink: '1F3D33', muted: '4E6359', line: '6E9283', red: 'B3261E' };
+const F = { head: 'Times New Roman', body: 'Times New Roman' };
+const ros = (r) => { let g = ''; for (let i = 0; i < 36; i++) g += `<ellipse cx="100" cy="100" rx="${r}" ry="${r * 0.35}" transform="rotate(${i * 5} 100 100)" fill="none" stroke="#6E9283" stroke-width="0.8" opacity="0.7"/>`; return `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">${g}</svg>`; };
+const border = () => { let g = '<rect x="10" y="10" width="1580" height="880" rx="30" fill="none" stroke="#1F3D33" stroke-width="6"/><rect x="34" y="34" width="1532" height="832" rx="22" fill="none" stroke="#6E9283" stroke-width="2"/>'; for (let x = 50; x < 1560; x += 16) g += `<circle cx="${x}" cy="22" r="5" fill="none" stroke="#6E9283"/><circle cx="${x}" cy="878" r="5" fill="none" stroke="#6E9283"/>`; return `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900"><rect width="1600" height="900" fill="#F2EFE3"/>${g}</svg>`; };
+async function build(content, out) {
+  const k = kit(content, F, C), { t } = k;
+  const bg = await k.svg('b', border(), 1600, 900, true), rose = await k.svg('r', ros(95), 200, 200);
+  const corners = (s) => { [[0.3, 0.25], [8.85, 0.25], [0.3, 4.55], [8.85, 4.55]].forEach(([x, y]) => { t.img(s, rose, x - 0.1, y - 0.1, 1.05, 1.05); k.txt(s, String(k.idx), x, y, 0.85, 0.85, { size: 26, bold: true, color: C.ink, align: 'center', valign: 'middle' }); }); };
+  const serial = (s) => k.txt(s, `AA ${String(k.idx * 7919).padStart(7, '0')}`, 1.3, 0.35, 2.5, 0.35, { size: 12, bold: true, color: C.red, font: 'Courier New' });
+  const page = (d) => { const s = k.slide({ data: bg }); corners(s); serial(s); if (d.title) k.head(s, d.title.toUpperCase(), 1.3, 0.7, 7.4, 0.6, { max: 22, min: 12, align: 'center', spacing: 2 }); t.line(s, 3.0, 1.32, 4.0, 0, C.line, 1); k.foot(s, { x: 1.3, w: 7.4, y: 5.12, size: 7.5, align: 'center' }); return s; };
+  const X = 1.3, W = 7.4, Y = 1.45, Hc = 3.55;
+  // fields separated by small rosettes
+  const fields = (s, n, draw) => { const w = W / n; for (let i = 0; i < n; i++) { const x = X + i * w; if (i) t.img(s, rose, x - 0.25, Y + Hc / 2 - 0.25, 0.5, 0.5); draw(i, x + 0.15, Y, w - 0.3, Hc); } };
+  const R = {
+    async cover(d) { const s = k.slide({ data: bg }); corners(s); serial(s); t.img(s, rose, 2.6, 0.6, 4.5, 4.5); if (d.image) { t.oval(s, 6.3, 1.0, 2.4, 3.2, C.paper, { line: { color: C.ink, width: 3 } }); await k.photo(s, d.image, 6.4, 1.1, 2.2, 3.0, { mask: 'circle', duo: ['1F3D33', 'F2EFE3'] }); }
+      k.txt(s, (k.M.org || '').toUpperCase(), 1.3, 1.0, 4.8, 0.4, { size: 13, bold: true, spacing: 3 }); k.head(s, d.title.toUpperCase(), 1.3, 1.5, 4.9, 2.0, { max: 28, min: 14, spacing: 1 }); k.txt(s, d.subtitle || '', 1.3, 3.5, 4.8, 0.6, { max: 12, italic: true, color: C.muted }); k.txt(s, k.M.author || '', 1.3, 4.1, 4.8, 0.4, { size: 15, italic: true }); k.foot(s, { x: 1.3, w: 7.4, y: 5.12, size: 7.5, align: 'center' }); },
+    async intro(d) { const s = page(d); t.oval(s, X, Y, 2.8, Hc, C.paper, { line: { color: C.ink, width: 3 } }); await k.photo(s, d.image, X + 0.1, Y + 0.1, 2.6, Hc - 0.2, { mask: 'circle', duo: ['1F3D33', 'F2EFE3'] }); k.txt(s, d.text, X + 3.1, Y, W - 3.1, Hc, { max: 15, min: 10, ls: 1.3, valign: 'middle' }); },
+    async image(d) { return R.intro(d); },
+    async agenda(d) { const s = page(d), n = d.items.length, rh = Hc / n; d.items.forEach((it, i) => { const y = Y + i * rh; k.txt(s, ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'][i] || i + 1, X, y, 0.8, rh, { size: 15, bold: true, color: C.red, valign: 'middle' }); k.head(s, it, X + 0.85, y, W - 0.85, rh, { max: 16, bold: false }); }); },
+    async cards(d) { const s = page(d); fields(s, d.items.length, (i, x, y, w, h) => { k.head(s, d.items[i].h, x, y, w, 0.55, { max: 15, align: 'center' }); k.txt(s, d.items[i].t, x, y + 0.6, w, h - 0.6, { max: 12, align: 'center', color: C.muted }); }); },
+    async process(d) { const s = page(d); fields(s, d.steps.length, (i, x, y, w, h) => { k.head(s, `${i + 1}. ${d.steps[i].h}`, x, y, w, 0.55, { max: 15, align: 'center' }); k.txt(s, d.steps[i].t, x, y + 0.6, w, h - 0.6, { max: 12, align: 'center', color: C.muted }); }); },
+    async stats(d) { const s = page(d); fields(s, d.stats.length, (i, x, y, w, h) => { k.head(s, d.stats[i].value, x, y + 0.2, w, 1.2, { max: 44, min: 16, align: 'center', color: i ? C.ink : C.red }); k.txt(s, d.stats[i].label, x, y + 1.5, w, h - 1.5 - (d.note ? 0.5 : 0), { max: 12, align: 'center', italic: true }); }); if (d.note) k.txt(s, d.note, X, Y + Hc - 0.45, W, 0.45, { max: 9, color: C.muted, align: 'center' }); },
+    async compare(d) { const s = page(d), w = W / 2 - 0.35, { rows: rr, fs } = rowsFit([d.left.items, d.right.items], 13, w, F.body, 0.1, Hc - 0.55); t.img(s, rose, 4.75, Y + Hc / 2 - 0.25, 0.5, 0.5); [d.left, d.right].forEach((sd, i) => { const x = X + i * (w + 0.7); k.head(s, sd.h, x, Y, w, 0.45, { max: 16, align: 'center', color: i ? C.ink : C.red }); let y = Y + 0.55; sd.items.forEach((it, j) => { k.txt(s, it, x, y, w, rr[j], { size: fs, align: 'center' }); y += rr[j]; }); }); },
+    async statement(d) { const s = page(d); t.img(s, rose, 3.2, Y - 0.2, 3.6, 3.6); k.head(s, L.runs(d.text), X, Y, W, 2.6, { max: 28, min: 14, align: 'center' }); if (d.caption) k.txt(s, d.caption, X, Y + 2.7, W, 0.85, { max: 11, align: 'center', italic: true, color: C.muted }); },
+    async timeline(d) { const s = page(d); fields(s, d.items.length, (i, x, y, w, h) => { k.head(s, d.items[i].year, x, y, w, 0.55, { max: 22, min: 11, align: 'center', color: C.red }); k.head(s, d.items[i].h, x, y + 0.58, w, 0.42, { max: 13, align: 'center' }); k.txt(s, d.items[i].t, x, y + 1.02, w, h - 1.02, { max: 11, align: 'center', color: C.muted }); }); },
+    async quote(d) { const s = page({}); t.img(s, rose, 3.2, Y - 0.2, 3.6, 3.6); k.head(s, `\u201C${d.text}\u201D`, X, Y, W, 2.8, { max: 26, min: 13, italic: true, bold: false, align: 'center' }); if (d.author) k.txt(s, d.author, X, Y + 2.9, W, 0.45, { size: 14, italic: true, color: C.red, align: 'center' }); },
+    async sources(d) { const s = page(d), n = d.items.length, rh = Hc / n; d.items.forEach((it, i) => k.txt(s, `${i + 1}. ${it}`, X, Y + i * rh, W, rh, { max: 12, valign: 'middle', align: 'center' })); },
+  };
+  R.closing = R.cover;
+  for (const d of content.slides) await R[d.type](d);
+  return L.save(k.pres, out, { name: 'SlideAI Banknota', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.ink, lt2: C.paper, accent1: C.red, accent2: C.line, accent3: '8C6D2C', accent4: '3B6E8F', accent5: C.muted, accent6: 'C9D6C9', hlink: C.red, folHlink: C.muted } });
+}
+module.exports = { id: 144, slug: 'banknota', name: 'Banknota', category: 'luxury', photos: true, build, style: { tone: "qiymat va ishonch: iqtisodiy natijalar, aniq raqamlar, salobatli til", limits: { card_t4: 100, step_t: 100 }, prefer: 'data' } };
+
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["elegant", "bold"], "transitions": ["p14:glitter|pattern=\"diamond\" dir=\"l\"", "fade", "p14:reveal|thruBlk=\"1\""], "cover": ["focusIn", "fadeLetters"], "mark": "wheel4", "deco": "dissolve", "sig": {"title": "focusIn", "body": "fade", "item": "dissolve", "image": "circle", "number": "wheel4", "order": "centerOut", "stagger": 0.2}, "tempo": 1.2, "kenburns": false};

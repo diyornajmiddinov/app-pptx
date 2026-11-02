@@ -203,5 +203,5 @@ async function build(content, out) {
 const STYLE = {"tone": "salobatli, madaniy-tarixiy ohang; hurmatli va biroz badiiy ifoda", "limits": {}};
 module.exports = { id: 4, slug: 'samarqand', name: 'Samarqand', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['elegant', 'calm'], kenburns: true, tempo: 1.15, speed: 'slow' };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["elegant", "calm"], "transitions": ["p14:doors|dir=\"vert\"", "p14:reveal|thruBlk=\"0\"", "fade"], "cover": ["split", "riseWords"], "mark": "wheel4", "deco": "split", "sig": {"title": "split", "body": "fadeWords", "item": "unfold", "image": "circle", "number": "wheel4", "order": "centerOut", "stagger": 0.22}, "tempo": 1.2, "kenburns": true};

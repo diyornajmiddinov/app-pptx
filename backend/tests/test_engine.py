@@ -40,8 +40,8 @@ async def test_async_render_and_a_broken_deck(sample, tmp_path):
     assert "TypeError" in e.value.stderr  # what alerts.why shows to the admins
 
 
-@pytest.mark.parametrize("template_id", range(1, 21))
-def test_animated_copy_renders_with_transitions_and_animations(template_id, sample, tmp_path):
+@pytest.mark.parametrize("template_id", [1, 9, 17, 23, 36, 43, 52, 65, 75, 88, 99, 104, 118, 127, 136, 144, 153, 160, 163, 178, 190, 200])
+def test_animated_copy_renders_with_transitions_and_animations(template_id, sample, tmp_path):  # every family, all 200 in the engine check
     import re
     import zipfile
     out = render_sync(sample, template_id, tmp_path / "a.pptx", animated=True)
@@ -55,7 +55,7 @@ def test_animated_copy_renders_with_transitions_and_animations(template_id, samp
         assert len(ids) == len(set(ids))
 
 
-def test_a_template_without_an_animated_copy_is_drawn_still(sample, tmp_path):
+def test_not_animated_is_drawn_still(sample, tmp_path):
     import zipfile
-    out = render_sync(sample, 150, tmp_path / "s.pptx", animated=True)
+    out = render_sync(sample, 150, tmp_path / "s.pptx")
     assert "<p:timing>" not in zipfile.ZipFile(out).read("ppt/slides/slide2.xml").decode()

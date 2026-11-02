@@ -180,5 +180,5 @@ async function build(content, out) {
 const STYLE = {"tone": "zamonaviy mahsulot taqdimoti: juda qisqa, ta'sirchan", "limits": {"card_t3": 70, "card_t4": 55}, "prefer": "data"};
 module.exports = { id: 18, slug: 'bento', name: 'Bento', category: 'business', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['energetic', 'technical'] };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["energetic", "technical"], "transitions": ["morph", "p14:pan|dir=\"u\"", "p14:window|dir=\"horz\""], "cover": ["springIn", "popOver"], "mark": "popIn", "deco": "springIn", "sig": {"title": "springIn", "body": "fadeUp", "item": "springIn", "image": "softGrow", "number": "popOver", "order": "diagonal", "stagger": 0.1}, "tempo": 0.9, "kenburns": false};

@@ -155,5 +155,5 @@ async function build(content, out) {
 const STYLE = {"tone": "sokin va minimal: har bir gapda bitta fikr", "limits": {"stmt": 60, "quote": 110}};
 module.exports = { id: 17, slug: 'zen', name: 'Zen', category: 'minimalist', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['calm'], tempo: 1.5, speed: 'slow', kenburns: true };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["calm"], "transitions": ["fade", "dissolve", "p14:reveal|thruBlk=\"0\""], "cover": ["fadeWords", "fadeWords"], "mark": "fade", "deco": "dissolve", "sig": {"title": "fadeWords", "body": "fade", "item": "fade", "image": "dissolve", "number": "fade", "order": "together", "stagger": 0.34}, "tempo": 1.6, "kenburns": true};

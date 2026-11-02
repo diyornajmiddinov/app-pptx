@@ -198,5 +198,5 @@ async function build(content, out) {
 const STYLE = {"tone": "ijodiy va energiyali; qisqa, jozibali iboralar", "limits": {"card_t4": 65}};
 module.exports = { id: 5, slug: 'gradient', name: 'Gradient', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['energetic', 'playful'] };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["energetic", "playful"], "transitions": ["p14:ripple", "morph", "zoom"], "cover": ["popOver", "springIn"], "mark": "popOver", "deco": "softGrow", "sig": {"title": "springIn", "body": "fadeUp", "item": "popOver", "image": "springIn", "number": "popOver", "order": "diagonal", "stagger": 0.12}, "tempo": 0.95, "kenburns": false};

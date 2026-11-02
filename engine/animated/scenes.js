@@ -81,6 +81,7 @@ const TRANSITIONS = {
   bold: ['cut', 'p14:switch|dir="r"', 'push:l', 'p14:doors|dir="vert"', 'split:h'],
   playful: ['p14:ferris|dir="l"', 'p14:flip|dir="r"', 'p14:gallery|dir="l"', 'push:l', 'p14:ripple'],
 };
+const area = (e) => Math.abs(e.w * e.h);
 const DUR = { title: 700, body: 650, item: 600, image: 850, number: 550, deco: 500, axis: 800 };
 
 // ---------------------------------------------------------------- a template's own set
@@ -94,11 +95,16 @@ function palette(id, spec = {}) {
   const mine = SCENES.filter((s) => s.moods.some((m) => moods.includes(m)));
   const first = SCENES.filter((s) => s.moods[0] === moods[0]);                 // the main mood leads
   const ordered = [...shuffle(first, r), ...shuffle(mine.filter((s) => !first.includes(s)), r)];
-  const scenes = ordered.slice(0, Math.max(8, Math.min(12, ordered.length)));
+  let scenes = ordered.slice(0, Math.max(8, Math.min(12, ordered.length)));
+  if (spec.sig) { // the template's own scene comes back every few slides (and leads the deck)
+    const sig = { ...S(`sig-${id}`, moods, spec.sig) };
+    scenes = scenes.slice(0, 10); scenes.splice(0, 0, sig); scenes.splice(6, 0, { ...sig, name: `sig-${id}b`, order: spec.sig.order2 || sig.order });
+  }
   const pool = [...new Set(moods.flatMap((m) => TRANSITIONS[m]))];
   const transitions = spec.transitions || shuffle(pool, r).slice(0, 3);
-  const cover = shuffle([...new Set(moods.flatMap((m) => COVER[m]))], r);
-  return { scenes, transitions, cover, kenburns: !!spec.kenburns, tempo: spec.tempo || 1, speed: spec.speed || 'med', moods };
+  const cover = spec.cover || shuffle([...new Set(moods.flatMap((m) => COVER[m]))], r);
+  return { scenes, transitions, cover, kenburns: !!spec.kenburns, tempo: spec.tempo || 1, speed: spec.speed || 'med', moods,
+    mark: spec.mark || null, deco: spec.deco || null };
 }
 
 // ---------------------------------------------------------------- one slide
@@ -128,8 +134,14 @@ function stepsFor(groups, scene, P, type, idx, nameTitle) {
   const push = (g, effect, delay, role) => {
     const dur = Math.round((DUR[role] || 600) * T);
     let span = dur;
+    // inside a card: the plate enters with the card's effect, its text a beat later, its marks (icon, badge,
+    // number, marker) last with the template's own mark effect
+    const plate = g.els.length > 1 ? g.els.filter((e) => e.kind === 'shape').sort((a, b) => area(b) - area(a))[0] : null;
+    const isMark = (e) => P.mark && e !== plate && role !== 'title' && (e.kind === 'shape' || e.kind === 'image' || (e.kind === 'text' && e.txt.length <= 4))
+      && area(e) < 0.8 && g.els.length > 1;
     g.els.slice().sort((a, b) => a.k - b.k).forEach((e) => {
-      let eff = effect, iterPct = 0;
+      let eff = isMark(e) ? P.mark : effect, iterPct = 0;
+      const lag = isMark(e) ? 0.22 * dur : plate && e !== plate && e.kind === 'text' ? 0.12 * dur : 0;
       const it = A.EFFECTS[eff] && A.EFFECTS[eff][3];
       if (it) {
         const units = it === 'lt' ? [...e.txt].length : e.txt.split(/\s+/).filter(Boolean).length;
@@ -138,7 +150,7 @@ function stepsFor(groups, scene, P, type, idx, nameTitle) {
         else { iterPct = Math.round((per / dur) * 100000); span = Math.max(span, dur + units * per); }
       }
       if (role === 'title' && e === g.els[0] && nameTitle) e.o.options.objectName = `!!title~${idx}`;
-      steps.push({ name: e.o.options.objectName, effect: eff, delay: Math.round(delay), dur, text: e.kind === 'text', iterPct, span,
+      steps.push({ name: e.o.options.objectName, effect: eff, delay: Math.round(delay + lag), dur, text: e.kind === 'text', iterPct, span,
         emph: role === 'image' && P.kenburns ? 'kenburns' : role === 'number' ? 'pulse' : null, emphDur: Math.round(7000 * T) });
     });
     return span;
@@ -147,7 +159,7 @@ function stepsFor(groups, scene, P, type, idx, nameTitle) {
   if (title) { const span = push(title, title.effect, 0, 'title'); t = Math.min(span, 450 * T) + 80 * T; }
   for (const g of axes) { push(g, scene.axis || 'wipe:r', t, 'axis'); t += 250 * T; }
   rest.forEach((g, n) => {
-    const raw = g.role === 'item' || g.role === 'deco' ? scene.item : scene[g.role] || scene.body;
+    const raw = g.role === 'deco' ? P.deco || scene.item : g.role === 'item' ? scene.item : scene[g.role] || scene.body;
     const effect = Array.isArray(raw) ? raw[n % raw.length] : raw;
     push(g, effect, t + slots[n] * scene.stagger * 1000 * T, g.role);
   });

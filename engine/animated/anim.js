@@ -240,6 +240,9 @@ const TR = {
   'cover:l': '<p:cover dir="l"/>', 'cover:u': '<p:cover dir="u"/>', 'pull:l': '<p:pull dir="l"/>', split: '<p:split orient="vert" dir="out"/>',
   'split:h': '<p:split orient="horz" dir="out"/>', blinds: '<p:blinds dir="horz"/>', checker: '<p:checker dir="horz"/>', wheel: '<p:wheel spokes="1"/>',
   randomBar: '<p:randomBar dir="vert"/>', strips: '<p:strips dir="rd"/>', wedge: '<p:wedge/>', newsflash: '<p:newsflash/>',
+  'cover:r': '<p:cover dir="r"/>', 'cover:d': '<p:cover dir="d"/>', 'pull:r': '<p:pull dir="r"/>', 'pull:u': '<p:pull dir="u"/>',
+  'blinds:v': '<p:blinds dir="vert"/>', 'checker:v': '<p:checker dir="vert"/>', 'wheel:4': '<p:wheel spokes="4"/>', 'randomBar:h': '<p:randomBar dir="horz"/>',
+  'strips:lu': '<p:strips dir="lu"/>', 'split:in': '<p:split orient="vert" dir="in"/>', 'zoom:out': '<p:zoom dir="out"/>',
 };
 // PowerPoint 2010 transitions (p14): written with a fade fallback for viewers without them
 const P14T = new Set(['vortex', 'switch', 'flip', 'ripple', 'honeycomb', 'prism', 'doors', 'window', 'ferris', 'gallery', 'conveyor', 'pan', 'glitter',

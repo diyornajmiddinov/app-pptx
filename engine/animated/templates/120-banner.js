@@ -1,0 +1,41 @@
+/**
+ * 120 Banner — hanging banners: a rod with finials runs across the top and every idea is a tall fabric banner
+ * with a swallow-tail hem hanging from it; the title is lettered above the rod.
+ */
+const { kit, L, rowsFit } = require('../free.js');
+const C = { wall: 'F3EFE7', rod: '3B3B3B', ink: '262626', muted: '5E5E5E', pal: ['8E2A3B', '1F5F8B', '2E7D5B', 'B5651D', '5B3F8C', '7A6A2E'] };
+const F = { head: 'Georgia', body: 'Calibri' };
+const RODY = 1.0;
+async function build(content, out) {
+  const k = kit(content, F, C), { t } = k;
+  const flag = async (s, x, w, bottom, fill) => { const W2 = Math.round(w * 100), H2 = Math.round((bottom - RODY) * 100); t.img(s, await k.svg(`b${W2}x${H2}${fill}`, `<svg xmlns="http://www.w3.org/2000/svg" width="${W2}" height="${H2}"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#000" stop-opacity="0.12"/><stop offset="0.15" stop-color="#000" stop-opacity="0"/><stop offset="0.85" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.12"/></linearGradient></defs><polygon points="0,0 ${W2},0 ${W2},${H2} ${W2 / 2},${H2 - 28} 0,${H2}" fill="#${fill}"/><polygon points="0,0 ${W2},0 ${W2},${H2} ${W2 / 2},${H2 - 28} 0,${H2}" fill="url(#g)"/><rect x="0" y="0" width="${W2}" height="8" fill="#000" opacity="0.2"/></svg>`, W2, H2), x, RODY, w, bottom - RODY); };
+  const rod = (s, x0 = 0.3, x1 = 9.7) => { t.rect(s, x0, RODY - 0.07, x1 - x0, 0.1, C.rod, { name: 'Rod' }); t.oval(s, x0 - 0.12, RODY - 0.14, 0.24, 0.24, C.rod); t.oval(s, x1 - 0.12, RODY - 0.14, 0.24, 0.24, C.rod); };
+  const page = (d) => { const s = k.slide(C.wall); rod(s); if (d.title) k.head(s, d.title, 0.5, 0.15, 8.2, 0.72, { max: 26, min: 14, bold: false }); k.txt(s, String(k.idx), 8.8, 0.15, 0.7, 0.72, { size: 20, font: F.head, color: C.pal[0], align: 'right', valign: 'middle' }); k.foot(s, { y: 5.32, size: 7.5 }); return s; };
+  const banners = async (s, n, draw, bottom = 5.15) => { const gap = 0.22, w = (9.0 - gap * (n - 1)) / n; for (let i = 0; i < n; i++) { const x = 0.5 + i * (w + gap); await flag(s, x, w, bottom, C.pal[i % 6]); draw(i, x + 0.18, RODY + 0.22, w - 0.36, bottom - RODY - 0.75); } };
+  const R = {
+    async cover(d) { const s = k.slide(C.wall); rod(s, 0.5, 9.5); await flag(s, 0.8, 5.2, 5.0, C.pal[0]); if (d.image) { await flag(s, 6.3, 3.0, 4.6, C.pal[1]); await k.photo(s, d.image, 6.5, 1.25, 2.6, 2.6); }
+      k.txt(s, k.org3, 1.1, 1.25, 4.6, 0.35, { size: 11, bold: true, color: 'F3D9A4' }); k.head(s, d.title, 1.1, 1.65, 4.6, 2.0, { max: 34, min: 16, color: 'FFFFFF', bold: false });
+      if (d.subtitle) k.txt(s, d.subtitle, 1.1, 3.7, 4.6, 0.55, { max: 11, color: 'F1DCDC' }); k.txt(s, k.M.author || '', 0.5, 0.25, 9.0, 0.5, { size: 15, bold: true, font: F.head, align: 'center' }); k.foot(s, { y: 5.32, size: 7.5 }); },
+    async intro(d) { const s = page(d); await flag(s, 0.5, 3.6, 4.7, C.pal[1]); await k.photo(s, d.image, 0.7, 1.2, 3.2, 2.8); await flag(s, 4.35, 5.15, 5.15, C.pal[0]); k.txt(s, d.text, 4.55, 1.2, 4.75, 3.3, { max: 15, min: 10, color: 'FFFFFF', ls: 1.3, valign: 'middle' }); },
+    async image(d) { const s = page(d); await flag(s, 0.5, 5.15, 5.15, C.pal[2]); k.txt(s, d.text, 0.7, 1.2, 4.75, 3.3, { max: 15, min: 10, color: 'FFFFFF', ls: 1.3, valign: 'middle' }); await flag(s, 5.9, 3.6, 4.7, C.pal[3]); await k.photo(s, d.image, 6.1, 1.2, 3.2, 2.8); },
+    async agenda(d) { const s = page(d); await banners(s, d.items.length, (i, x, y, w, h) => { k.txt(s, String(i + 1), x, y, w, 0.6, { size: 26, font: F.head, bold: true, color: 'FFFFFF', align: 'center' }); k.head(s, d.items[i], x, y + 0.7, w, Math.min(h - 0.7, 2.0), { max: 15, min: 10, color: 'FFFFFF', align: 'center', valign: 'top', bold: false }); }); },
+    async cards(d) { const s = page(d); for (const [i, it] of d.items.entries()); await banners(s, d.items.length, (i, x, y, w, h) => { k.head(s, d.items[i].h, x, y + 0.45, w, 0.6, { max: 15, color: 'FFFFFF', align: 'center', valign: 'top' }); k.txt(s, d.items[i].t, x, y + 1.1, w, h - 1.1, { max: 13, color: 'F5F5F5', align: 'center' }); });
+      const n = d.items.length, w = (9.0 - 0.22 * (n - 1)) / n; for (const [i, it] of d.items.entries()) t.img(s, await k.icon(it.icon, 'FFFFFF', 2), 0.5 + i * (w + 0.22) + w / 2 - 0.18, RODY + 0.2, 0.36, 0.36); },
+    async process(d) { const s = page(d); await banners(s, d.steps.length, (i, x, y, w, h) => { k.txt(s, String(i + 1), x, y, w, 0.5, { size: 22, bold: true, font: F.head, color: 'FFFFFF', align: 'center' }); k.head(s, d.steps[i].h, x, y + 0.55, w, 0.55, { max: 15, color: 'FFFFFF', align: 'center', valign: 'top' }); k.txt(s, d.steps[i].t, x, y + 1.15, w, h - 1.15, { max: 13, color: 'F5F5F5', align: 'center' }); }); },
+    async stats(d) { const s = page(d); await banners(s, d.stats.length, (i, x, y, w, h) => { k.head(s, d.stats[i].value, x, y + 0.2, w, 1.2, { max: 50, min: 18, color: 'FFFFFF', align: 'center' }); k.txt(s, d.stats[i].label, x, y + 1.5, w, h - 1.5 - (d.note ? 0.4 : 0), { max: 13, color: 'F5F5F5', align: 'center' }); }, d.note ? 4.55 : 5.15);
+      if (d.note) k.txt(s, d.note, 0.5, 4.6, 9.0, 0.65, { max: 10, italic: true, color: C.muted, valign: 'bottom' }); },
+    async compare(d) { const s = page(d), w = 4.35, { rows: rr, fs } = rowsFit([d.left.items, d.right.items], 13, w - 0.5, F.body, 0.12, 3.1);
+      for (const [i, sd] of [d.left, d.right].entries()) { const x = 0.5 + i * (w + 0.3); await flag(s, x, w, 5.15, C.pal[i]); k.head(s, sd.h, x + 0.2, RODY + 0.2, w - 0.4, 0.55, { max: 16, color: 'FFFFFF', align: 'center' }); let y = RODY + 0.85; sd.items.forEach((it, j) => { k.txt(s, it, x + 0.25, y, w - 0.5, rr[j], { size: fs, color: 'FFFFFF', align: 'center' }); y += rr[j]; }); } },
+    async statement(d) { const s = page(d); await flag(s, 1.5, 7.0, 5.15, C.pal[4]); k.head(s, L.runs(d.text), 1.8, RODY + 0.3, 6.4, 2.3, { max: 30, min: 15, color: 'FFFFFF', align: 'center', bold: false }); if (d.caption) k.txt(s, d.caption, 1.9, RODY + 2.7, 6.2, 0.95, { max: 12, color: 'EDE7F6', align: 'center' }); },
+    async timeline(d) { const s = page(d); await banners(s, d.items.length, (i, x, y, w, h) => { const it = d.items[i]; k.head(s, it.year, x, y, w, 0.55, { max: 22, min: 11, color: 'FFFFFF', align: 'center' }); k.head(s, it.h, x, y + 0.6, w, 0.45, { max: 14, color: 'FFFFFF', align: 'center', valign: 'top' }); k.txt(s, it.t, x, y + 1.1, w, h - 1.1, { max: 12, color: 'F5F5F5', align: 'center' }); }); },
+    async quote(d) { const s = page({}); await flag(s, 1.5, 7.0, 5.15, C.pal[0]); k.head(s, `\u201C${d.text}\u201D`, 1.8, RODY + 0.3, 6.4, 2.6, { max: 28, min: 14, italic: true, color: 'FFFFFF', align: 'center', bold: false }); if (d.author) k.txt(s, d.author, 1.8, RODY + 3.0, 6.4, 0.4, { size: 13, bold: true, color: 'F3D9A4', align: 'center' }); },
+    async sources(d) { const s = page(d); await flag(s, 0.8, 8.4, 5.15, 'FFFFFF'); const n = d.items.length, rh = 3.35 / n; d.items.forEach((it, i) => k.txt(s, [{ text: `${i + 1}. `, options: { bold: true, color: C.pal[i % 6] } }, { text: it }], 1.1, RODY + 0.2 + i * rh, 7.8, rh, { max: 12, valign: 'middle' })); },
+  };
+  R.closing = R.cover;
+  for (const d of content.slides) await R[d.type](d);
+  return L.save(k.pres, out, { name: 'SlideAI Banner', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.rod, lt2: C.wall, accent1: C.pal[0], accent2: C.pal[1], accent3: C.pal[2], accent4: C.pal[3], accent5: C.pal[4], accent6: C.pal[5], hlink: C.pal[1], folHlink: C.muted } });
+}
+module.exports = { id: 120, slug: 'banner', name: 'Banner', category: 'creative', photos: true, build, style: { tone: "tantanali va ko'rkam: shior kabi sarlavhalar, qisqa va salobatli matn", limits: { card_t4: 110 }, prefer: null } };
+
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["bold", "energetic"], "transitions": ["push:l", "cover:l", "p14:switch|dir=\"l\""], "cover": ["stretch", "flyRight"], "mark": "popIn", "deco": "wipe:r", "sig": {"title": "stretch", "body": "slideRight", "item": "swingRight", "image": "wipe:r", "number": "popOver", "order": "cascade", "stagger": 0.1}, "tempo": 0.9, "kenburns": false};

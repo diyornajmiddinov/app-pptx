@@ -178,5 +178,5 @@ async function build(content, out) {
 const STYLE = {"tone": "analitik: ko'rsatkichlar, raqamlar, natijaga yo'naltirilgan", "limits": {}, "prefer": "data"};
 module.exports = { id: 10, slug: 'dashboard', name: 'Dashboard', category: 'business', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['technical', 'energetic'], tempo: 0.9 };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["technical", "energetic"], "transitions": ["morph", "p14:conveyor|dir=\"l\"", "push:u"], "cover": ["stretch", "popOver"], "mark": "popOver", "deco": "wipe:u", "sig": {"title": "sweepIn", "body": "fade", "item": "wipe:u", "image": "growIn", "number": "popOver", "order": "cascade", "stagger": 0.1}, "tempo": 0.85, "kenburns": false};

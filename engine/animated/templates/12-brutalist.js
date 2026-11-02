@@ -171,5 +171,5 @@ async function build(content, out) {
 const STYLE = {"tone": "o'tkir va to'g'ridan-to'g'ri: shiorga o'xshash qisqa iboralar", "limits": {"card_h": 18, "card_t4": 60}};
 module.exports = { id: 12, slug: 'brutalist', name: 'Brutalist', category: 'creative', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['bold'], tempo: 0.8, speed: 'fast' };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["bold"], "transitions": ["cut", "p14:switch|dir=\"r\"", "push:d"], "cover": ["appear", "stretch"], "mark": "appear", "deco": "drop", "sig": {"title": "appear", "body": "appear", "item": "drop", "image": "appear", "number": "popIn", "order": "cascade", "stagger": 0.08}, "tempo": 0.7, "kenburns": false};

@@ -193,5 +193,5 @@ async function build(content, out) {
 const STYLE = {"tone": "sokin, tushunarli, ta'limiy ohang", "limits": {}};
 module.exports = { id: 7, slug: 'eco', name: 'Tabiat', category: 'academic', build, style: STYLE };
 
-// animated copy: this template's moods choose its own scenes and transitions (animated/scenes.js)
-module.exports.anim = { moods: ['calm', 'playful'], kenburns: true, tempo: 1.1 };
+// animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
+module.exports.anim = {"moods": ["calm", "playful"], "transitions": ["fade", "p14:pan|dir=\"u\"", "dissolve"], "cover": ["riseWords", "fadeWords"], "mark": "swing", "deco": "curveUp", "sig": {"title": "riseWords", "body": "fadeUp", "item": "curveUp", "image": "dissolve", "number": "springIn", "order": "seq", "stagger": 0.22}, "tempo": 1.2, "kenburns": true};
