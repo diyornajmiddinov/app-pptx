@@ -28,19 +28,17 @@ TMP = Path(tempfile.gettempdir())
 MAX_ATTEMPTS = 2  # a job interrupted by a restart is run once more, then refunded
 JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini busy for minutes) -> refunded
 MAX_ACTIVE = 3     # a user's jobs queued or running at once: one person cannot fill the queue for everybody
-FIRST_MAX_SLIDES = 10  # a free first deck has at most this many slides (a cheaper, paid one: any size)
+FIRST_MAX_SLIDES = 10  # a free first deck has up to this many slides; a longer first deck costs the usual price
 
 
 class LowBalance(Exception):
-    pass
+    def __init__(self, price: int):
+        super().__init__(price)
+        self.price = price  # what the order costs: the top-up message names it
 
 
 class TooMany(Exception):
     """The user already has MAX_ACTIVE jobs waiting."""
-
-
-class FirstTooLong(Exception):
-    """A free first deck asked for more than FIRST_MAX_SLIDES slides."""
 
 
 # ---------------------------------------------------------------- queue
@@ -65,34 +63,35 @@ _HAS_DECK = """SELECT EXISTS (SELECT 1 FROM jobs WHERE user_id = $1 AND kind = '
                    OR EXISTS (SELECT 1 FROM decks WHERE user_id = $1)"""
 
 
-def _price(cfg: dict, has_deck: bool) -> int:
+def _price(cfg: dict, has_deck: bool, slides: int = 0) -> int:
     first = cfg["first_generate_price"]
-    return first if first is not None and first < cfg["price_generate"] and not has_deck else cfg["price_generate"]
+    if first is None or first >= cfg["price_generate"] or has_deck or (first == 0 and slides > FIRST_MAX_SLIDES):
+        return cfg["price_generate"]
+    return first
 
 
 async def generate_price(user_id: int) -> int:
     """What a new deck costs this user now (to show): first_generate_price (app_settings, the admin panel) for the
-    first deck ever — bot, Mini App or site; a first deck that failed does not count."""
+    first deck ever — bot, Mini App or site; a first deck that failed does not count. Free: up to FIRST_MAX_SLIDES
+    slides (more: the usual price)."""
     return _price(await app_settings.get(), await db.pool().fetchval(_HAS_DECK, user_id))
 
 
 async def order(kind: str, user_id: int, payload: dict, price: int | None = None) -> tuple[int, int, int]:
     """Charge and queue paid work in one transaction, under the user's balance lock: a refused order takes no money,
     and two requests at the same moment cannot both get the first-deck price. price=None: a new deck at this user's
-    price (generate_price); a free one has at most FIRST_MAX_SLIDES slides. Returns (job id, jobs ahead, price).
-    Raises LowBalance, TooMany or FirstTooLong."""
+    price (generate_price; a free one of more than FIRST_MAX_SLIDES slides costs the usual price). Returns (job id,
+    jobs ahead, price). Raises LowBalance (with the price) or TooMany."""
     cfg = await app_settings.get() if price is None else None
     async with db.transaction() as con:
         await billing.lock_in(con, user_id)
         if await con.fetchval("SELECT count(*) FROM jobs WHERE user_id = $1 AND state IN ('queued', 'running')", user_id) >= MAX_ACTIVE:
             raise TooMany
         if cfg is not None:
-            price = _price(cfg, await con.fetchval(_HAS_DECK, user_id))
-            if price == 0 and payload.get("slide_count", 0) > FIRST_MAX_SLIDES:
-                raise FirstTooLong
+            price = _price(cfg, await con.fetchval(_HAS_DECK, user_id), payload.get("slide_count", 0))
         assert price is not None
         if await billing.apply_in(con, user_id, -price, kind, None, False) is None:
-            raise LowBalance
+            raise LowBalance(price)
         job_id, ahead = await _enqueue_in(con, kind, user_id, payload, price)
     return job_id, ahead, price
 

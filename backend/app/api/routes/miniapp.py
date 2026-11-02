@@ -64,13 +64,11 @@ async def _order(user_id: int, lang: str, kind: str, payload: dict, price: int |
         raise HTTPException(403, "subscribe")
     try:
         return await jobs.order(kind, user_id, payload, price)
-    except jobs.LowBalance:
-        await send_low_balance(user_id, lang, price if price is not None else await jobs.generate_price(user_id))
+    except jobs.LowBalance as e:
+        await send_low_balance(user_id, lang, e.price)
         raise HTTPException(402, "Balans yetarli emas") from None
     except jobs.TooMany:
         raise HTTPException(429, "Oldingi buyurtmalaringiz hali tayyorlanmoqda") from None
-    except jobs.FirstTooLong:
-        raise HTTPException(422, "firstMaxSlides") from None
 
 
 async def _queued(user_id: int, lang: str, text: str, ahead: int):

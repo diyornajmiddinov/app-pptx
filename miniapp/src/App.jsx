@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Header from './components/Header.jsx';
 import DetailsForm from './components/DetailsForm.jsx';
-import SettingsPanel, { MAX_SLIDES } from './components/SettingsPanel.jsx';
+import SettingsPanel from './components/SettingsPanel.jsx';
 import TemplateGallery from './components/TemplateGallery.jsx';
 import DeckList from './components/DeckList.jsx';
 import EditorPanel from './components/EditorPanel.jsx';
@@ -21,7 +21,7 @@ export default function App() {
   const avatar = useAvatar({ user, initData, isTelegram });
 
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
-  const [slideCount, setSlideCount] = useState(12);
+  const [slideCount, setSlideCount] = useState(10);
   const [density, setDensity] = useState('balanced'); // how much text on the slides
   const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   // presentation language follows the interface language until the user picks another one
@@ -89,6 +89,10 @@ export default function App() {
     : restyling && selectedTemplateId === deck.template_id ? 'needOtherTemplate' : null;
   const ready = missing === null;
 
+  // a free first deck has up to first_max_slides slides; a longer one costs the usual price (the bot asks to top up)
+  const freeMax = account?.prices?.now === 0 && account.prices.generate > 0 ? account.prices.first_max_slides : null;
+  const deckPrice = freeMax && slideCount > freeMax ? account.prices.generate : account?.prices?.now ?? account?.prices?.generate;
+
   const handleGenerate = useCallback(async () => {
     if (submittingRef.current) return;
     if (missing) {
@@ -99,7 +103,7 @@ export default function App() {
     if (!user?.id) { showAlert(t('noUser')); return; }
     if (!restyling) { // the user checks the topic's spelling: a typo makes the AI write about something else
       const topic = details.topic.trim();
-      const price = account?.prices?.now ?? account?.prices?.generate; // the first deck may cost less (admin panel)
+      const price = deckPrice; // the first deck may cost less (admin panel)
       const text = t('confirmTopic', { topic: topic.length > 110 ? `${topic.slice(0, 110)}…` : topic, n: slideCount,
         price: price === 0 ? t('free') : price ? money(price, lang) : '' });
       submittingRef.current = true; // no second tap while the question is open
@@ -127,21 +131,19 @@ export default function App() {
       tg?.close(); // the bot sends the finished .pptx to the chat
     } catch (err) {
       hapticNotify('error');
-      showAlert(t(err.key || 'eServer', { status: err.status, n: account?.prices?.first_max_slides }));
+      showAlert(t(err.key || 'eServer', { status: err.status }));
       if (err.status === 402 || err.key === 'eSubscribe') { loadAccount().catch(() => {}); tg?.close(); } // the bot sent the top-up / join buttons
     } finally {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);
     }
-  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, account, lang, hapticNotify, t, loadAccount]);
+  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, deckPrice, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
-  const price = restyling ? account?.prices?.restyle : account?.prices?.now ?? account?.prices?.generate;
+  const price = restyling ? account?.prices?.restyle : deckPrice;
   const priceText = price === 0 ? t('free') : price ? money(price, lang) : '';
   const buttonText = `${restyling ? t('restyleBtn') : t('mainBtn')}${priceText ? ` · ${priceText}` : ''}`;
   const firstOffer = !restyling && account?.prices?.now != null && account.prices.now < account.prices.generate;
-  const maxSlides = firstOffer && account.prices.now === 0 ? account.prices.first_max_slides ?? MAX_SLIDES : MAX_SLIDES; // a free deck is a short one
-  useEffect(() => { if (slideCount > maxSlides) setSlideCount(maxSlides); }, [slideCount, maxSlides]);
   const editorTab = mode === 'editor';
   useMainButton({ tg, text: buttonText, active: ready, onClick: handleGenerate, hidden: editorTab });
 
@@ -156,7 +158,7 @@ export default function App() {
       {firstOffer && mode !== 'editor' && (
         <p className="-mt-2 mb-5 rounded-xl bg-tg-secondary-bg px-3 py-2 text-[14px] font-medium text-tg-text">
           {account.prices.now === 0 ? t('firstFree') : t('firstPrice', { price: money(account.prices.now, lang) })}
-          {maxSlides < MAX_SLIDES && ` · ${t('firstMax', { n: maxSlides })}`}
+          {freeMax && ` · ${t(slideCount > freeMax ? 'firstOver' : 'firstMax', { n: freeMax, price: money(account.prices.generate, lang) })}`}
         </p>
       )}
       <div className="mb-5 rounded-xl bg-tg-secondary-bg p-1" role="tablist" aria-label={t('mode')}>
@@ -175,7 +177,7 @@ export default function App() {
       {editorTab && <EditorPanel tg={tg} initData={initData} isTelegram={isTelegram} />}
       {restyling && <DeckList decks={decks} templates={TEMPLATES} selectedId={deckId} onSelect={(id) => { hapticSelect(); setDeckId(id); }} />}
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
-      {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} maxSlides={maxSlides} language={language} onLanguageChange={handleDeckLang}
+      {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
         density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }} />}
       {!restyling && !editorTab && (
         <section className="pb-6">

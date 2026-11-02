@@ -82,9 +82,10 @@ export default function Create({ me, refreshMe, go }) {
     setForm((f) => ({ ...f, [k]: value }));
     if (['slide_count', 'language', 'template_id'].includes(k)) setOutline(null);
   };
-  const price = me.prices.now ?? me.prices.generate;
-  const maxSlides = price === 0 ? me.prices.first_max_slides ?? 30 : 30; // a free deck is a short one
-  const slideCount = Math.min(form.slide_count, maxSlides);
+  // a free first deck has up to first_max_slides slides; a longer one costs the usual price
+  const freeMax = me.prices.now === 0 && me.prices.generate > 0 ? me.prices.first_max_slides : null;
+  const price = freeMax && form.slide_count > freeMax ? me.prices.generate : me.prices.now ?? me.prices.generate;
+  const slideCount = form.slide_count;
   const low = me.balance < price;
   const topic = form.topic.trim();
   const base = { topic, slide_count: slideCount, language: form.language, template_id: form.template_id, wishes: wishes.trim(),
@@ -106,7 +107,7 @@ export default function Create({ me, refreshMe, go }) {
       setForm((f) => ({ ...f, topic: '' })); setOutline(null); setSource(null); setWishes('');
       refreshMe();
     } catch (err) {
-      setError(t(`e_${err.key}`, { n: maxSlides }));
+      setError(t(`e_${err.key}`));
       if (err.key === 'outlineStale') setOutline(null);
     } finally { setBusy(''); }
   };
@@ -123,7 +124,7 @@ export default function Create({ me, refreshMe, go }) {
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label={t('slides')}>
               <div className="flex items-center gap-3">
-                <input type="range" min="6" max={maxSlides} value={slideCount} onChange={(e) => set('slide_count')(Number(e.target.value))}
+                <input type="range" min="6" max="30" value={slideCount} onChange={(e) => set('slide_count')(Number(e.target.value))}
                   className="w-full accent-brand-600" aria-label={t('slides')} />
                 <span className="w-24 shrink-0 text-right text-sm font-semibold text-slate-900 dark:text-white">{t('slidesN', { n: slideCount })}</span>
               </div>
@@ -167,7 +168,7 @@ export default function Create({ me, refreshMe, go }) {
             <span className="text-slate-600 dark:text-slate-400">{t('balance')}</span>
             <span className={`font-semibold ${low ? 'text-red-600' : 'text-slate-900 dark:text-white'}`}>{money(me.balance)}</span>
           </div>
-          {price < me.prices.generate && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('firstPrice', { price: price === 0 ? t('free') : money(price) })}{maxSlides < 30 && ` · ${t('firstMax', { n: maxSlides })}`}</p>}
+          {(price < me.prices.generate || freeMax) && <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">{t('firstPrice', { price: me.prices.now === 0 ? t('free') : money(me.prices.now) })}{freeMax && ` · ${t(slideCount > freeMax ? 'firstOver' : 'firstMax', { n: freeMax, price: money(me.prices.generate) })}`}</p>}
           <Alert>{error}</Alert>
           <Alert kind="ok">{done && t('queued')}</Alert>
           {!outline && (
