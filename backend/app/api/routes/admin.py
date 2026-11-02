@@ -432,13 +432,16 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
 
 class TopupBonusReq(BaseModel):
     percent: int = Field(ge=1, le=topup_bonus.PERCENT_MAX)   # +P% on every top-up
-    hours: int = Field(ge=1, le=topup_bonus.HOURS_MAX)       # for the next N hours
+    until: int                                               # until this moment (epoch seconds), e.g. 03.11.2026 00:00
 
 
 @router.put("/topup-bonus")
 async def start_topup_bonus(req: TopupBonusReq, uid: int = Depends(admin_user)):
-    """Start (or restart) the top-up bonus campaign: from now, for `hours`, every top-up gets +`percent`%."""
-    c = await topup_bonus.start(req.percent, req.hours, uid)
+    """Start (or restart) the top-up bonus campaign: from now until `until`, every top-up gets +`percent`%."""
+    now = time.time()
+    if not now + 60 <= req.until <= now + topup_bonus.DAYS_MAX * 86400:
+        raise HTTPException(422, f"Tugash vaqti kelajakda va {topup_bonus.DAYS_MAX} kun ichida bo'lsin")
+    c = await topup_bonus.start(req.percent, req.until, uid)
     await audit(uid, "topup_bonus", None, after=c)
     return {"topup_bonus": c}
 

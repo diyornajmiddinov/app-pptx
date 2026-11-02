@@ -11,7 +11,12 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
   const [sub, setSub] = useState({ channel: '', link: '' });
   const [arch, setArch] = useState('');
-  const [bonus, setBonus] = useState({ percent: '20', hours: '24' });  // top-up bonus campaign
+  // top-up bonus campaign: the percent and the end, a local date-time (by default tomorrow 00:00)
+  const [bonus, setBonus] = useState(() => {
+    const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(0, 0, 0, 0);
+    const p = (n) => String(n).padStart(2, '0');
+    return { percent: '20', until: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T00:00` };
+  });
   const toast = useToast();
   const [confirm, confirmNode] = useConfirm();
 
@@ -64,14 +69,16 @@ export default function Settings() {
 
   const tb = data?.values?.topup_bonus || {};
   const bonusOn = !!tb.percent && !tb.stopped && tb.until * 1000 > Date.now();
+  const bonusUntil = Math.floor(new Date(bonus.until).getTime() / 1000);  // the admin's local time
+  const bonusValid = parse(bonus.percent) >= 1 && parse(bonus.percent) <= 100 && bonusUntil * 1000 > Date.now() + 60000;
   const startBonus = async () => {
-    const percent = parse(bonus.percent), hours = parse(bonus.hours);
+    const percent = parse(bonus.percent);
     if (!await confirm({ title: "To'ldirish bonusini boshlash", body: <>
-      Hozirdan boshlab <b>{hours} soat</b> davomida har bir to'ldirishga (Payme, Click, karta) <b>+{percent}%</b> bonus qo'shiladi.<br /><br />
+      Hozirdan boshlab <b>{dateTime(bonusUntil)}</b> gacha har bir to'ldirishga (Payme, Click, karta) <b>+{percent}%</b> bonus qo'shiladi.<br /><br />
       Masalan: 50 000 so'm to'ldirsa — balansiga <b>{som(50000 + Math.floor(50000 * percent / 100))}</b> tushadi.<br />
       Foydalanuvchilar botdagi balans oynasida aksiyani ko'radi.</> })) return;
     setBusy(true);
-    try { await api.startTopupBonus(percent, hours); toast('Aksiya boshlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
+    try { await api.startTopupBonus(percent, bonusUntil); toast('Aksiya boshlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
   };
   const stopBonus = async () => {
     if (!await confirm({ title: "Aksiyani to'xtatish", body: "Bonus endi qo'shilmaydi. Aksiya vaqtida berilgan karta to'lovlari tasdiqlansa, ularga bonus baribir beriladi." })) return;
@@ -170,11 +177,12 @@ export default function Settings() {
                   <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
                     <div className="field" style={{ flex: 1, minWidth: 120 }}><label htmlFor="b-pct">Bonus, %</label>
                       <input id="b-pct" className="input num" inputMode="numeric" value={bonus.percent} onChange={(e) => setBonus({ ...bonus, percent: e.target.value })} /></div>
-                    <div className="field" style={{ flex: 1, minWidth: 120 }}><label htmlFor="b-h">Davomiyligi, soat</label>
-                      <input id="b-h" className="input num" inputMode="numeric" value={bonus.hours} onChange={(e) => setBonus({ ...bonus, hours: e.target.value })} /></div>
+                    <div className="field" style={{ flex: 2, minWidth: 200 }}><label htmlFor="b-until">Qachongacha (sana va vaqt)</label>
+                      <input id="b-until" type="datetime-local" className="input" value={bonus.until} onChange={(e) => setBonus({ ...bonus, until: e.target.value })} /></div>
                   </div>
-                  <span className="help">Aksiya davomida Payme, Click yoki karta orqali to'ldirilgan har bir summaga shu foiz qo'shib beriladi (1–100%, 1–720 soat).</span>
-                  <div className="row"><button type="button" className="btn primary" disabled={busy || !(parse(bonus.percent) >= 1 && parse(bonus.percent) <= 100 && parse(bonus.hours) >= 1 && parse(bonus.hours) <= 720)} onClick={startBonus}>Boshlash</button></div>
+                  <span className="help">Hozirdan boshlab tanlangan vaqtgacha Payme, Click yoki karta orqali to'ldirilgan har bir summaga shu foiz qo'shib beriladi
+                    (1–100%, ko'pi bilan 60 kun). Masalan: 03.11.2026 00:00 gacha.</span>
+                  <div className="row"><button type="button" className="btn primary" disabled={busy || !bonusValid} onClick={startBonus}>Boshlash</button></div>
                 </>
               )}
             </div>

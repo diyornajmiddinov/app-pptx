@@ -162,14 +162,18 @@ async def test_the_ai_model_is_chosen_in_the_panel(admin, monkeypatch):
 
 
 async def test_admin_starts_and_stops_a_top_up_bonus_and_the_bot_tells_users(admin, tg):
+    import time
+
     from conftest import add_user
 
     from app.bot import money
     from app.services import topup_bonus
-    assert (await admin.put("/api/admin/topup-bonus", json={"percent": 0, "hours": 3})).status_code == 422
-    r = await admin.put("/api/admin/topup-bonus", json={"percent": 25, "hours": 6})
+    until = int(time.time()) + 6 * 3600
+    assert (await admin.put("/api/admin/topup-bonus", json={"percent": 0, "until": until})).status_code == 422
+    assert (await admin.put("/api/admin/topup-bonus", json={"percent": 25, "until": int(time.time()) - 10})).status_code == 422  # the past
+    r = await admin.put("/api/admin/topup-bonus", json={"percent": 25, "until": until})
     c = r.json()["topup_bonus"]
-    assert r.status_code == 200 and c["percent"] == 25 and c["until"] - c["started"] == 6 * 3600
+    assert r.status_code == 200 and c["percent"] == 25 and c["until"] == until
     assert (await topup_bonus.current())["percent"] == 25
     await add_user(77)
     await money.show_balance(77, 77, "uz")

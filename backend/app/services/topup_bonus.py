@@ -1,6 +1,6 @@
 """
-Top-up bonus campaign (admin panel → Sozlamalar): for the next N hours every top-up — Payme, Click or card — gets
-+P% on top. The bonus is a ledger entry of its own (kind "bonus:topup", ref "bonus:<the top-up's ref>"), credited in
+Top-up bonus campaign (admin panel → Sozlamalar): from now until the chosen date and time every top-up — Payme,
+Click or card — gets +P% on top. The bonus is a ledger entry of its own (kind "bonus:topup", ref "bonus:<the top-up's ref>"), credited in
 the same transaction as the money itself, so it comes exactly once and never without the payment.
 
     app_settings "topup_bonus" = {"percent": P, "started": epoch, "until": epoch}   ({} — never run; stopped: until = then)
@@ -13,7 +13,7 @@ from datetime import datetime
 
 from app.services import app_settings, billing
 
-PERCENT_MAX, HOURS_MAX = 100, 24 * 30
+PERCENT_MAX, DAYS_MAX = 100, 60
 
 
 async def current() -> dict | None:
@@ -40,9 +40,9 @@ async def credit_in(con, user_id: int, amount: int, ref: str, ordered: datetime 
     return (bonus, new) if new is not None else (0, None)
 
 
-async def start(percent: int, hours: int, admin_id: int) -> dict:
-    now = int(time.time())
-    c = {"percent": percent, "started": now, "until": now + hours * 3600}
+async def start(percent: int, until: int, admin_id: int) -> dict:
+    """From now until `until` (epoch seconds)."""
+    c = {"percent": percent, "started": int(time.time()), "until": int(until)}
     await app_settings.set_many({"topup_bonus": c}, admin_id)
     return c
 
