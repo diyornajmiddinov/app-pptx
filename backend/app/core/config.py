@@ -55,6 +55,12 @@ class Settings(BaseSettings):
     payme_key: str = ""
     payme_test: bool = True               # test.paycom.uz instead of checkout.paycom.uz
     payme_account_field: str = "order_id"
+    # fiscal receipt (CheckPerformTransaction "detail"): the service's IKPU (tasnif.soliq.uz) and package code;
+    # empty: no detail is sent
+    payme_ikpu: str = ""
+    payme_package_code: str = ""
+    payme_vat_percent: int = 0
+    payme_item_title: str = "SlideAI: balansni to'ldirish"
     click_service_id: str = ""
     click_merchant_id: str = ""
     click_secret_key: str = ""

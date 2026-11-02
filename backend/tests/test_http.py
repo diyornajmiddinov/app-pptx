@@ -28,6 +28,8 @@ async def test_payme_endpoint_always_answers_json_rpc(client, monkeypatch):
     monkeypatch.setattr(settings, "payme_key", "k")
     r = await client.post("/api/pay/payme", content=b"{not json")
     assert r.status_code == 200 and r.json()["error"]["code"] == -32700
+    r = await client.get("/api/pay/payme")
+    assert r.status_code == 200 and r.json()["error"]["code"] == -32300  # not POST
     await add_user(U)
     oid = await payments.create_order(U, 30000, "payme")
     auth = {"Authorization": "Basic " + base64.b64encode(b"Paycom:k").decode()}

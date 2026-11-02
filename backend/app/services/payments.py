@@ -17,6 +17,7 @@ Amounts: orders are in so'm; Payme works in tiyin (x100), Click in so'm.
 import base64
 import hashlib
 import hmac
+import logging
 import re
 import time
 from urllib.parse import urlencode
@@ -25,6 +26,7 @@ from app.core import db
 from app.core.config import settings
 from app.services import billing
 
+log = logging.getLogger("payments")
 PAYME_TIMEOUT_MS = 12 * 3600 * 1000  # Payme: an unperformed transaction expires after 12 hours
 
 
@@ -171,12 +173,21 @@ async def _txn(con, txn_id) -> dict | None:
 
 
 async def _cancel_expired(con, txn: dict) -> dict:
-    """An unperformed transaction older than 12 h is cancelled with reason 4 (timeout)."""
-    if txn["state"] == 1 and now_ms() - txn["create_time"] > PAYME_TIMEOUT_MS:
+    """An unperformed transaction 12 h after Payme created it (its "time") is cancelled with reason 4 (timeout)."""
+    if txn["state"] == 1 and now_ms() - (txn["paycom_time"] or txn["create_time"]) > PAYME_TIMEOUT_MS:
         t = now_ms()
         await con.execute("UPDATE payme_txns SET state = -1, reason = 4, cancel_time = $1 WHERE id = $2", t, txn["id"])
         txn = {**txn, "state": -1, "reason": 4, "cancel_time": t}
     return txn
+
+
+def _fiscal_detail(order: dict) -> dict:
+    """The fiscal receipt's item (developer.help.paycom.uz, CheckPerformTransaction "detail"): one service, the top-up."""
+    if not (settings.payme_ikpu and settings.payme_package_code):
+        return {}
+    return {"detail": {"receipt_type": 0, "items": [{
+        "title": settings.payme_item_title, "price": order["amount"] * 100, "count": 1, "code": settings.payme_ikpu,
+        "package_code": settings.payme_package_code, "vat_percent": settings.payme_vat_percent}]}}
 
 
 async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
@@ -189,8 +200,8 @@ async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
                 await _cancel_expired(con, txn)
     async with db.transaction() as con:
         if method == "CheckPerformTransaction":
-            await _check_order(con, params)
-            return {"allow": True}, None
+            order = await _check_order(con, params)
+            return {"allow": True, **_fiscal_detail(order)}, None
 
         if method == "CreateTransaction":
             txn = await _txn(con, params.get("id"))
@@ -282,6 +293,10 @@ async def payme_rpc(body: dict, auth_header: str | None) -> tuple[dict, dict | N
     except (KeyError, TypeError, ValueError, AttributeError):
         return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32600, "message": {
             "uz": "So'rov noto'g'ri", "ru": "Неверный запрос", "en": "Invalid request"}}}, None
+    except Exception:  # database down etc.: -32400 (system error), Payme asks again
+        log.exception("Payme %s failed", body.get("method") if isinstance(body, dict) else None)
+        return {"jsonrpc": "2.0", "id": rid, "error": {"code": -32400, "message": {
+            "uz": "Tizim xatosi", "ru": "Системная ошибка", "en": "System error"}}}, None
 
 
 # ---------- Click SHOP API (Prepare / Complete) ----------

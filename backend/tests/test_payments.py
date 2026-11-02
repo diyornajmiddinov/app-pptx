@@ -161,9 +161,66 @@ async def test_payme_refuses_a_second_payment_for_one_order_and_expires_old_ones
     assert (await payme("CreateTransaction", {"id": "a", "time": now, "amount": 3000000, "account": acc}))[0]["result"]["state"] == 1
     r, _ = await payme("CreateTransaction", {"id": "b", "time": now, "amount": 3000000, "account": acc})
     assert r["error"]["code"] == -31099                       # this order already waits for transaction "a"
-    await db.pool().execute("UPDATE payme_txns SET create_time = create_time - $1 WHERE id = 'a'", payments.PAYME_TIMEOUT_MS + 1000)
+    await db.pool().execute("UPDATE payme_txns SET paycom_time = paycom_time - $1 WHERE id = 'a'", payments.PAYME_TIMEOUT_MS + 1000)  # 12 h from Payme's time
     r, _ = await payme("PerformTransaction", {"id": "a"})
     assert r["error"]["code"] == -31008                       # older than 12 h: cancelled, cannot be performed
     r, _ = await payme("CheckTransaction", {"id": "a"})
     assert r["result"]["state"] == -1 and r["result"]["reason"] == 4
     assert await billing.balance(1) == 0
+
+
+async def test_payme_answers_follow_the_merchant_api_docs(payme, monkeypatch):
+    """developer.help.paycom.uz: error codes with a localized message, account errors name the field in data."""
+    await add_user(1)
+    oid = await payments.create_order(1, 30000, "payme")
+    acc = {settings.payme_account_field: str(oid)}
+    r, _ = await payme("CheckPerformTransaction", {"amount": 3000000, "account": {settings.payme_account_field: "999999"}})
+    assert r["error"]["code"] == -31050 and r["error"]["data"] == settings.payme_account_field and set(r["error"]["message"]) == {"uz", "ru", "en"}
+    r, _ = await payme("Nope", {})
+    assert r["error"]["code"] == -32601 and r["error"]["data"] == "Nope"
+    assert (await payme("PerformTransaction", {"id": "none"}))[0]["error"]["code"] == -31003
+    assert (await payme("CheckTransaction", {"id": "none"}))[0]["error"]["code"] == -31003
+    assert (await payme("CancelTransaction", {"id": "none", "reason": 1}))[0]["error"]["code"] == -31003
+    t0 = int(time.time() * 1000)
+    create = {"id": "x" * 24, "time": t0, "amount": 3000000, "account": acc}
+    first = (await payme("CreateTransaction", create))[0]["result"]
+    assert (await payme("CreateTransaction", create))[0]["result"] == first  # repeated: the same answer
+    r = (await payme("CheckTransaction", {"id": "x" * 24}))[0]["result"]
+    assert r == {"create_time": first["create_time"], "perform_time": 0, "cancel_time": 0, "transaction": "x" * 24, "state": 1, "reason": None}
+    r = (await payme("CancelTransaction", {"id": "x" * 24, "reason": 3}))[0]["result"]
+    assert r["state"] == -1 and r["cancel_time"] > 0
+    assert (await payme("CancelTransaction", {"id": "x" * 24, "reason": 3}))[0]["result"] == r  # repeated
+    assert (await payme("PerformTransaction", {"id": "x" * 24}))[0]["error"]["code"] == -31008
+    st = (await payme("GetStatement", {"from": t0, "to": t0}))[0]["result"]["transactions"]  # from <= time <= to
+    assert [(x["id"], x["time"], x["amount"], x["account"], x["state"], x["reason"]) for x in st] == [("x" * 24, t0, 3000000, acc, -1, 3)]
+    assert (await payme("GetStatement", {"from": t0 + 1, "to": t0 + 9}))[0]["result"] == {"transactions": []}
+
+
+async def test_payme_refund_of_spent_money_is_refused(payme):
+    await add_user(1)
+    oid = await payments.create_order(1, 30000, "payme")
+    acc = {settings.payme_account_field: str(oid)}
+    await payme("CreateTransaction", {"id": "s", "time": int(time.time() * 1000), "amount": 3000000, "account": acc})
+    await payme("PerformTransaction", {"id": "s"})
+    assert await billing.charge(1, 20000, "generate") is not None  # spent on a deck
+    assert (await payme("CancelTransaction", {"id": "s", "reason": 5}))[0]["error"]["code"] == -31007
+    assert (await payme("CheckTransaction", {"id": "s"}))[0]["result"]["state"] == 2
+
+
+async def test_payme_fiscal_detail_when_ikpu_is_set(payme, monkeypatch):
+    await add_user(1)
+    oid = await payments.create_order(1, 30000, "payme")
+    acc = {settings.payme_account_field: str(oid)}
+    assert (await payme("CheckPerformTransaction", {"amount": 3000000, "account": acc}))[0]["result"] == {"allow": True}
+    monkeypatch.setattr(settings, "payme_ikpu", "10305008002000000"); monkeypatch.setattr(settings, "payme_package_code", "1500491")
+    r = (await payme("CheckPerformTransaction", {"amount": 3000000, "account": acc}))[0]["result"]
+    assert r["allow"] is True and r["detail"]["receipt_type"] == 0
+    assert r["detail"]["items"] == [{"title": settings.payme_item_title, "price": 3000000, "count": 1, "code": "10305008002000000",
+                                     "package_code": "1500491", "vat_percent": 0}]
+
+
+async def test_payme_system_failure_is_32400(payme, monkeypatch):
+    async def down(*a, **k):
+        raise OSError("database is down")
+    monkeypatch.setattr(payments, "_payme_method", down)
+    assert (await payme("CheckTransaction", {"id": "a"}))[0]["error"]["code"] == -32400

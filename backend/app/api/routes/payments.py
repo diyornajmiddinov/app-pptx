@@ -29,6 +29,13 @@ async def _notify_paid(paid: dict | None):
             log.exception("To'lov haqida xabar yuborilmadi · foydalanuvchi %s · %s so'm", paid.get("user_id"), paid.get("amount"))
 
 
+@router.api_route("/api/pay/payme", methods=["GET", "PUT", "PATCH", "DELETE"], include_in_schema=False)
+async def pay_payme_not_post():
+    """Payme's protocol: a request that is not POST gets -32300 (HTTP 200, like every Payme answer)."""
+    return {"jsonrpc": "2.0", "id": None, "error": {"code": -32300, "message": {
+        "uz": "Faqat POST", "ru": "Метод запроса не POST", "en": "Request method is not POST"}}}
+
+
 @router.post("/api/pay/payme")
 async def pay_payme(request: Request, background: BackgroundTasks, authorization: str | None = Header(None)):
     try:
