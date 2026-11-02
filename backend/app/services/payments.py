@@ -24,7 +24,7 @@ from urllib.parse import urlencode
 
 from app.core import db
 from app.core.config import settings
-from app.services import billing
+from app.services import billing, topup_bonus
 
 log = logging.getLogger("payments")
 PAYME_TIMEOUT_MS = 12 * 3600 * 1000  # Payme: an unperformed transaction expires after 12 hours
@@ -45,7 +45,7 @@ async def _order(con, order_id) -> dict | None:
         oid = int(order_id)
     except (TypeError, ValueError):
         return None
-    row = await con.fetchrow("SELECT id, user_id, amount, provider, state FROM orders WHERE id = $1 FOR UPDATE", oid)
+    row = await con.fetchrow("SELECT id, user_id, amount, provider, state, created FROM orders WHERE id = $1 FOR UPDATE", oid)
     return dict(row) if row else None
 
 
@@ -120,7 +120,8 @@ async def card_decide(order_id: int, approve: bool, admin_id: int) -> tuple[str,
             return "rejected", order, None
         await con.execute("UPDATE orders SET state = 'paid', reviewed_by = $1 WHERE id = $2", admin_id, order_id)
         new = await billing.apply_in(con, order["user_id"], order["amount"], "topup:card", f"card:{order_id}", True)
-        return "paid", order, new
+        bonus, with_bonus = await topup_bonus.credit_in(con, order["user_id"], order["amount"], f"card:{order_id}", order["created"])
+        return "paid", {**order, "bonus": bonus}, with_bonus or new
 
 
 # ---------- Payme Merchant API (JSON-RPC 2.0) ----------
@@ -235,7 +236,9 @@ async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
             await con.execute("UPDATE payme_txns SET state = 2, perform_time = $1 WHERE id = $2", t, txn["id"])
             await con.execute("UPDATE orders SET state = 'paid' WHERE id = $1", order["id"])
             new = await billing.apply_in(con, order["user_id"], order["amount"], "topup:payme", f"payme:{txn['id']}", True)
-            paid = {"user_id": order["user_id"], "amount": order["amount"], "balance": new} if new is not None else None
+            bonus, with_bonus = await topup_bonus.credit_in(con, order["user_id"], order["amount"], f"payme:{txn['id']}", order["created"]) \
+                if new is not None else (0, None)
+            paid = {"user_id": order["user_id"], "amount": order["amount"], "balance": with_bonus or new, "bonus": bonus} if new is not None else None
             return {"transaction": txn["id"], "perform_time": t, "state": 2}, paid
 
         if method == "CancelTransaction":
@@ -400,5 +403,7 @@ async def click_complete(f: dict) -> tuple[dict, dict | None]:
         await con.execute("UPDATE click_txns SET state = 'paid' WHERE id = $1", prepare_id)
         await con.execute("UPDATE orders SET state = 'paid' WHERE id = $1", order["id"])
         new = await billing.apply_in(con, order["user_id"], order["amount"], "topup:click", f"click:{ctid}", True)
-        paid = {"user_id": order["user_id"], "amount": order["amount"], "balance": new} if new is not None else None
+        bonus, with_bonus = await topup_bonus.credit_in(con, order["user_id"], order["amount"], f"click:{ctid}", order["created"]) \
+            if new is not None else (0, None)
+        paid = {"user_id": order["user_id"], "amount": order["amount"], "balance": with_bonus or new, "bonus": bonus} if new is not None else None
     return _click_reply(f, 0, "Success", merchant_confirm_id=prepare_id), paid

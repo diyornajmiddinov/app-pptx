@@ -109,7 +109,7 @@ export default function Balance({ me, refreshMe }) {
   };
   const kind = (k) => {
     const p = k.split(':')[0];
-    return t(`k_${['generate', 'restyle', 'paper', 'refund', 'promo', 'referral'].includes(p) ? p : 'topup'}`);
+    return t(`k_${['generate', 'restyle', 'paper', 'refund', 'promo', 'referral', 'bonus'].includes(p) ? p : 'topup'}`);
   };
   const card = order?.card || data?.card;
   const cardOrders = data?.orders || [];
@@ -121,6 +121,11 @@ export default function Balance({ me, refreshMe }) {
           <p className="text-sm text-slate-500">{t('balance')}</p>
           <p className="mt-1 text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">{money(me.balance)}</p>
         </Card>
+        {me.topup_bonus && (
+          <p className="rounded-xl bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            {t('bonusOn', { percent: me.topup_bonus.percent, until: date(me.topup_bonus.until, true) })}
+          </p>
+        )}
 
         <Card className="space-y-5">
           <div>

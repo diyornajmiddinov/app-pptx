@@ -38,7 +38,7 @@ from app.core import alerts, db, telegram
 from app.core.auth import admin_user
 from app.core.config import DATA_DIR, settings
 from app.core.telegram import download_file, send_message
-from app.services import app_settings, billing, growth, payments, subscription
+from app.services import app_settings, billing, growth, payments, subscription, topup_bonus
 from app.services.ai import models
 from app.services.ai.catalog import TEMPLATE_NAMES
 from app.services.ai.render import render
@@ -277,7 +277,7 @@ async def decide(order_id: int, req: Decision, uid: int = Depends(admin_user)):
     await audit(uid, "card_" + outcome, order_id, amount=order["amount"], user=order["user_id"])
     try:  # the user hears about it exactly as with the bot's buttons
         if outcome == "paid":
-            await notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new})
+            await notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new, "bonus": order.get("bonus", 0)})
         else:
             lang = await lang_of(order["user_id"])
             await send_message(order["user_id"], t(lang, "card_rejected", code=payments.payment_code(order_id)))
@@ -428,6 +428,26 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
     await app_settings.set_many(new, uid)
     await audit(uid, "settings", None, before=old, after=new)
     return {"values": await app_settings.get()}
+
+
+class TopupBonusReq(BaseModel):
+    percent: int = Field(ge=1, le=topup_bonus.PERCENT_MAX)   # +P% on every top-up
+    hours: int = Field(ge=1, le=topup_bonus.HOURS_MAX)       # for the next N hours
+
+
+@router.put("/topup-bonus")
+async def start_topup_bonus(req: TopupBonusReq, uid: int = Depends(admin_user)):
+    """Start (or restart) the top-up bonus campaign: from now, for `hours`, every top-up gets +`percent`%."""
+    c = await topup_bonus.start(req.percent, req.hours, uid)
+    await audit(uid, "topup_bonus", None, after=c)
+    return {"topup_bonus": c}
+
+
+@router.delete("/topup-bonus")
+async def stop_topup_bonus(uid: int = Depends(admin_user)):
+    await topup_bonus.stop(uid)
+    await audit(uid, "topup_bonus", None, after={})
+    return {"topup_bonus": None}
 
 
 class SubscriptionReq(BaseModel):

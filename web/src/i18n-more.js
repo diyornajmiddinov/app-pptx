@@ -22,6 +22,7 @@ export const MORE = {
     legalBack: '← Bosh sahifa', updated: 'Tahrir sanasi', k_promo: 'Promokod', k_referral: 'Taklif bonusi',
     // referat / mustaqil ish
     e_tooManyJobs: "Oldingi buyurtmalaringiz hali tayyorlanmoqda. Ular tugagach qayta urining.",
+    bonusOn: "🔥 Aksiya! Hozir to'ldirsangiz, summaga +{percent}% bonus qo'shiladi — {until} gacha.", k_bonus: "Aksiya bonusi",
     e_animSoon: "✨ Animatsiyali taqdimotlar tez orada qo'shiladi.", e_animTemplate: "Bu shablonning animatsiyali turi hali tayyor emas. Boshqa shablon tanlang.",
     animTitle: 'Animatsiyali taqdimot', soon: 'Tez orada', animSoonHint: "Slaydlar jonli chiqadi — tez orada qo'shiladi",
     animHint: 'Har bir element jonli chiqadi · +{price}', animNoTpl: "Bu shablon uchun hali tayyor emas",
@@ -92,6 +93,7 @@ export const MORE = {
     support: 'Связаться', oferta: 'Публичная оферта', privacy: 'Политика конфиденциальности', legalAgree: 'Входя, вы соглашаетесь с условиями: {oferta} и {privacy}.',
     legalBack: '← На главную', updated: 'Редакция от', k_promo: 'Промокод', k_referral: 'Бонус за приглашение',
     e_tooManyJobs: 'Предыдущие заказы ещё готовятся. Попробуйте, когда они будут готовы.',
+    bonusOn: '🔥 Акция! Пополните сейчас — к сумме добавится +{percent}% бонус, до {until}.', k_bonus: 'Бонус акции',
     e_animSoon: '✨ Анимированные презентации скоро появятся.', e_animTemplate: 'Анимированная версия этого шаблона ещё не готова. Выберите другой.',
     animTitle: 'Презентация с анимацией', soon: 'Скоро', animSoonHint: 'Слайды оживают — скоро появится',
     animHint: 'Каждый элемент появляется с анимацией · +{price}', animNoTpl: 'Для этого шаблона ещё не готово',
@@ -162,6 +164,7 @@ export const MORE = {
     support: 'Contact', oferta: 'Public offer', privacy: 'Privacy policy', legalAgree: 'By signing in you agree to the {oferta} and the {privacy}.',
     legalBack: '← Home', updated: 'Version of', k_promo: 'Promo code', k_referral: 'Invite bonus',
     e_tooManyJobs: 'Your previous orders are still being made. Try again when they are ready.',
+    bonusOn: '🔥 Special offer! Top up now and get +{percent}% on top — until {until}.', k_bonus: 'Campaign bonus',
     e_animSoon: '✨ Animated presentations are coming soon.', e_animTemplate: 'The animated version of this template is not ready yet. Choose another one.',
     animTitle: 'Animated presentation', soon: 'Soon', animSoonHint: 'Slides come alive — coming soon',
     animHint: 'Every element comes in with motion · +{price}', animNoTpl: 'Not ready for this template yet',

@@ -11,6 +11,7 @@ export default function Settings() {
   const [busy, setBusy] = useState(false);
   const [sub, setSub] = useState({ channel: '', link: '' });
   const [arch, setArch] = useState('');
+  const [bonus, setBonus] = useState({ percent: '20', hours: '24' });  // top-up bonus campaign
   const toast = useToast();
   const [confirm, confirmNode] = useConfirm();
 
@@ -59,6 +60,23 @@ export default function Settings() {
       const r = await api.saveSubscription(channel, off ? '' : sub.link.trim());
       toast(channel ? `Yoqildi: ${r.title || r.required_channel}` : "O'chirildi"); reload();
     } catch (e) { toast(e.message, true); } finally { setBusy(false); }
+  };
+
+  const tb = data?.values?.topup_bonus || {};
+  const bonusOn = !!tb.percent && !tb.stopped && tb.until * 1000 > Date.now();
+  const startBonus = async () => {
+    const percent = parse(bonus.percent), hours = parse(bonus.hours);
+    if (!await confirm({ title: "To'ldirish bonusini boshlash", body: <>
+      Hozirdan boshlab <b>{hours} soat</b> davomida har bir to'ldirishga (Payme, Click, karta) <b>+{percent}%</b> bonus qo'shiladi.<br /><br />
+      Masalan: 50 000 so'm to'ldirsa — balansiga <b>{som(50000 + Math.floor(50000 * percent / 100))}</b> tushadi.<br />
+      Foydalanuvchilar botdagi balans oynasida aksiyani ko'radi.</> })) return;
+    setBusy(true);
+    try { await api.startTopupBonus(percent, hours); toast('Aksiya boshlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
+  };
+  const stopBonus = async () => {
+    if (!await confirm({ title: "Aksiyani to'xtatish", body: "Bonus endi qo'shilmaydi. Aksiya vaqtida berilgan karta to'lovlari tasdiqlansa, ularga bonus baribir beriladi." })) return;
+    setBusy(true);
+    try { await api.stopTopupBonus(); toast("To'xtatildi"); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
   };
 
   const saveArch = async (off) => {
@@ -140,6 +158,28 @@ export default function Settings() {
             </div>
           </div>
           <div className="card">
+            <div className="card-h"><h2>🔥 To'ldirish bonusi</h2>{bonusOn ? <Pill tone="good">Faol</Pill> : <Pill>O'chiq</Pill>}</div>
+            <div className="card-b stack" style={{ gap: 12 }}>
+              {bonusOn ? (
+                <>
+                  <p>Har bir to'ldirishga <b>+{tb.percent}%</b> · <b>{dateTime(tb.until)}</b> gacha</p>
+                  <div className="row"><button type="button" className="btn" disabled={busy} onClick={stopBonus}>To'xtatish</button></div>
+                </>
+              ) : (
+                <>
+                  <div className="row" style={{ gap: 12, flexWrap: 'wrap' }}>
+                    <div className="field" style={{ flex: 1, minWidth: 120 }}><label htmlFor="b-pct">Bonus, %</label>
+                      <input id="b-pct" className="input num" inputMode="numeric" value={bonus.percent} onChange={(e) => setBonus({ ...bonus, percent: e.target.value })} /></div>
+                    <div className="field" style={{ flex: 1, minWidth: 120 }}><label htmlFor="b-h">Davomiyligi, soat</label>
+                      <input id="b-h" className="input num" inputMode="numeric" value={bonus.hours} onChange={(e) => setBonus({ ...bonus, hours: e.target.value })} /></div>
+                  </div>
+                  <span className="help">Aksiya davomida Payme, Click yoki karta orqali to'ldirilgan har bir summaga shu foiz qo'shib beriladi (1–100%, 1–720 soat).</span>
+                  <div className="row"><button type="button" className="btn primary" disabled={busy || !(parse(bonus.percent) >= 1 && parse(bonus.percent) <= 100 && parse(bonus.hours) >= 1 && parse(bonus.hours) <= 720)} onClick={startBonus}>Boshlash</button></div>
+                </>
+              )}
+            </div>
+          </div>
+          <div className="card">
             <div className="card-h"><h2>Arxiv kanali</h2>{data.values.archive_channel ? <Pill tone="good">Ulangan</Pill> : <Pill>O'chiq</Pill>}</div>
             <div className="card-b stack" style={{ gap: 12 }}>
               <div className="field"><label htmlFor="a-ch">Kanal</label>
@@ -189,7 +229,7 @@ export default function Settings() {
 }
 
 const ACTIONS = { balance: "Balans o'zgartirildi", message: 'Xabar yuborildi', card_paid: "Karta to'lovi tasdiqlandi",
-  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi', subscription: "Majburiy obuna o'zgartirildi", archive: "Arxiv kanali o'zgartirildi" };
+  card_rejected: "Karta to'lovi rad etildi", broadcast: 'Ommaviy xabar', settings: "Sozlamalar o'zgartirildi", ai_model: 'AI modeli almashtirildi', subscription: "Majburiy obuna o'zgartirildi", archive: "Arxiv kanali o'zgartirildi", topup_bonus: "To'ldirish bonusi" };
 
 export function AdminLog() {
   const [page, setPage] = useState(1);

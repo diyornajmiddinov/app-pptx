@@ -8,6 +8,8 @@ card_ok:/card_no:<order> buttons -> the admin's choice credits the balance or re
 """
 import html
 import logging
+from datetime import datetime
+from zoneinfo import ZoneInfo
 
 from app.bot.keyboards import (
     DANGER,
@@ -21,7 +23,7 @@ from app.bot.keyboards import (
 )
 from app.core.config import settings
 from app.core.telegram import answer_callback, edit_caption, send_file_id, send_message
-from app.services import app_settings, billing, payments
+from app.services import app_settings, billing, payments, topup_bonus
 from app.services import images_pdf as pdfs
 from app.services.users import lang_of
 from app.texts import esc, som, t
@@ -29,17 +31,27 @@ from app.texts import esc, som, t
 log = logging.getLogger("bot")
 
 
+async def with_bonus(text: str, lang: str) -> str:
+    """While a top-up bonus campaign runs (admin panel): '🔥 +20% until 03.11 18:00' above the top-up buttons' hint."""
+    c = await topup_bonus.current()
+    if not c:
+        return text
+    until = datetime.fromtimestamp(c["until"], ZoneInfo("Asia/Tashkent")).strftime("%d.%m %H:%M")
+    line = t(lang, "bonus_on", percent=c["percent"], until=until)
+    return text.replace("\n\n👇", f"\n\n{line}\n\n👇", 1) if "\n\n👇" in text else f"{text}\n\n{line}"
+
+
 async def show_balance(chat_id: int, user_id: int, lang: str):
     cfg = await app_settings.get()
-    await send_message(chat_id, t(lang, "balance", balance=som(await billing.balance(user_id), lang),
+    await send_message(chat_id, await with_bonus(t(lang, "balance", balance=som(await billing.balance(user_id), lang),
                                   p_gen=som(cfg["price_generate"], lang), p_restyle=som(cfg["price_restyle"], lang),
-                                  p_paper=som(cfg["price_paper"], lang)),
+                                  p_paper=som(cfg["price_paper"], lang)), lang),
                        topup_keyboard(lang, cfg["topup_amounts"]))
 
 
 async def send_low_balance(user_id: int, lang: str, price: int):
     """Called by the API when a paid job is refused: tells how much is missing, with top-up buttons."""
-    await send_message(user_id, t(lang, "low_balance", price=som(price, lang), balance=som(await billing.balance(user_id), lang)),
+    await send_message(user_id, await with_bonus(t(lang, "low_balance", price=som(price, lang), balance=som(await billing.balance(user_id), lang)), lang),
                        topup_keyboard(lang, (await app_settings.get())["topup_amounts"]))
 
 
@@ -93,7 +105,7 @@ async def card_decision(q: dict, approve: bool, order_id: int):
         verdict = t(al, "card_admin_paid" if outcome == "paid" else "card_admin_rejected", admin=user_label(admin))
         await edit_caption(m["chat"]["id"], m["message_id"], f"{esc(m.get('caption', ''))}\n\n<b>{verdict}</b>")  # HTML
     if outcome == "paid":
-        await notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new})
+        await notify_paid({"user_id": order["user_id"], "amount": order["amount"], "balance": new, "bonus": order.get("bonus", 0)})
     else:
         ul = await lang_of(order["user_id"])
         await send_message(order["user_id"], t(ul, "card_rejected", code=payments.payment_code(order["id"])))
@@ -102,7 +114,10 @@ async def card_decision(q: dict, approve: bool, order_id: int):
 async def notify_paid(paid: dict):
     """A payment was credited (Payme / Click callback, card approval): tell the user."""
     uid = paid["user_id"]; lang = await lang_of(uid)
-    await send_message(uid, t(lang, "paid", amount=som(paid["amount"], lang), balance=som(paid["balance"], lang)), open_keyboard(lang))
+    text = t(lang, "paid", amount=som(paid["amount"], lang), balance=som(paid["balance"], lang))
+    if paid.get("bonus"):  # the top-up bonus campaign (services/topup_bonus.py)
+        text = t(lang, "paid_bonus", amount=som(paid["amount"], lang), bonus=som(paid["bonus"], lang), balance=som(paid["balance"], lang))
+    await send_message(uid, text, open_keyboard(lang))
 
 
 async def on_callback(q: dict, data: str, chat_id: int, uid: int, lang: str) -> bool:

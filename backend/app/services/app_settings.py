@@ -16,7 +16,8 @@ def defaults() -> dict:
             "topup_amounts": list(settings.topup_amounts), "referral_bonus": settings.referral_bonus,
             "first_generate_price": settings.first_generate_price, "ai_model": models.default_choice(),
             "custom_emoji": {}, "required_channel": "", "required_channel_link": "",
-            "archive_channel": "", "price_animation": settings.price_animation, "animation_public": False}
+            "archive_channel": "", "price_animation": settings.price_animation, "animation_public": False,
+            "topup_bonus": {}}
 
 
 TTL = 5.0  # s

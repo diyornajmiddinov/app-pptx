@@ -224,3 +224,50 @@ async def test_payme_system_failure_is_32400(payme, monkeypatch):
         raise OSError("database is down")
     monkeypatch.setattr(payments, "_payme_method", down)
     assert (await payme("CheckTransaction", {"id": "a"}))[0]["error"]["code"] == -32400
+
+
+# ---------------------------------------------------------------- top-up bonus campaign (admin panel)
+
+async def test_a_bonus_campaign_adds_its_percent_to_every_kind_of_top_up_once(click, payme):
+    from app.core import db
+    from app.services import topup_bonus
+    await add_user(1)
+    await topup_bonus.start(20, 3, 1)                                          # +20% for 3 hours
+    oid = await payments.create_order(1, 50000, "click")
+    reply, paid = await _click_pay(_click_base(oid, "901"))
+    assert reply["error"] == 0 and paid["bonus"] == 10000 and paid["balance"] == 60000
+    again, paid2 = await payments.click_complete(_click_signed({**_click_base(oid, "901"), "action": "1", "merchant_prepare_id": str(reply["merchant_confirm_id"])}, True))
+    assert again["error"] == -4 and paid2 is None and await billing.balance(1) == 60000  # Click repeats: no second bonus
+
+    oid = await payments.create_order(1, 30000, "payme")
+    acc = {settings.payme_account_field: str(oid)}
+    await payme("CreateTransaction", {"id": "b1", "time": int(time.time() * 1000), "amount": 3000000, "account": acc})
+    _, paid = await payme("PerformTransaction", {"id": "b1"})
+    assert paid["bonus"] == 6000 and await billing.balance(1) == 60000 + 36000
+    assert (await payme("PerformTransaction", {"id": "b1"}))[1] is None and await billing.balance(1) == 96000
+
+    oid = await payments.create_order(1, 15000, "card")
+    await payments.card_submit(1, "file-1", "photo", f"chek {payments.payment_code(oid)}")
+    await topup_bonus.stop(1)                                                   # the campaign ends before the admin approves
+    outcome, order, new = await payments.card_decide(oid, True, 1)
+    assert outcome == "paid" and order["bonus"] == 3000 and new == 96000 + 18000  # paid while it ran: the bonus stays
+    kinds = await db.pool().fetch("SELECT kind, delta FROM ledger WHERE kind = 'bonus:topup' ORDER BY id")
+    assert [r["delta"] for r in kinds] == [10000, 6000, 3000] and not await billing.reconcile()
+
+
+async def test_no_campaign_or_a_late_order_gets_no_bonus(click):
+    from app.core import db
+    from app.services import topup_bonus
+    await add_user(1)
+    oid = await payments.create_order(1, 50000, "click")
+    _, paid = await _click_pay(_click_base(oid, "911"))
+    assert paid["bonus"] == 0 and paid["balance"] == 50000
+    await topup_bonus.start(10, 1, 1)
+    await db.pool().execute("UPDATE app_settings SET value = jsonb_set(value, '{until}', to_jsonb(1)) WHERE key = 'topup_bonus'")
+    from app.services import app_settings
+    app_settings.forget()                                                       # the campaign is over
+    assert await topup_bonus.current() is None
+    oid = await payments.create_order(1, 20000, "card")
+    await payments.card_submit(1, "file-2", "photo", f"chek {payments.payment_code(oid)}")
+    _, order, new = await payments.card_decide(oid, True, 1)
+    assert order["bonus"] == 0 and new == 70000 and not await billing.reconcile()

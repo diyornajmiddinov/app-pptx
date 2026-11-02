@@ -45,7 +45,7 @@ from app.core.auth import make_editor_token
 from app.core.config import DATA_DIR, ENGINE_DIR, settings
 from app.core.locks import machine_lock_async
 from app.core.telegram import send_message
-from app.services import animation, app_settings, archive, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
+from app.services import animation, app_settings, archive, billing, decks, doc_text, growth, jobs, papers, payments, topup_bonus, web_auth
 from app.services import images_pdf as pdfs
 from app.services.ai import content as ai_content
 from app.services.ai import models
@@ -189,6 +189,7 @@ async def me(uid: int = Depends(web_user)):
     out = {"user": {"id": uid, **dict(u)}, "lang": u["lang"] or "uz", "balance": await billing.balance(uid), **await _prices()}
     out["prices"]["now"] = await jobs.generate_price(uid)  # what "create" costs this user right now
     out["animation"] = await animation.info(uid)
+    out["topup_bonus"] = await topup_bonus.current()  # a running top-up bonus campaign, or null
     out["prices"]["first_max_slides"] = jobs.FIRST_MAX_SLIDES  # a free deck has up to this many slides, a longer one the usual price
     return out
 

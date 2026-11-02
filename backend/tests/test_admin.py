@@ -59,7 +59,7 @@ async def test_prices_change_for_bot_and_app(admin):
                                   "referral_bonus": 1000, "first_generate_price": None, "price_paper": 7000,
                                   "ai_model": r.json()["values"]["ai_model"], "custom_emoji": {},
                                   "required_channel": "", "required_channel_link": "", "archive_channel": "",
-                                  "price_animation": 3000, "animation_public": False}  # the website's: .env defaults
+                                  "price_animation": 3000, "animation_public": False, "topup_bonus": {}}  # the website's: .env defaults
     r = await admin.put("/api/admin/settings", json={"price_generate": 7000, "price_restyle": 3000, "topup_amounts": [10000], "price_paper": 9000})
     assert r.json()["values"]["price_paper"] == 9000 and r.json()["values"]["price_generate"] == 7000
     assert (await admin.put("/api/admin/settings", json={"price_generate": 1, "price_restyle": 1, "topup_amounts": [5]})).status_code == 422
@@ -159,3 +159,21 @@ async def test_the_ai_model_is_chosen_in_the_panel(admin, monkeypatch):
     assert (await admin.put("/api/admin/ai-model", json={"model": "openai:gpt-6.1-sol"})).status_code == 422  # no key
     log = (await admin.get("/api/admin/log")).json()["items"][0]
     assert log["action"] == "ai_model" and log["details"]["after"] == "openai:gpt-6.1-terra"
+
+
+async def test_admin_starts_and_stops_a_top_up_bonus_and_the_bot_tells_users(admin, tg):
+    from conftest import add_user
+
+    from app.bot import money
+    from app.services import topup_bonus
+    assert (await admin.put("/api/admin/topup-bonus", json={"percent": 0, "hours": 3})).status_code == 422
+    r = await admin.put("/api/admin/topup-bonus", json={"percent": 25, "hours": 6})
+    c = r.json()["topup_bonus"]
+    assert r.status_code == 200 and c["percent"] == 25 and c["until"] - c["started"] == 6 * 3600
+    assert (await topup_bonus.current())["percent"] == 25
+    await add_user(77)
+    await money.show_balance(77, 77, "uz")
+    assert "+25%</b> bonus" in tg.texts()[-1] and tg.texts()[-1].index("Aksiya") < tg.texts()[-1].index("👇")
+    assert (await admin.delete("/api/admin/topup-bonus")).status_code == 200 and await topup_bonus.current() is None
+    await money.show_balance(77, 77, "uz")
+    assert "Aksiya" not in tg.texts()[-1]
