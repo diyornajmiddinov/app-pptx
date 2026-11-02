@@ -36,7 +36,7 @@ async def handle(u: dict):
         log.exception("Bot xabarni qayta ishlay olmadi · %s", what(u))
 
 
-COMMANDS = ("start", "taqdimot", "referat", "mustaqil", "pdf", "balance", "editor", "language", "help")  # the Menu list, in order
+COMMANDS = ("start", "taqdimot", "referat", "mustaqil", "pdf", "balance", "taklif", "editor", "language", "help")  # the Menu list, in order
 MENU = "commands"  # what the button by the input field is now; written to data/menu_button once every user has it
 
 

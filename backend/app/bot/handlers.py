@@ -13,6 +13,7 @@ import asyncio
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
+from urllib.parse import quote
 
 from app.bot import money, pdf
 from app.bot.keyboards import (
@@ -27,11 +28,11 @@ from app.bot.keyboards import (
     open_keyboard,
     paper_url,
 )
-from app.core import alerts, telegram
+from app.core import alerts, db, telegram
 from app.core.auth import make_admin_token
 from app.core.config import settings
 from app.core.telegram import answer_callback, send_message
-from app.services import animation, app_settings, billing, editor, subscription
+from app.services import animation, app_settings, billing, editor, growth, subscription
 from app.services import images_pdf as pdfs
 from app.services.users import has_choice, lang_of, set_lang, touch
 from app.texts import CHOOSE, LANGS, esc, som, t
@@ -120,7 +121,51 @@ async def not_member(chat_id: int, user_id: int, lang: str):
         await send_message(chat_id, CHOOSE, lang_keyboard())
 
 
+_ME: dict = {}
+
+
+async def bot_username() -> str:
+    if "username" not in _ME:
+        _ME.update((await telegram.call("getMe"))["result"])
+    return _ME["username"]
+
+
+async def invite_link(uid: int) -> str:
+    """The bot link with the user's invite code (the same code as the website's ?ref=)."""
+    return f"https://t.me/{await bot_username()}?start=ref_{await growth.ref_code(uid)}"
+
+
+async def came_by_invite(m: Msg):
+    """/start ref_CODE: a new user came by someone's link; the inviter is told (the bonus comes after the first top-up)."""
+    parts = m.text.split(maxsplit=1)
+    if len(parts) < 2 or not parts[1].startswith("ref_") or not await growth.attach(m.uid, parts[1][4:]):
+        return
+    inviter = await db.pool().fetchval("SELECT referrer_id FROM referrals WHERE referred_id = $1", m.uid)
+    bonus = (await app_settings.get())["referral_bonus"]
+    if inviter and bonus:
+        name = " ".join(x for x in (m.user.get("first_name"), m.user.get("last_name")) if x) or "Do'stingiz"
+        lang = await lang_of(inviter)
+        try:
+            await send_message(inviter, t(lang, "invite_joined", name=name, bonus=som(bonus, lang)))
+        except Exception:  # the inviter blocked the bot: the referral still counts
+            log.info("invite note to %s not sent", inviter)
+
+
+async def cmd_invite(m: Msg):
+    await growth.settle(m.uid)  # a friend may have topped up since the last hourly run
+    info = await growth.referral_info(m.uid)
+    if not info["bonus"]:
+        await send_message(m.chat_id, t(m.lang, "invite_off"))
+        return
+    link = await invite_link(m.uid)
+    share = f"https://t.me/share/url?url={quote(link)}&text={quote(t(m.lang, 'share_text'))}"
+    await send_message(m.chat_id, t(m.lang, "invite", bonus=som(info["bonus"], m.lang), link=link, invited=info["invited"],
+                                    paid=info["paid"], earned=som(info["paid"] * info["bonus"], m.lang)),
+                       {"inline_keyboard": [[{"text": t(m.lang, "btn_share"), "url": share, "style": PRIMARY}]]})
+
+
 async def cmd_start(m: Msg):
+    await came_by_invite(m)
     if await has_choice(m.uid):
         if await subscription.is_member(m.uid):
             await welcome(m.chat_id, m.lang)
@@ -232,6 +277,7 @@ ROUTES: list[tuple[tuple[str, ...], tuple[str, ...], bool, Handler]] = [
     (("/taqdimot",), ("kb_create",), False, cmd_create),
     (("/referat", "/mustaqil"), ("kb_referat", "kb_mustaqil"), False, cmd_paper),
     (("/animatsiya", "/anim"), ("kb_anim",), False, cmd_anim),
+    (("/taklif", "/invite"), ("kb_invite",), False, cmd_invite),
     (("/pdf",), ("kb_pdf",), False, cmd_pdf),
     ((), ("kb_pdf_make", "kb_pdf_cancel"), False, cmd_old_pdf_button),
     (("/language", "/til"), ("kb_lang",), False, cmd_language),

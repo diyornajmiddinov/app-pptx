@@ -148,3 +148,20 @@ async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_use
     await add_user(ADMIN)
     await bot.handle(msg("✨ Animatsiyali taqdimot", uid=ADMIN, mid=2))
     assert "anim=1" in tg.last()["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"]
+
+
+async def test_invite_button_gives_the_link_and_a_friend_by_it_is_counted(tg):
+    from app.bot.keyboards import main_keyboard
+    from app.services import growth
+    assert any(b["text"] == "🎁 Do'stlarni taklif qilish" for row in main_keyboard("uz", U)["keyboard"] for b in row)
+    await add_user(U)
+    await bot.handle(msg("🎁 Do'stlarni taklif qilish"))
+    code = await growth.ref_code(U)
+    assert f"t.me/testbot?start=ref_{code}" in tg.texts()[-1] and "1 000" in tg.texts()[-1].replace("\xa0", " ")
+    assert "t.me/share/url" in tg.last()["reply_markup"]["inline_keyboard"][0][0]["url"]
+    friend = 777
+    await bot.handle(msg(f"/start ref_{code}", uid=friend, mid=2))  # a new user comes by the link
+    assert await db.pool().fetchval("SELECT referrer_id FROM referrals WHERE referred_id = $1", friend) == U
+    assert any("havolangiz orqali qo'shildi" in x for x in tg.texts())  # the inviter is told
+    await bot.handle(msg(f"/start ref_{code}", uid=U, mid=3))  # one's own link does nothing
+    assert await db.pool().fetchval("SELECT count(*) FROM referrals") == 1

@@ -64,7 +64,7 @@ def main_keyboard(lang: str, user_id: int) -> dict:
     create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}", PRIMARY)
     anim = {**b("kb_anim"), "style": PRIMARY}  # a plain button: the bot answers (open for this user, or "coming soon")
     papers = [app(f"kb_{d}", paper_url(lang, d, user_id), SUCCESS) for d in ("referat", "mustaqil")]
-    return {"keyboard": [[create, anim], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
+    return {"keyboard": [[create, anim], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_invite"), b("kb_editor")], [b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 
