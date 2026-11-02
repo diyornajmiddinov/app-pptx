@@ -65,10 +65,9 @@ def main_keyboard(lang: str, user_id: int) -> dict:
     def app(key, url, style):
         return {**b(key), "web_app": {"url": url}, "style": style} if has_webapp() else b(key)
     create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}", PRIMARY)
-    anim = {**b("kb_anim"), "style": SUCCESS}  # a plain button: the bot answers (open for this user, or "coming soon")
     paper = app("kb_paper", paper_url(lang, None, user_id), SUCCESS)  # referat or mustaqil ish: chosen in the form
-    # by importance: the deck, the animated deck, the papers, the tools, money, settings
-    return {"keyboard": [[create], [anim], [paper], [b("kb_pdf"), b("kb_editor")], [b("kb_balance"), b("kb_invite")], [b("kb_lang"), b("kb_help")]],
+    # by importance: the deck (animated or not: a switch in the app), the papers, the tools, money, settings
+    return {"keyboard": [[create], [paper], [b("kb_pdf"), b("kb_editor")], [b("kb_balance"), b("kb_invite")], [b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 

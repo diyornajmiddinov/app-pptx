@@ -122,8 +122,8 @@ async def test_admin_adds_bot_to_a_channel(tg, tmp_path, monkeypatch):
 async def test_the_menu_has_one_referat_and_mustaqil_ish_button(tg):
     from app.bot.keyboards import main_keyboard
     rows = main_keyboard("uz", U)["keyboard"]
-    assert [b["text"] for b in rows[2]] == ["📝 Referat / Mustaqil ish"]
-    url = rows[2][0]["web_app"]["url"]
+    assert [b["text"] for b in rows[1]] == ["📝 Referat / Mustaqil ish"]
+    url = rows[1][0]["web_app"]["url"]
     assert "mode=paper" in url and "type=" not in url and "&t=" in url  # the form asks which
     await add_user(U)
     await bot.handle(msg("📝 Referat / Mustaqil ish"))  # without web_app: the form as an inline button
@@ -142,9 +142,9 @@ async def test_menu_commands_open_the_forms(tg):
 
 async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_users(tg):
     from app.bot.keyboards import main_keyboard
-    assert main_keyboard("uz", U)["keyboard"][1][0]["text"] == "✨ Animatsiyali taqdimot"
+    assert all(b["text"] != "✨ Animatsiyali taqdimot" for row in main_keyboard("uz", U)["keyboard"] for b in row)  # a switch in the app
     await add_user(U)
-    await bot.handle(msg("✨ Animatsiyali taqdimot"))
+    await bot.handle(msg("✨ Animatsiyali taqdimot"))  # an earlier keyboard still has the button
     assert "tez orada" in tg.texts()[-1] and "reply_markup" not in tg.last()
     await add_user(ADMIN)
     await bot.handle(msg("✨ Animatsiyali taqdimot", uid=ADMIN, mid=2))
@@ -154,7 +154,7 @@ async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_use
 async def test_invite_button_gives_the_link_and_a_friend_by_it_is_counted(tg):
     from app.bot.keyboards import main_keyboard
     from app.services import growth
-    assert [b["text"] for b in main_keyboard("uz", U)["keyboard"][4]] == ["💰 Balans", "🎁 Taklif qilish"]
+    assert [b["text"] for b in main_keyboard("uz", U)["keyboard"][3]] == ["💰 Balans", "🎁 Taklif qilish"]
     await add_user(U)
     await bot.handle(msg("🎁 Do'stlarni taklif qilish"))  # the earlier label still works
     code = await growth.ref_code(U)
