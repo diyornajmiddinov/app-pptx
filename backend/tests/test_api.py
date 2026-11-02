@@ -72,7 +72,8 @@ async def test_successful_generation_saves_the_deck_and_sends_the_file(client, t
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
     await jobs.run_pending()  # what the worker does
     assert await billing.balance(U) == 5000
-    assert tg.sent("sendDocument")
+    sent = str(tg.sent("sendDocument")[0])
+    assert "Kompyuterda PowerPoint" in sent and "slayd-shou" not in sent  # the phone note; not animated: no slide-show line
     lst = (await client.get("/api/decks", headers=h())).json()["decks"]
     assert lst[0]["topic"] == "Mavzu" and lst[0]["slides"] == 2
 

@@ -179,6 +179,12 @@ async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".
         _drop_tmp(final.parent)
 
 
+def deck_note(lang: str, head: str, animated: bool) -> str:
+    """Under a delivered deck: on a phone it may look off (the phone apps' limits), on a computer in PowerPoint it is
+    right; an animated one plays in the slide show."""
+    return f"{head}\n\n{t(lang, 'phone_note')}" + (f"\n{t(lang, 'anim_note')}" if animated else "")
+
+
 async def run(job: dict):
     """Do one claimed job. Any failure ends in fail(): refund + message."""
     try:
@@ -186,7 +192,8 @@ async def run(job: dict):
             req, deck_id = job["payload"], decks.new_id()
             path, content = await asyncio.wait_for(build(req, deck_id, job["user_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, req, deck_id)
-            await deliver(job["user_id"], path, req["topic"], t(await lang_of(job["user_id"]), "slides", n=len(content["slides"])),
+            lang = await lang_of(job["user_id"])
+            await deliver(job["user_id"], path, req["topic"], deck_note(lang, t(lang, "slides", n=len(content["slides"])), bool(req.get("animated"))),
                           copy={"kind": "generate", "facts": [f"{len(content['slides'])} slayd", f"shablon #{req['template_id']}",
                                                               "✨ animatsiyali" if req.get("animated") else ""],
                                 "price": job["price"], "via": req.get("via", "bot")})
@@ -198,7 +205,8 @@ async def run(job: dict):
             path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"],
                                                                 deck["request"].get("density", "balanced"), bool(p.get("animated"))), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"], "animated": bool(p.get("animated"))}, p["deck_id"])
-            await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"),
+            lang = await lang_of(job["user_id"])
+            await deliver(job["user_id"], path, content["meta"]["topic"], deck_note(lang, t(lang, "new_template"), bool(p.get("animated"))),
                           copy={"kind": "restyle", "facts": [f"shablon #{p['template_id']}"], "price": job["price"], "via": p.get("via", "bot")})
         elif job["kind"] == "paper":
             req = job["payload"]
