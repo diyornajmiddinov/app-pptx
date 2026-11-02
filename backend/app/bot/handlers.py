@@ -18,6 +18,7 @@ from app.bot import money, pdf
 from app.bot.keyboards import (
     BUTTONS,
     PRIMARY,
+    anim_url,
     app_url,
     editor_keyboard,
     has_webapp,
@@ -30,7 +31,7 @@ from app.core import alerts, telegram
 from app.core.auth import make_admin_token
 from app.core.config import settings
 from app.core.telegram import answer_callback, send_message
-from app.services import app_settings, billing, editor, subscription
+from app.services import animation, app_settings, billing, editor, subscription
 from app.services import images_pdf as pdfs
 from app.services.users import has_choice, lang_of, set_lang, touch
 from app.texts import CHOOSE, LANGS, esc, som, t
@@ -137,6 +138,16 @@ async def cmd_create(m: Msg):
         await send_message(m.chat_id, t(m.lang, "hint"))
 
 
+async def cmd_anim(m: Msg):
+    """✨ Animated presentation: the Mini App with the switch on, for those it is open to; "coming soon" for the rest."""
+    if not await animation.allowed(m.uid):
+        await send_message(m.chat_id, t(m.lang, "anim_soon"))
+    elif has_webapp():
+        await send_message(m.chat_id, t(m.lang, "anim_open"), {"inline_keyboard": [[{"text": t(m.lang, "btn_anim"), "web_app": {"url": anim_url(m.lang)}, "style": PRIMARY}]]})
+    else:
+        await send_message(m.chat_id, t(m.lang, "hint"))
+
+
 async def cmd_paper(m: Msg):
     """/referat, /mustaqil (the Menu), or an old keyboard without the buttons' web_app: the form as an inline button."""
     doc_type = "mustaqil" if m.key == "kb_mustaqil" or m.text.lower().startswith("/mustaqil") else "referat"
@@ -220,6 +231,7 @@ ROUTES: list[tuple[tuple[str, ...], tuple[str, ...], bool, Handler]] = [
     (("/start",), (), False, cmd_start),
     (("/taqdimot",), ("kb_create",), False, cmd_create),
     (("/referat", "/mustaqil"), ("kb_referat", "kb_mustaqil"), False, cmd_paper),
+    (("/animatsiya", "/anim"), ("kb_anim",), False, cmd_anim),
     (("/pdf",), ("kb_pdf",), False, cmd_pdf),
     ((), ("kb_pdf_make", "kb_pdf_cancel"), False, cmd_old_pdf_button),
     (("/language", "/til"), ("kb_lang",), False, cmd_language),

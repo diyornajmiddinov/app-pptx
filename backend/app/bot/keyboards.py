@@ -34,6 +34,11 @@ def paper_url(lang: str, doc_type: str, user_id: int | None = None) -> str:
     return f"{app_url(lang)}&mode=paper&type={doc_type}" + (f"&t={make_app_token(user_id)}" if user_id else "")
 
 
+def anim_url(lang: str) -> str:
+    """The Mini App with "✨ Animated" switched on (App.jsx: anim=1)."""
+    return f"{app_url(lang)}&anim=1"
+
+
 def editor_url(user_id: int, lang: str) -> str:
     """Signed link to the desktop editor; the token is in the #fragment, so it never reaches server logs."""
     return f"{settings.webapp_url.rstrip('/')}/editor.html#t={make_editor_token(user_id)}&lang={lang}"
@@ -57,8 +62,9 @@ def main_keyboard(lang: str, user_id: int) -> dict:
     def app(key, url, style):
         return {**b(key), "web_app": {"url": url}, "style": style} if has_webapp() else b(key)
     create = app("kb_create", f"{app_url(lang)}&t={make_app_token(user_id)}", PRIMARY)
+    anim = {**b("kb_anim"), "style": PRIMARY}  # a plain button: the bot answers (open for this user, or "coming soon")
     papers = [app(f"kb_{d}", paper_url(lang, d, user_id), SUCCESS) for d in ("referat", "mustaqil")]
-    return {"keyboard": [[create], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
+    return {"keyboard": [[create, anim], papers, [b("kb_pdf"), b("kb_balance")], [b("kb_editor"), b("kb_lang"), b("kb_help")]],
             "resize_keyboard": True, "is_persistent": True}
 
 

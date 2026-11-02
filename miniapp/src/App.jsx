@@ -23,7 +23,8 @@ export default function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [slideCount, setSlideCount] = useState(10);
   const [density, setDensity] = useState('balanced'); // how much text on the slides
-  const [animated, setAnimated] = useState(false);     // ✨ an animated copy of the template (costs extra; admins first)
+  // ✨ an animated copy of the template (costs extra; admins first); the bot's "✨ Animated" button opens with it on (anim=1)
+  const [animated, setAnimated] = useState(() => new URLSearchParams(window.location.search).get('anim') === '1');
   const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   // presentation language follows the interface language until the user picks another one
   const [language, setLanguage] = useState(lang);

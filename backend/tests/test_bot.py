@@ -137,3 +137,14 @@ async def test_menu_commands_open_the_forms(tg):
     for command, part in (("/taqdimot", "lang=uz"), ("/referat", "type=referat"), ("/mustaqil", "type=mustaqil")):
         await bot.handle(msg(command))
         assert part in tg.last()["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"]
+
+
+async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_users(tg):
+    from app.bot.keyboards import main_keyboard
+    assert main_keyboard("uz", U)["keyboard"][0][1]["text"] == "✨ Animatsiyali taqdimot"
+    await add_user(U)
+    await bot.handle(msg("✨ Animatsiyali taqdimot"))
+    assert "tez orada" in tg.texts()[-1] and "reply_markup" not in tg.last()
+    await add_user(ADMIN)
+    await bot.handle(msg("✨ Animatsiyali taqdimot", uid=ADMIN, mid=2))
+    assert "anim=1" in tg.last()["reply_markup"]["inline_keyboard"][0][0]["web_app"]["url"]
