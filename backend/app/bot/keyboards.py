@@ -15,7 +15,7 @@ def _bare(text: str) -> str:
 # reply-keyboard text -> key, any language; with and without the leading emoji (telegram.emoji_buttons)
 _KB = [(str(T[lang][k]), k) for lang in LANGS for k in T[lang] if k.startswith("kb_")]
 # earlier labels of a button: a keyboard the user still has keeps working
-_OLD = {"🎁 Do'stlarni taklif qilish": "kb_invite", "🎁 Пригласить друзей": "kb_invite", "🎁 Invite friends": "kb_invite"}
+_OLD = {"📝 Реферат / Самостоятельная": "kb_paper", "🎁 Do'stlarni taklif qilish": "kb_invite", "🎁 Пригласить друзей": "kb_invite", "🎁 Invite friends": "kb_invite"}
 BUTTONS: dict[str, str] = {**{_bare(text): k for text, k in [*_KB, *_OLD.items()]}, **dict(_KB), **_OLD}
 
 

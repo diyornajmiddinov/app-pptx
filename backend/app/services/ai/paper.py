@@ -28,6 +28,32 @@ INTRO_PARTS = {
 }
 
 
+# how the literature and page references look in each language (the model copies the examples' style)
+REFS = {
+    "uz": """  O‘zbekiston Respublikasining “Ta’lim to‘g‘risida”gi Qonuni. 2020-yil 23-sentabr, O‘RQ-637-son.
+  Familiya I.O. Kitob nomi: darslik. – Toshkent: Nashriyot, 2021. – 256 b.
+  O‘zbekiston Respublikasi Qonunchilik ma’lumotlari milliy bazasi. – URL: https://lex.uz""",
+    "uzc": """  Ўзбекистон Республикасининг “Таълим тўғрисида”ги Қонуни. 2020 йил 23 сентябрь, ЎРҚ-637-сон.
+  Фамилия И.О. Китоб номи: дарслик. – Тошкент: Нашриёт, 2021. – 256 б.
+  Ўзбекистон Республикаси Қонунчилик маълумотлари миллий базаси. – URL: https://lex.uz""",
+    "ru": """  Закон Республики Узбекистан «Об образовании» от 23.09.2020 г. № ЗРУ-637.
+  Фамилия И. О. Название книги: учебник. – Москва: Издательство, 2021. – 256 с.
+  Фамилия И. О. Название статьи // Название журнала. – 2020. – № 3. – С. 45–52.
+  Национальная база данных законодательства Республики Узбекистан. – URL: https://lex.uz""",
+    "en": """  Law of the Republic of Uzbekistan "On Education", 23 September 2020, No. ZRU-637.
+  Surname, A. B. (2021). Title of the book (2nd ed.). Publisher.
+  Surname, A. B., & Surname, C. D. (2020). Title of the article. Journal Name, 12(3), 45–52.
+  National Database of Legislation of the Republic of Uzbekistan. https://lex.uz""",
+}
+LOCAL_REFS = {  # a work in Uzbek or Russian leans on literature in its own language too
+    "uz": "\nRo'yxatda o'zbek tilidagi darslik va qo'llanmalar ham bo'lsin (mavjud bo'lsa), faqat xorijiy manbalar emas.",
+    "uzc": "\nRo'yxatda o'zbek tilidagi darslik va qo'llanmalar ham bo'lsin (mavjud bo'lsa), faqat xorijiy manbalar emas.",
+    "ru": "\nRo'yxatda rus tilidagi darslik va monografiyalar ham bo'lsin (haqiqatan mavjudlari), faqat ingliz tilidagilar emas.",
+}
+PAGE_REF = {"uz": "[n, 45-b.]", "uzc": "[n, 45-б.]", "ru": "[n, с. 45]", "en": "[n, p. 45]"}
+DOC = {"referat": "referat", "mustaqil": "mustaqil ish"}
+
+
 def shape(pages: int) -> tuple[int, int]:
     """(chapters, sections per chapter) for a work of this many pages."""
     return (2, 2) if pages <= 12 else (2, 3) if pages <= 20 else (3, 3)
@@ -144,28 +170,28 @@ def _check_plan(data: dict, n_chapters: int, n_sections: int, fixed: list[dict] 
 
 
 async def plan(topic: str, pages: int, language: str = "uz", subject: str = "", source: str = "", wishes: str = "",
-               chapters: list[dict] | None = None, ask: Ask | None = None) -> dict:
+               chapters: list[dict] | None = None, ask: Ask | None = None, doc_type: str = "referat") -> dict:
     ask = ask or ai  # looked up at call time: tests replace the module's model
     n_ch, n_sec = shape(pages)
     n_refs = 8 if pages <= 12 else 12
+    doc = DOC.get(doc_type, "referat")
     if chapters:
         task = f"Ish rejasi tayyor, uni O'ZGARTIRMA:\n{_plan_text(chapters)}\nFaqat shu reja uchun adabiyotlar ro'yxatini tuz."
         answer = '{"references": ["...", ...]}'
     else:
-        task = (f"Hajmi taxminan {pages} bet bo'lgan referat rejasini tuz: aynan {n_ch} ta bob, har birida aynan {n_sec} ta paragraf. "
+        task = (f"Hajmi taxminan {pages} bet bo'lgan {doc} rejasini tuz: aynan {n_ch} ta bob, har birida aynan {n_sec} ta paragraf. "
                 "Birinchi bob odatda nazariy asoslar, keyingilari tahlil va amaliy jihatlar, takliflar. Nomlar qisqa, aniq, "
-                "nuqtasiz; \"Kirish\", \"Xulosa\" ni rejaga qo'shma (ular alohida). Raqam (1.1.) yozma — faqat nom.")
+                "nuqtasiz; kirish va xulosani rejaga qo'shma (ular alohida). Raqam (1.1.) yozma — faqat nom.")
         answer = '{"chapters": [{"title": "...", "sections": ["...", ...]}], "references": ["...", ...]}'
     prompt = f"""{_common(topic, subject, language, source, wishes)}
 
 {task}
 Adabiyotlar ro'yxati: {n_refs}–15 ta, FAQAT haqiqatan mavjud manbalar (ishonching komil bo'lmagan kitobni yozma, to'qima).
 Tartib: avval normativ-huquqiy hujjatlar (qonunlar, farmonlar), so'ng darslik, monografiya va maqolalar (muallif familiyasi
-bo'yicha alifbo tartibida), oxirida internet manbalari. Rasmiylashtirish (GOST 7.1 bo'yicha), masalan:
-  O‘zbekiston Respublikasining “Ta’lim to‘g‘risida”gi Qonuni. 2020-yil 23-sentabr, O‘RQ-637-son.
-  Familiya I.O. Kitob nomi: darslik. – Toshkent: Nashriyot, 2021. – 256 b.
-  O‘zbekiston Respublikasi Qonunchilik ma’lumotlari milliy bazasi. – URL: https://lex.uz
-Xorijiy manbaning nomini ASL tilida qoldir (tarjima qilma), izoh yoki tushuntirish qatorlarini yozma — faqat manbalar.
+bo'yicha alifbo tartibida), oxirida internet manbalari. Ro'yxat ish tilida rasmiylashtirilsin, namunadagi kabi
+({'APA' if language == 'en' else 'GOST 7.1'}); har bir kitob va maqolada NASHR YILI bo'lsin:
+{REFS[language]}
+Xorijiy manbaning nomini ASL tilida qoldir (tarjima qilma), izoh yoki tushuntirish qatorlarini yozma — faqat manbalar.{LOCAL_REFS.get(language, "")}
 Hujjatning sanasi va raqamini faqat aniq bilsang yoz, aks holda faqat nomi va yili. Saytlar uchun faqat asosiy manzil
 (https://lex.uz kabi), sahifa yo'lini to'qima.
 Raqam qo'yma — ro'yxat tartibi raqam bo'ladi.
@@ -186,7 +212,9 @@ def _check_paragraphs(data: dict, want: int, n_refs: int, key: str = "paragraphs
         e.append(f"{key}: {got} so'z, kamida {int(want * 0.85)} so'z kerak — kengaytir")
     if got > want * 1.7:
         e.append(f"{key}: {got} so'z, ko'pi bilan {int(want * 1.3)} so'z — qisqartir")
-    bad = sorted({int(n) for p in paras for n in re.findall(r"\[(\d+)(?:,[^\]]*)?\]", p) if not 1 <= int(n) <= n_refs})
+    cited = [int(m.group(1)) for p in paras for group in re.findall(r"\[(\d[^\]]*)\]", p)  # [3], [3, 45-b.], [1; 3]
+             for part in group.split(";") if (m := re.match(r"\s*(\d+)", part))]
+    bad = sorted({n for n in cited if not 1 <= n <= n_refs})
     if bad:
         e.append(f"havolalar {bad}: ro'yxatda 1–{n_refs} raqamli manbalar bor")
     return paras, e
@@ -197,18 +225,19 @@ async def _intro(head: str, language: str, words: int, n_chapters: int, n_refs: 
     prompt = f"""{head}
 KIRISH qismini yoz, taxminan {words} so'z, 4–7 xatboshi. Xatboshilar shu qalin sarlavhalar bilan boshlansin (tartibi bilan):
 {parts}. Vazifalarni bitta xatboshida sanab o't. "Ishning tuzilishi" da ish kirish, {n_chapters} ta bob, xulosa va adabiyotlar
-ro'yxatidan iboratligini yoz. Kerak joyda manbalarga [n] ko'rinishida havola qil.
+ro'yxatidan iboratligini yoz. Kerak joyda manbalarga [n] ko'rinishida havola qil (bir nechtasi: [1; 3]).
 Javob: FAQAT JSON: {{"paragraphs": ["...", ...]}}"""
     return await _ask_until([{"role": "user", "content": prompt}], lambda d: _check_paragraphs(d, words, n_refs), ask)
 
 
-async def _chapter(head: str, i: int, chapter: dict, words: list[int], n_refs: int, ask: Ask) -> list[dict]:
+async def _chapter(head: str, i: int, chapter: dict, words: list[int], n_refs: int, ask: Ask, language: str = "uz") -> list[dict]:
     rows = "\n".join(f"  {i + 1}.{j + 1}. {s} — taxminan {w} so'z" for j, (s, w) in enumerate(zip(chapter["sections"], words, strict=True)))
     prompt = f"""{head}
 Endi faqat {i + 1}-BOBni yoz: "{chapter['title']}". Paragraflar:
 {rows}
 Har paragraf 3–8 xatbosidan iborat, har xatboshi 60–180 so'z. Paragraflar bir-birini takrorlamasin, boshqa boblar mavzusiga
-o'tib ketmasin. Har paragrafda kamida bitta manbaga [n] yoki [n, 45-b.] ko'rinishida havola bo'lsin (n — ro'yxatdagi raqam).
+o'tib ketmasin. Har paragrafda kamida bitta manbaga [n] yoki {PAGE_REF[language]} ko'rinishida havola bo'lsin (n — ro'yxatdagi raqam);
+bir nechta manba nuqtali vergul bilan: [1; 3] (vergul faqat sahifadan oldin).
 Paragraf nomini matn ichida takrorlama, sarlavha yozma, ro'yxat belgilari (-, *) ishlatma.
 Javob: FAQAT JSON: {{"sections": [{{"paragraphs": ["...", ...]}}, ...]}} — aynan {len(words)} ta, tartib bilan."""
 
@@ -239,16 +268,17 @@ async def write(req: dict, fmt: dict, ask: Ask | None = None) -> dict:
     ask = ask or ai
     language, pages = req.get("language", "uz"), req["pages"]
     p = await plan(req["topic"], pages, language, req.get("subject", ""), req.get("source", ""), req.get("wishes", ""),
-                   req.get("outline"), ask)
+                   req.get("outline"), ask, req.get("doc_type", "referat"))
     chapters, refs = p["chapters"], p["references"]
     b = budget(pages, fmt, chapters)
     head = (f"{_common(req['topic'], req.get('subject', ''), language, req.get('source', ''), req.get('wishes', ''))}\n\n"
             f"Ish rejasi:\n{_plan_text(chapters)}\n\nAdabiyotlar ro'yxati (havolalar uchun raqamlar):\n{_refs_text(refs)}\n")
     intro, *bodies, conclusion = await asyncio.gather(
         _intro(head, language, b["intro"], len(chapters), len(refs), ask),
-        *(_chapter(head, i, ch, b["sections"][i], len(refs), ask) for i, ch in enumerate(chapters)),
+        *(_chapter(head, i, ch, b["sections"][i], len(refs), ask, language) for i, ch in enumerate(chapters)),
         _conclusion(head, b["conclusion"], len(refs), ask))
     meta_keys = ("ministry", "university", "faculty", "department", "subject", "student", "group", "teacher", "city", "year", "doc_type")
     text = polish({"intro": intro, "chapters": [{"title": ch["title"], "sections": s} for ch, s in zip(chapters, bodies, strict=True)],
                    "conclusion": conclusion, "references": refs}, language)
+    # the title page shows what the user typed, as they typed it
     return {"meta": {"topic": req["topic"], "language": language, **{k: req.get(k, "") for k in meta_keys}}, **text}

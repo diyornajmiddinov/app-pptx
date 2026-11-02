@@ -242,3 +242,15 @@ async def test_the_chat_gets_word_and_pdf(client, tg, offline, monkeypatch):  # 
     await jobs.run_pending()
     docs = tg.sent("sendDocument")
     assert len(docs) == 2 and "12 bet" in docs[0]["caption"] and docs[1]["caption"].endswith("PDF")
+
+
+async def test_the_literature_and_references_follow_the_work_s_language():
+    seen = []
+
+    async def model(messages):
+        seen.append(messages[0]["content"])
+        return json.dumps({"chapters": [{"title": f"Глава {i}", "sections": ["А", "Б"]} for i in range(2)],
+                           "references": [f"Иванов И. И. Книга {n}. – Москва: Медицина, 2020. – 300 с." for n in range(8)]}, ensure_ascii=False)
+    await paper_ai.plan("Аускультация", 10, "ru", ask=model, doc_type="mustaqil")
+    assert "Москва: Издательство" in seen[0] and "Toshkent" not in seen[0] and "mustaqil ish rejasini" in seen[0]
+    assert paper_ai.PAGE_REF["en"] == "[n, p. 45]" and paper_ai.PAGE_REF["ru"] == "[n, с. 45]"

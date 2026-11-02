@@ -132,7 +132,7 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         # bottom (reply) keyboard and buttons
         "kb_create": "📊 Создать презентацию",
         "kb_referat": "📝 Реферат",
-        "kb_paper": "📝 Реферат / Самостоятельная",
+        "kb_paper": "📝 Реферат / Самостоятельная работа",
         "kb_mustaqil": "📘 Самостоятельная работа",
         "paper_queued": "✍️ <b>«{topic}»</b> пишется…\n<i>Обычно это занимает 1–3 минуты. Готовые файлы Word и PDF пришлю сюда.</i>",
         "create_open": "👇 <b>Нажмите кнопку, чтобы открыть приложение:</b>",
