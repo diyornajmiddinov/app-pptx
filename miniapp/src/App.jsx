@@ -4,7 +4,6 @@ import DetailsForm from './components/DetailsForm.jsx';
 import SettingsPanel from './components/SettingsPanel.jsx';
 import TemplateGallery from './components/TemplateGallery.jsx';
 import DeckList from './components/DeckList.jsx';
-import EditorPanel from './components/EditorPanel.jsx';
 import { useTelegram } from './hooks/useTelegram.js';
 import { useMainButton } from './hooks/useMainButton.js';
 import { useAvatar } from './hooks/useAvatar.js';
@@ -168,8 +167,8 @@ export default function App() {
         </p>
       )}
       <div className="mb-5 rounded-xl bg-tg-secondary-bg p-1" role="tablist" aria-label={t('mode')}>
-        <div className={`grid gap-1 ${decks.length > 0 ? 'grid-cols-3' : 'grid-cols-2'}`}>
-          {[['new', t('modeNew')], ...(decks.length > 0 ? [['restyle', t('modeRestyle')]] : []), ['editor', t('modeEditor')]].map(([m, label]) => (
+        <div className={`grid gap-1 ${decks.length > 0 ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          {[['new', t('modeNew')], ...(decks.length > 0 ? [['restyle', t('modeRestyle')]] : [])].map(([m, label]) => (
             <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => setMode(m)}
               className={`h-9 rounded-lg text-[13px] font-medium ${mode === m ? 'bg-tg-bg text-tg-text shadow-sm' : 'text-tg-hint'}`}>{label}</button>
           ))}
@@ -180,7 +179,6 @@ export default function App() {
           </p>
         )}
       </div>
-      {editorTab && <EditorPanel tg={tg} initData={initData} isTelegram={isTelegram} />}
       {restyling && <DeckList decks={decks} templates={TEMPLATES} selectedId={deckId} onSelect={(id) => { hapticSelect(); setDeckId(id); }} />}
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
       {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
