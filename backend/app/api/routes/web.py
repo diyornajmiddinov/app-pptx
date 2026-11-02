@@ -45,7 +45,7 @@ from app.core.auth import make_editor_token
 from app.core.config import DATA_DIR, ENGINE_DIR, settings
 from app.core.locks import machine_lock_async
 from app.core.telegram import send_message
-from app.services import app_settings, archive, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
+from app.services import animation, app_settings, archive, billing, decks, doc_text, growth, jobs, papers, payments, web_auth
 from app.services import images_pdf as pdfs
 from app.services.ai import content as ai_content
 from app.services.ai import models
@@ -188,6 +188,7 @@ async def me(uid: int = Depends(web_user)):
     u = await db.pool().fetchrow("SELECT first_name, last_name, username, lang FROM users WHERE id = $1", uid)
     out = {"user": {"id": uid, **dict(u)}, "lang": u["lang"] or "uz", "balance": await billing.balance(uid), **await _prices()}
     out["prices"]["now"] = await jobs.generate_price(uid)  # what "create" costs this user right now
+    out["animation"] = await animation.info(uid)
     out["prices"]["first_max_slides"] = jobs.FIRST_MAX_SLIDES  # a free deck has up to this many slides, a longer one the usual price
     return out
 
@@ -218,6 +219,7 @@ class GenerateRequest(OutlineRequest):
     outline: list[Annotated[str, Field(max_length=80)]] | None = Field(None, max_length=30)  # approved titles, one per slide
     notes: bool = False                                                                       # speaker notes
     density: Literal["concise", "balanced", "detailed"] = "balanced"                           # how much text on the slides
+    animated: bool = False                                                                    # animated copy (costs extra)
 
 
 class RestyleRequest(BaseModel):
@@ -240,6 +242,8 @@ async def _order(uid: int, kind: str, payload: dict, price: int | None = None) -
 async def generate(req: GenerateRequest, uid: int = Depends(web_user)):
     if req.outline is not None and len(req.outline) != req.slide_count:
         raise HTTPException(422, "outlineStale")  # the slide count changed after the outline was made
+    if req.animated and (why := await animation.refusal(uid, req.template_id)):
+        raise HTTPException(403 if why == "animSoon" else 422, why)
     payload = {"user_id": uid, "via": "web", **req.model_dump(exclude_none=True)}
     if not payload.get("source"):
         payload.pop("source", None)
@@ -279,8 +283,9 @@ async def restyle(req: RestyleRequest, uid: int = Depends(web_user)):
         raise HTTPException(404, "notFound")
     if deck["request"]["template_id"] == req.template_id:
         raise HTTPException(422, "sameTemplate")
-    job_id, ahead = await _order(uid, "restyle", {"deck_id": req.deck_id, "template_id": req.template_id},
-                                 (await app_settings.get())["price_restyle"])
+    animated, extra = await animation.for_restyle(uid, deck["request"], req.template_id)
+    job_id, ahead = await _order(uid, "restyle", {"deck_id": req.deck_id, "template_id": req.template_id, "animated": animated},
+                                 (await app_settings.get())["price_restyle"] + extra)
     return {"job": job_id, "ahead": ahead}
 
 

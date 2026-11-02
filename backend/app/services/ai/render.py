@@ -13,6 +13,12 @@ from app.core.config import ENGINE_DIR
 from app.core.locks import machine_lock, machine_lock_async
 
 TIMEOUT = 180  # s
+# templates with an animated copy (engine/animated/templates/NN-*.js): drawn by engine/animated/fill.js when asked
+ANIMATED = frozenset(int(p.name.split("-")[0]) for p in (ENGINE_DIR / "animated" / "templates").glob("*.js"))
+
+
+def _script(template_id: int, animated: bool) -> str:
+    return "animated/fill.js" if animated and template_id in ANIMATED else "fill.js"
 
 
 def add_notes(path: Path, content: dict) -> Path:
@@ -37,11 +43,11 @@ def _content_file(content: dict) -> str:
     return f.name
 
 
-async def render(content: dict, template_id: int, out_path: Path | str) -> Path:
+async def render(content: dict, template_id: int, out_path: Path | str, animated: bool = False) -> Path:
     """Async: a cancelled job (time limit) kills node instead of leaving it running. One node on the server at a time
     (the "drawing" lock): the worker runs several jobs at once, but they mostly wait for the AI, drawing takes ~1 s."""
     src = _content_file(content)
-    cmd = ["node", "fill.js", str(template_id), src, str(out_path)]
+    cmd = ["node", _script(template_id, animated), str(template_id), src, str(out_path)]
     try:
         async with machine_lock_async("drawing"):
             proc = await asyncio.create_subprocess_exec(*cmd, cwd=ENGINE_DIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
@@ -59,12 +65,12 @@ async def render(content: dict, template_id: int, out_path: Path | str) -> Path:
     return await asyncio.to_thread(add_notes, Path(out_path), content)
 
 
-def render_sync(content: dict, template_id: int, out_path: Path | str, lock: bool = True) -> Path:
+def render_sync(content: dict, template_id: int, out_path: Path | str, lock: bool = True, animated: bool = False) -> Path:
     """For code that already runs in a thread (the editor's import). lock=False: the caller holds the "drawing" lock."""
     src = _content_file(content)
     try:
         with machine_lock("drawing") if lock else contextlib.nullcontext():
-            subprocess.run(["node", "fill.js", str(template_id), src, str(out_path)], cwd=ENGINE_DIR, check=True, timeout=TIMEOUT,
+            subprocess.run(["node", _script(template_id, animated), str(template_id), src, str(out_path)], cwd=ENGINE_DIR, check=True, timeout=TIMEOUT,
                            capture_output=True, text=True)
     finally:
         os.unlink(src)

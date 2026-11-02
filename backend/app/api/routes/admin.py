@@ -370,6 +370,8 @@ class SettingsReq(BaseModel):
     topup_amounts: list[int] = Field(min_length=1, max_length=8)
     referral_bonus: int | None = Field(None, ge=0, le=1_000_000)           # left out: unchanged
     first_generate_price: int | None = Field(None, ge=0, le=10_000_000)    # sent as null: no first-deck price
+    price_animation: int | None = Field(None, ge=0, le=10_000_000)         # left out: unchanged
+    animation_public: bool | None = None                                   # animated decks for everyone (not only admins)
 
 
 def _dir_size(path: Path) -> int:
@@ -419,6 +421,10 @@ async def put_settings(req: SettingsReq, uid: int = Depends(admin_user)):
         new["price_paper"] = req.price_paper
     if "first_generate_price" in req.model_fields_set:
         new["first_generate_price"] = req.first_generate_price
+    if req.price_animation is not None:
+        new["price_animation"] = req.price_animation
+    if req.animation_public is not None:
+        new["animation_public"] = req.animation_public
     await app_settings.set_many(new, uid)
     await audit(uid, "settings", None, before=old, after=new)
     return {"values": await app_settings.get()}

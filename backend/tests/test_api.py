@@ -257,3 +257,29 @@ async def test_the_mini_app_passes_the_users_wishes(client, tg):
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
     assert (await db.pool().fetchval("SELECT payload FROM jobs"))["wishes"] == "Ko'proq statistika"
     assert (await client.post("/api/generate", headers=h(), json={**body, "wishes": "x" * 601})).status_code == 422
+
+
+# ---------------------------------------------------------------- animated decks: admins only until opened, extra price
+
+async def test_animated_decks_are_for_admins_until_opened_and_cost_extra(client, tg, monkeypatch):
+    from app.core.config import settings
+    from app.services import app_settings
+    from app.services.ai.render import ANIMATED
+    assert set(range(1, 21)) <= ANIMATED
+    await add_user(U, balance=20000)
+    me = (await client.get("/api/me", headers=h())).json()["animation"]
+    assert me["open"] is False and me["price"] == 3000 and 1 in me["templates"]
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "language": "uz", "topic": "Mavzu", "animated": True}
+    r = await client.post("/api/generate", headers=h(), json=body)
+    assert r.status_code == 403 and r.json()["detail"] == "animSoon"  # "coming soon" for users
+    assert await billing.balance(U) == 20000
+    monkeypatch.setattr(settings, "admin_ids", {U})
+    assert (await client.get("/api/me", headers=h())).json()["animation"]["open"] is True
+    r = await client.post("/api/generate", headers=h(), json={**body, "template_id": 150})
+    assert r.status_code == 422 and r.json()["detail"] == "animTemplate"
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
+    assert await db.pool().fetchval("SELECT price FROM jobs") == 5000 + 3000 and await billing.balance(U) == 12000
+    monkeypatch.setattr(settings, "admin_ids", set())
+    await app_settings.set_many({"animation_public": True, "price_animation": 1000}, 1)
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202  # opened to everyone
+    assert await db.pool().fetchval("SELECT price FROM jobs ORDER BY id DESC LIMIT 1") == 6000 and not await billing.reconcile()

@@ -45,6 +45,7 @@ class Settings(BaseSettings):
     price_generate: int = Field(5000, ge=0)
     price_restyle: int = Field(2000, ge=0)
     price_paper: int = Field(7000, ge=0)                # a referat / mustaqil ish (website)
+    price_animation: int = Field(3000, ge=0)            # added to a deck's price when it is animated (engine/animated)
     topup_amounts: Annotated[list[int], NoDecode] = [15000, 30000, 50000, 100000]
     referral_bonus: int = Field(1000, ge=0)            # to the inviter, after the invited user's first top-up (website)
     first_generate_price: int | None = Field(None, ge=0)  # a user's first deck, bot or site (None: the usual price; 0: free)

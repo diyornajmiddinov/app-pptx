@@ -27,7 +27,8 @@ async function request(method, path, { initData, payload } = {}) {
   } finally { clearTimeout(timer); }
   if (!res.ok) {
     const detail = await res.clone().json().then((b) => b?.detail).catch(() => null);
-    throw new ApiError(detail === 'subscribe' ? 'eSubscribe' : keyForStatus(res.status), res.status);
+    const keys = { subscribe: 'eSubscribe', animSoon: 'eAnimSoon', animTemplate: 'eAnimTemplate' };
+    throw new ApiError(keys[detail] || keyForStatus(res.status), res.status);
   }
   return res.json().catch(() => ({}));
 }

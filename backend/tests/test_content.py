@@ -159,7 +159,7 @@ async def test_build_presentation_end_to_end_with_fakes(tmp_path, monkeypatch):
 
     drawn = {}
 
-    async def fake_render(c, template_id, out):
+    async def fake_render(c, template_id, out, animated=False):
         drawn.update(content=c, template=template_id); out.write_bytes(b"pptx"); return out
     monkeypatch.setattr(pipeline, "render", fake_render)
     path, c = await pipeline.build_presentation("Soliq", 3, 10, "uz", meta={"author": "Ali"}, ask=model, search=search)
@@ -255,7 +255,7 @@ async def test_the_chosen_density_is_kept_and_used_again_for_a_new_template(monk
     from app.services.ai import pipeline
     got = {}
 
-    async def switch(content, template_id, out_path=None, ask=None, density="balanced"):
+    async def switch(content, template_id, out_path=None, ask=None, density="balanced", animated=False):
         got["density"] = density
         raise RuntimeError("stop here")
     monkeypatch.setattr(pipeline, "switch_template", switch)

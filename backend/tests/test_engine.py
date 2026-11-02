@@ -38,3 +38,24 @@ async def test_async_render_and_a_broken_deck(sample, tmp_path):
     with pytest.raises(subprocess.CalledProcessError) as e:
         await render({"slides": "broken", "meta": {}}, 3, tmp_path / "b.pptx")
     assert "TypeError" in e.value.stderr  # what alerts.why shows to the admins
+
+
+@pytest.mark.parametrize("template_id", range(1, 21))
+def test_animated_copy_renders_with_transitions_and_animations(template_id, sample, tmp_path):
+    import re
+    import zipfile
+    out = render_sync(sample, template_id, tmp_path / "a.pptx", animated=True)
+    assert len(Presentation(out).slides) == len(sample["slides"])
+    z = zipfile.ZipFile(out)
+    slides = [z.read(n).decode() for n in z.namelist() if re.fullmatch(r"ppt/slides/slide\d+\.xml", n)]
+    assert all("<p:timing>" in x and ("<p:transition" in x) for x in slides)
+    for x in slides:  # every animation points at a shape of its slide; timing node ids are unique
+        assert set(re.findall(r'spid="(\d+)"', x)) <= set(re.findall(r'<p:cNvPr id="(\d+)"', x))
+        ids = re.findall(r'<p:cTn id="(\d+)"', x)
+        assert len(ids) == len(set(ids))
+
+
+def test_a_template_without_an_animated_copy_is_drawn_still(sample, tmp_path):
+    import zipfile
+    out = render_sync(sample, 150, tmp_path / "s.pptx", animated=True)
+    assert "<p:timing>" not in zipfile.ZipFile(out).read("ppt/slides/slide2.xml").decode()

@@ -89,6 +89,8 @@ async def order(kind: str, user_id: int, payload: dict, price: int | None = None
             raise TooMany
         if cfg is not None:
             price = _price(cfg, await con.fetchval(_HAS_DECK, user_id), payload.get("slide_count", 0))
+            if payload.get("animated"):  # an animated deck costs extra (admin panel)
+                price += cfg["price_animation"]
         assert price is not None
         if await billing.apply_in(con, user_id, -price, kind, None, False) is None:
             raise LowBalance(price)
@@ -143,23 +145,25 @@ async def build(req: dict, deck_id: str, user_id: int) -> tuple[Path, dict]:
     """New deck: AI text, photos, drawing."""
     models.usage_context.set({"user_id": user_id, "purpose": "generate", "job": deck_id})
     meta = {k: req.get(k, "") for k in ("author", "org", "loc", "year")}
+    animated = bool(req.get("animated"))
     if settings.demo:  # offline demo: ready content instead of AI + Pexels
         content = demo_content(req["topic"], meta)
-        path = await render(content, req["template_id"], pipeline.workdir() / "demo.pptx")
+        path = await render(content, req["template_id"], pipeline.workdir() / "demo.pptx", animated)
     else:
         path, content = await pipeline.build_presentation(req["topic"], req["template_id"], req["slide_count"], req.get("language", "uz"), meta=meta,
                                                           outline=req.get("outline"), notes=bool(req.get("notes")), source=req.get("source", ""),
-                                                          density=req.get("density", "balanced"), wishes=req.get("wishes", ""))
+                                                          density=req.get("density", "balanced"), wishes=req.get("wishes", ""), animated=animated)
     await asyncio.to_thread(decks.keep_images, user_id, deck_id, content)
     return path, content
 
 
-async def redraw(content: dict, template_id: int, user_id: int, deck_id: str, density: str = "balanced") -> tuple[Path, dict]:
+async def redraw(content: dict, template_id: int, user_id: int, deck_id: str, density: str = "balanced",
+                 animated: bool = False) -> tuple[Path, dict]:
     """The same deck in another template (one short AI call adapts the tone)."""
     models.usage_context.set({"user_id": user_id, "purpose": "restyle", "job": deck_id})
     if settings.demo:
-        return await render(content, template_id, pipeline.workdir() / "demo.pptx"), content
-    return await pipeline.switch_template(content, template_id, density=density)
+        return await render(content, template_id, pipeline.workdir() / "demo.pptx", animated), content
+    return await pipeline.switch_template(content, template_id, density=density, animated=animated)
 
 
 async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".pptx", copy: dict | None = None):
@@ -183,7 +187,8 @@ async def run(job: dict):
             path, content = await asyncio.wait_for(build(req, deck_id, job["user_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, req, deck_id)
             await deliver(job["user_id"], path, req["topic"], t(await lang_of(job["user_id"]), "slides", n=len(content["slides"])),
-                          copy={"kind": "generate", "facts": [f"{len(content['slides'])} slayd", f"shablon #{req['template_id']}"],
+                          copy={"kind": "generate", "facts": [f"{len(content['slides'])} slayd", f"shablon #{req['template_id']}",
+                                                              "✨ animatsiyali" if req.get("animated") else ""],
                                 "price": job["price"], "via": req.get("via", "bot")})
         elif job["kind"] == "restyle":
             p = job["payload"]
@@ -191,8 +196,8 @@ async def run(job: dict):
             if not deck:
                 raise LookupError(f"taqdimot {p['deck_id']} topilmadi")
             path, content = await asyncio.wait_for(redraw(deck["content"], p["template_id"], job["user_id"], p["deck_id"],
-                                                                deck["request"].get("density", "balanced")), JOB_TIMEOUT)
-            await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"]}, p["deck_id"])
+                                                                deck["request"].get("density", "balanced"), bool(p.get("animated"))), JOB_TIMEOUT)
+            await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"], "animated": bool(p.get("animated"))}, p["deck_id"])
             await deliver(job["user_id"], path, content["meta"]["topic"], t(await lang_of(job["user_id"]), "new_template"),
                           copy={"kind": "restyle", "facts": [f"shablon #{p['template_id']}"], "price": job["price"], "via": p.get("via", "bot")})
         elif job["kind"] == "paper":

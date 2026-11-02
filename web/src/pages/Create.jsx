@@ -70,6 +70,7 @@ export default function Create({ me, refreshMe, go }) {
   const [form, setForm] = useState({ topic: '', slide_count: 10, language: lang, template_id: 1, author: '', org: '', loc: '', year: String(new Date().getFullYear()) });
   const [notes, setNotes] = useState(false);
   const [density, setDensity] = useState('balanced'); // how much text on the slides
+  const [animated, setAnimated] = useState(false);     // ✨ animated copy of the template (costs extra; admins first)
   const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   const [source, setSource] = useState(null);
   const [outline, setOutline] = useState(null); // [{type, title}] once made; dropped when what it was made for changes
@@ -84,7 +85,10 @@ export default function Create({ me, refreshMe, go }) {
   };
   // a free first deck has up to first_max_slides slides; a longer one costs the usual price
   const freeMax = me.prices.now === 0 && me.prices.generate > 0 ? me.prices.first_max_slides : null;
-  const price = freeMax && form.slide_count > freeMax ? me.prices.generate : me.prices.now ?? me.prices.generate;
+  const anim = me.animation;
+  const animTemplateOk = !!anim?.templates?.includes(form.template_id);
+  const sendAnimated = animated && !!anim?.open && animTemplateOk;
+  const price = (freeMax && form.slide_count > freeMax ? me.prices.generate : me.prices.now ?? me.prices.generate) + (sendAnimated ? anim.price : 0);
   const slideCount = form.slide_count;
   const low = me.balance < price;
   const topic = form.topic.trim();
@@ -101,7 +105,7 @@ export default function Create({ me, refreshMe, go }) {
     if (busy) return;
     setBusy('create'); setError(''); setDone(false);
     try {
-      await api.generate({ ...base, author: form.author, org: form.org, loc: form.loc, year: form.year, notes, density,
+      await api.generate({ ...base, author: form.author, org: form.org, loc: form.loc, year: form.year, notes, density, animated: sendAnimated,
         ...(outline ? { outline: outline.map((s) => s.title.trim()) } : {}) });
       setDone(true); setJobsKey((k) => k + 1);
       setForm((f) => ({ ...f, topic: '' })); setOutline(null); setSource(null); setWishes('');
@@ -139,6 +143,14 @@ export default function Create({ me, refreshMe, go }) {
           <Field label={t('density')} hint={t(`d_${density}_t`)}>
             <Segmented value={density} onChange={setDensity} label={t('density')} options={['concise', 'balanced', 'detailed'].map((d) => ({ id: d, label: t(`d_${d}`) }))} />
           </Field>
+          {anim && (
+            <label className={`flex items-start gap-3 ${anim.open && animTemplateOk ? '' : 'opacity-60'}`}>
+              <input type="checkbox" checked={sendAnimated} disabled={!anim.open || !animTemplateOk} onChange={(e) => setAnimated(e.target.checked)} className="mt-1 h-4 w-4 rounded accent-brand-600" />
+              <span><span className="flex items-center gap-2 text-sm font-medium text-slate-900 dark:text-white">✨ {t('animTitle')}
+                {!anim.open && <span className="rounded-full bg-brand-600 px-2 py-0.5 text-[11px] font-semibold text-white">{t('soon')}</span>}</span>
+                <span className="block text-xs text-slate-500">{!anim.open ? t('animSoonHint') : animTemplateOk ? t('animHint', { price: money(anim.price) }) : t('animNoTpl')}</span></span>
+            </label>
+          )}
           <label className="flex items-start gap-3">
             <input type="checkbox" checked={notes} onChange={(e) => setNotes(e.target.checked)} className="mt-1 h-4 w-4 rounded accent-brand-600" />
             <span><span className="block text-sm font-medium text-slate-900 dark:text-white">{t('notes')}</span>

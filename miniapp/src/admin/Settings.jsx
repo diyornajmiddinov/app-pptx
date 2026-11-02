@@ -16,7 +16,8 @@ export default function Settings() {
 
   useEffect(() => {
     if (data) setForm({ gen: data.values.price_generate, restyle: data.values.price_restyle, paper: data.values.price_paper, topup: data.values.topup_amounts.join(', '),
-      ref: data.values.referral_bonus ?? 0, first: data.values.first_generate_price ?? '' });
+      ref: data.values.referral_bonus ?? 0, first: data.values.first_generate_price ?? '', anim: data.values.price_animation ?? 0,
+      animOpen: !!data.values.animation_public });
     if (data) setSub({ channel: data.values.required_channel || '', link: data.values.required_channel_link || '' });
     if (data) setArch(data.values.archive_channel || '');
   }, [data]);
@@ -25,16 +26,17 @@ export default function Settings() {
   if (!data || !form) return <div className="card"><Loading rows={8} /></div>;
   const s = data.system;
   const topup = form.topup.split(/[,;]/).map(parse).filter((v) => v > 0);
-  const valid = [form.gen, form.restyle, form.paper].every((v) => Number.isFinite(parse(v)) && parse(v) >= 0) && topup.length > 0;
+  const valid = [form.gen, form.restyle, form.paper, form.anim].every((v) => Number.isFinite(parse(v)) && parse(v) >= 0) && topup.length > 0;
 
   const save = async () => {
     const first = String(form.first).trim() === '' ? null : parse(form.first);
     const body = { price_generate: parse(form.gen), price_restyle: parse(form.restyle), price_paper: parse(form.paper), topup_amounts: topup,
-      referral_bonus: parse(form.ref) || 0, first_generate_price: first };
+      referral_bonus: parse(form.ref) || 0, first_generate_price: first, price_animation: parse(form.anim), animation_public: form.animOpen };
     if (!await confirm({ title: 'Narxlarni saqlash', body: <>
       Yangi taqdimot: <b>{som(body.price_generate)}</b><br />Shablon almashtirish: <b>{som(body.price_restyle)}</b><br />Referat (sayt): <b>{som(body.price_paper)}</b><br />
       To'ldirish: {body.topup_amounts.map(som).join(', ')}<br />
-      Taklif bonusi: <b>{som(body.referral_bonus)}</b><br />Birinchi taqdimot: <b>{first === null ? "oddiy narx" : first === 0 ? 'tekin' : som(first)}</b>
+      Taklif bonusi: <b>{som(body.referral_bonus)}</b><br />Birinchi taqdimot: <b>{first === null ? "oddiy narx" : first === 0 ? 'tekin' : som(first)}</b><br />
+      Animatsiya: <b>+{som(body.price_animation)}</b>, {body.animation_public ? <b>hammaga ochiq</b> : "faqat adminlarga (foydalanuvchilarga «tez orada»)"}
       <br /><br />Bot, Mini App va sayt darhol yangi narxlarni ko'rsatadi.</> })) return;
     setBusy(true);
     try { await api.saveSettings(body); toast('Saqlandi'); reload(); } catch (e) { toast(e.message, true); } finally { setBusy(false); }
@@ -104,6 +106,13 @@ export default function Settings() {
                   onChange={(e) => setForm({ ...form, first: e.target.value })} placeholder="yoki chegirma narxi" />
               </div>
               <span className="help">Har bir foydalanuvchining eng birinchi taqdimoti shu narxda. 0 — tekin, bo'sh — oddiy narx. Bajarilmay qolgan taqdimot hisoblanmaydi.</span></div>
+            <div className="field"><label htmlFor="p-anim">✨ Animatsiyali taqdimot (qo'shimcha narx)</label>
+              <input id="p-anim" className="input num" inputMode="numeric" value={form.anim} onChange={(e) => setForm({ ...form, anim: e.target.value })} />
+              <label className="row" style={{ gap: 8, marginTop: 8 }}>
+                <input type="checkbox" checked={form.animOpen} onChange={(e) => setForm({ ...form, animOpen: e.target.checked })} />
+                <span>Hammaga ochiq</span>
+              </label>
+              <span className="help">Taqdimot narxiga qo'shiladi. Belgilanmagan bo'lsa faqat adminlar buyurtma qila oladi, foydalanuvchilar «tez orada» deb ko'radi.</span></div>
             <div className="row"><button type="button" className="btn primary" disabled={busy || !valid} onClick={save}>Saqlash</button></div>
           </div>
         </div>

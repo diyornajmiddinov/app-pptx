@@ -23,6 +23,7 @@ export default function App() {
   const [selectedTemplateId, setSelectedTemplateId] = useState(null);
   const [slideCount, setSlideCount] = useState(10);
   const [density, setDensity] = useState('balanced'); // how much text on the slides
+  const [animated, setAnimated] = useState(false);     // ✨ an animated copy of the template (costs extra; admins first)
   const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   // presentation language follows the interface language until the user picks another one
   const [language, setLanguage] = useState(lang);
@@ -91,7 +92,11 @@ export default function App() {
 
   // a free first deck has up to first_max_slides slides; a longer one costs the usual price (the bot asks to top up)
   const freeMax = account?.prices?.now === 0 && account.prices.generate > 0 ? account.prices.first_max_slides : null;
-  const deckPrice = freeMax && slideCount > freeMax ? account.prices.generate : account?.prices?.now ?? account?.prices?.generate;
+  const anim = account?.animation;
+  const animTemplateOk = !!anim?.templates?.includes(selectedTemplateId);
+  const sendAnimated = animated && !!anim?.open && animTemplateOk;
+  const basePrice = freeMax && slideCount > freeMax ? account.prices.generate : account?.prices?.now ?? account?.prices?.generate;
+  const deckPrice = basePrice != null && sendAnimated ? basePrice + anim.price : basePrice;
 
   const handleGenerate = useCallback(async () => {
     if (submittingRef.current) return;
@@ -123,7 +128,7 @@ export default function App() {
         payload: {
           user_id: user.id, template_id: selectedTemplateId, slide_count: slideCount, language,
           topic: details.topic.trim(), author: details.author.trim(), org: details.org.trim(),
-          loc: details.loc.trim(), year: details.year.trim(), density, wishes: wishes.trim(),
+          loc: details.loc.trim(), year: details.year.trim(), density, wishes: wishes.trim(), animated: sendAnimated,
         },
       });
       }
@@ -137,7 +142,7 @@ export default function App() {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);
     }
-  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, deckPrice, lang, hapticNotify, t, loadAccount]);
+  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, deckPrice, sendAnimated, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
   const price = restyling ? account?.prices?.restyle : deckPrice;
@@ -178,7 +183,9 @@ export default function App() {
       {restyling && <DeckList decks={decks} templates={TEMPLATES} selectedId={deckId} onSelect={(id) => { hapticSelect(); setDeckId(id); }} />}
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
       {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
-        density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }} />}
+        density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }}
+        anim={anim} animated={animated} onAnimatedChange={(v) => { hapticSelect(); setAnimated(v); }} animTemplateOk={animTemplateOk}
+        animPriceText={anim ? money(anim.price, lang) : ''} />}
       {!restyling && !editorTab && (
         <section className="pb-6">
           <label htmlFor="d-wishes" className="mb-1.5 block text-[15px] font-semibold">{t('pWishes')}</label>

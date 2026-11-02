@@ -23,7 +23,7 @@ from app.core import db
 from app.core.auth import telegram_user
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_message
-from app.services import app_settings, billing, decks, jobs, subscription
+from app.services import animation, app_settings, billing, decks, jobs, subscription
 from app.services.users import avatar, lang_of, set_lang, touch
 from app.texts import t
 
@@ -44,6 +44,7 @@ class GenerateRequest(BaseModel):
     year: str = Field("", max_length=10)
     density: Literal["concise", "balanced", "detailed"] = "balanced"  # how much text (ai/catalog.py DENSITY)
     wishes: str = Field("", max_length=600)                           # "what else would you like" (optional)
+    animated: bool = False                                            # an animated copy of the template (costs extra)
 
 
 class RestyleRequest(BaseModel):
@@ -86,6 +87,8 @@ async def generate(req: GenerateRequest, tg_user: dict = Depends(telegram_user))
     if req.user_id != tg_user["id"]:
         raise HTTPException(403, "User mismatch")
     lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
+    if req.animated and (why := await animation.refusal(tg_user["id"], req.template_id)):
+        raise HTTPException(403 if why == "animSoon" else 422, why)
     job_id, ahead, _ = await _order(tg_user["id"], lang, "generate", req.model_dump())  # the first deck may be free (admin panel)
     await _queued(tg_user["id"], lang, t(lang, "queued", topic=req.topic), ahead)
     return {"status": "queued", "job": job_id, "ahead": ahead}
@@ -113,8 +116,9 @@ async def restyle(req: RestyleRequest, tg_user: dict = Depends(telegram_user)):
     if deck["request"]["template_id"] == req.template_id:
         raise HTTPException(422, "Bu taqdimot allaqachon shu shablonda")
     lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
-    job_id, ahead, _ = await _order(tg_user["id"], lang, "restyle", {"deck_id": req.deck_id, "template_id": req.template_id},
-                                    (await app_settings.get())["price_restyle"])
+    animated, extra = await animation.for_restyle(tg_user["id"], deck["request"], req.template_id)
+    job_id, ahead, _ = await _order(tg_user["id"], lang, "restyle", {"deck_id": req.deck_id, "template_id": req.template_id, "animated": animated},
+                                    (await app_settings.get())["price_restyle"] + extra)
     await _queued(tg_user["id"], lang, t(lang, "restyle_queued", topic=deck["content"]["meta"]["topic"]), ahead)
     return {"status": "queued", "job": job_id, "ahead": ahead}
 
@@ -145,7 +149,8 @@ async def me(tg_user: dict = Depends(telegram_user)):
     return {"user": {"id": tg_user["id"], **(dict(u) if u else {})},  # the keyboard-opened app knows only the id
             "lang": await lang_of(tg_user["id"], tg_user.get("language_code")), "balance": await billing.balance(tg_user["id"]),
             "prices": {"generate": cfg["price_generate"], "restyle": cfg["price_restyle"], "paper": cfg["price_paper"],
-                       "now": await jobs.generate_price(tg_user["id"]), "first_max_slides": jobs.FIRST_MAX_SLIDES}}  # a new deck for this user now (the first may be free)
+                       "now": await jobs.generate_price(tg_user["id"]), "first_max_slides": jobs.FIRST_MAX_SLIDES},
+            "animation": await animation.info(tg_user["id"])}  # a new deck for this user now (the first may be free)
 
 
 @router.post("/api/me")

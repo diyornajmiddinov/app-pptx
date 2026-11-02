@@ -21,7 +21,29 @@ function Stepper({ value, onChange }) {
 
 export const DENSITIES = ['concise', 'balanced', 'detailed'];
 
-export default function SettingsPanel({ slideCount, onSlideCountChange, language, onLanguageChange, density, onDensityChange }) {
+/** "✨ Animated": a switch for those it is open to (admins until the admin panel opens it), "coming soon" for the rest */
+function AnimSwitch({ anim, on, onChange, templateOk, priceText }) {
+  const { t } = useI18n();
+  const usable = anim.open && templateOk;
+  return (
+    <div className="flex items-center justify-between gap-3 rounded-[10px] bg-tg-secondary-bg px-3 py-2.5">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 text-[15px] font-semibold">
+          <span>✨ {t('animTitle')}</span>
+          {!anim.open && <span className="rounded-full bg-tg-button px-2 py-0.5 text-[11px] font-semibold text-tg-button-text">{t('soon')}</span>}
+        </div>
+        <p className="mt-0.5 text-[12px] text-tg-hint">{!anim.open ? t('animSoonHint') : templateOk ? t('animHint', { price: priceText }) : t('animNoTpl')}</p>
+      </div>
+      <button type="button" role="switch" aria-checked={on && usable} aria-label={t('animTitle')} disabled={!usable} onClick={() => onChange(!on)}
+        className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${on && usable ? 'bg-tg-button' : 'bg-tg-hint/40'}`}>
+        <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on && usable ? 'left-[22px]' : 'left-0.5'}`} />
+      </button>
+    </div>
+  );
+}
+
+export default function SettingsPanel({ slideCount, onSlideCountChange, language, onLanguageChange, density, onDensityChange,
+  anim, animated, onAnimatedChange, animTemplateOk, animPriceText }) {
   const { t } = useI18n();
   return (
     <section className="space-y-4 pb-6" aria-label={t('settings')}>
@@ -40,6 +62,7 @@ export default function SettingsPanel({ slideCount, onSlideCountChange, language
         <SegmentedControl label={t('density')} value={density} onChange={onDensityChange} options={DENSITIES.map((d) => ({ value: d, label: t(`d_${d}`) }))} />
         <p className="mt-1.5 text-[12px] text-tg-hint">{t(`d_${density}_t`)}</p>
       </div>
+      {anim && <AnimSwitch anim={anim} on={animated} onChange={onAnimatedChange} templateOk={animTemplateOk} priceText={animPriceText} />}
     </section>
   );
 }
