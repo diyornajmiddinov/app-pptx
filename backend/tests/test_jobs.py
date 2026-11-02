@@ -1,6 +1,7 @@
 """The paid-work queue: nothing lost on a restart, money back on failure, a job taken by one worker only."""
 import asyncio
 
+import pytest
 from conftest import add_user
 
 from app.core import db
@@ -104,3 +105,17 @@ def test_systemd_notify(tmp_path, monkeypatch):
         monkeypatch.setenv("NOTIFY_SOCKET", path)
         assert systemd.notify("WATCHDOG=1")
         assert srv.recv(64) == b"WATCHDOG=1"
+
+
+async def test_an_animated_order_is_drawn_animated(monkeypatch):
+    from app.core.config import settings
+    got = {}
+
+    async def fake_render(content, template_id, out, animated=False):
+        got["animated"] = animated
+        raise RuntimeError("stop here")
+    monkeypatch.setattr(settings, "demo", True)
+    monkeypatch.setattr(jobs, "render", fake_render)
+    with pytest.raises(RuntimeError):
+        await jobs.build({"topic": "Mavzu", "template_id": 5, "slide_count": 8, "animated": True}, "d1", 1)
+    assert got["animated"] is True

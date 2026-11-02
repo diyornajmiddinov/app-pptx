@@ -32,11 +32,11 @@ export default function App() {
   const handleDeckLang = useCallback((l) => { deckLangTouched.current = true; setLanguage(l); }, []);
 
   // balance and prices (UZS) come from the server; money is added only in the bot (/balance)
-  const [account, setAccount] = useState(null); // { balance, prices: { generate, restyle } }
+  const [account, setAccount] = useState(null); // { balance, prices: { generate, restyle, now }, user, animation: { templates, open, price } }
   const loadAccount = useCallback(() => {
     if (!isTelegram) return Promise.resolve(null);
     return getMe({ initData }).then((r) => {
-      if (r) setAccount({ balance: r.balance, prices: r.prices, user: r.user });
+      if (r) setAccount({ balance: r.balance, prices: r.prices, user: r.user, animation: r.animation });
       // opened from the bottom keyboard: the name comes from the server, not from Telegram
       const name = [r?.user?.first_name, r?.user?.last_name].filter(Boolean).join(' ');
       if (name) setDetails((d) => (d.author ? d : { ...d, author: name }));
