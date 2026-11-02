@@ -28,7 +28,7 @@ TMP = Path(tempfile.gettempdir())
 MAX_ATTEMPTS = 2  # a job interrupted by a restart is run once more, then refunded
 JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini busy for minutes) -> refunded
 MAX_ACTIVE = 3     # a user's jobs queued or running at once: one person cannot fill the queue for everybody
-FIRST_MAX_SLIDES = 10  # a first deck at the first-deck price (free or cheaper) has at most this many slides
+FIRST_MAX_SLIDES = 10  # a free first deck has at most this many slides (a cheaper, paid one: any size)
 
 
 class LowBalance(Exception):
@@ -40,7 +40,7 @@ class TooMany(Exception):
 
 
 class FirstTooLong(Exception):
-    """A first deck at the first-deck price asked for more than FIRST_MAX_SLIDES slides."""
+    """A free first deck asked for more than FIRST_MAX_SLIDES slides."""
 
 
 # ---------------------------------------------------------------- queue
@@ -79,7 +79,7 @@ async def generate_price(user_id: int) -> int:
 async def order(kind: str, user_id: int, payload: dict, price: int | None = None) -> tuple[int, int, int]:
     """Charge and queue paid work in one transaction, under the user's balance lock: a refused order takes no money,
     and two requests at the same moment cannot both get the first-deck price. price=None: a new deck at this user's
-    price (generate_price); at the first-deck price at most FIRST_MAX_SLIDES slides. Returns (job id, jobs ahead, price).
+    price (generate_price); a free one has at most FIRST_MAX_SLIDES slides. Returns (job id, jobs ahead, price).
     Raises LowBalance, TooMany or FirstTooLong."""
     cfg = await app_settings.get() if price is None else None
     async with db.transaction() as con:
@@ -88,7 +88,7 @@ async def order(kind: str, user_id: int, payload: dict, price: int | None = None
             raise TooMany
         if cfg is not None:
             price = _price(cfg, await con.fetchval(_HAS_DECK, user_id))
-            if price < cfg["price_generate"] and payload.get("slide_count", 0) > FIRST_MAX_SLIDES:
+            if price == 0 and payload.get("slide_count", 0) > FIRST_MAX_SLIDES:
                 raise FirstTooLong
         assert price is not None
         if await billing.apply_in(con, user_id, -price, kind, None, False) is None:

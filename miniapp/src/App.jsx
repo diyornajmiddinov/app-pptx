@@ -140,7 +140,7 @@ export default function App() {
   const priceText = price === 0 ? t('free') : price ? money(price, lang) : '';
   const buttonText = `${restyling ? t('restyleBtn') : t('mainBtn')}${priceText ? ` · ${priceText}` : ''}`;
   const firstOffer = !restyling && account?.prices?.now != null && account.prices.now < account.prices.generate;
-  const maxSlides = firstOffer ? account.prices.first_max_slides ?? MAX_SLIDES : MAX_SLIDES; // the first deck's offer is for a short deck
+  const maxSlides = firstOffer && account.prices.now === 0 ? account.prices.first_max_slides ?? MAX_SLIDES : MAX_SLIDES; // a free deck is a short one
   useEffect(() => { if (slideCount > maxSlides) setSlideCount(maxSlides); }, [slideCount, maxSlides]);
   const editorTab = mode === 'editor';
   useMainButton({ tg, text: buttonText, active: ready, onClick: handleGenerate, hidden: editorTab });

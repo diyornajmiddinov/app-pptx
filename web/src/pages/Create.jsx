@@ -83,7 +83,7 @@ export default function Create({ me, refreshMe, go }) {
     if (['slide_count', 'language', 'template_id'].includes(k)) setOutline(null);
   };
   const price = me.prices.now ?? me.prices.generate;
-  const maxSlides = price < me.prices.generate ? me.prices.first_max_slides ?? 30 : 30; // the first deck's offer is for a short deck
+  const maxSlides = price === 0 ? me.prices.first_max_slides ?? 30 : 30; // a free deck is a short one
   const slideCount = Math.min(form.slide_count, maxSlides);
   const low = me.balance < price;
   const topic = form.topic.trim();
