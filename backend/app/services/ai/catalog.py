@@ -81,29 +81,28 @@ LIMITS = {  # characters
 }
 
 
-# How much text a deck gets (the user's choice): concise ~45% of the template's limits, balanced ~60%, detailed up to
-# 140% of the running text. The limits leave air; 140% was checked on all 200 templates at full length (no box spills
-# or clips, the shared fit only shrinks the font a little). The answer is checked against the balanced limits, or the
-# detailed ones for a detailed deck (content.py), so a deck is never failed for missing the level a little.
+# How much text a deck gets (the user's choice), as a share of the template's running-text limits: concise 45%,
+# balanced 125% (asked to fill 70–90% of it), detailed 180% (90–100%). The template limits leave a lot of air; 180% was
+# checked on all 200 templates at full length (no box spills or clips; the shared fit shrinks the font a little where
+# needed; 230% begins to spill). The answer is checked against the balanced limits, or the detailed ones for a detailed
+# deck (content.py), so a deck is never failed for missing the level a little.
 DENSITY = ("concise", "balanced", "detailed")
 BODY_TEXT = ("subtitle", "intro", "image_text", "card_t3", "card_t4", "step_t", "side_item", "stmt", "caption", "event_t", "quote", "note")
-CONCISE, DETAILED = 0.45, 1.4
+FACTOR = {"concise": 0.45, "balanced": 1.25, "detailed": 1.8}
 DENSITY_RULE = {
     "concise": "\nMatn hajmi: LO'NDA — har bir maydonda qisqa ibora va kalit fikrlar, ortiqcha so'zsiz; tomoshabin bir qarashda ilg'ab olsin.",
-    "balanced": "\nMatn hajmi: MUVOZANATLI — har bir matn maydoni chegarasining taxminan YARMIDAN uchdan ikkisigacha (50–65%): "
-                "bitta aniq, ixcham gap; slaydda matn va bo'sh joy teng bo'lsin. Chegaragacha cho'zma.",
-    "detailed": "\nMatn hajmi: BATAFSIL — har bir matn maydonini chegarasiga YAQIN (85–100%) to'ldir, qisqa yozma: 2–3 to'liq gap, "
-                "izoh, misol, sabab-oqibat yoki aniq raqam bilan (chegaradan oshma). Kartochka, qadam, taqqoslash va voqealar matni ham "
-                "chegarasigacha bo'lsin: bitta ibora emas, to'liq tushuntirish.",
+    "balanced": "\nMatn hajmi: MUVOZANATLI — har bir matn maydonini chegarasining 70–90% igacha to'ldir: 1–2 to'liq, mazmunli gap, "
+                "aniq fakt yoki misol bilan (chegaradan oshma). Kartochka, qadam va voqealar matni ham bitta ibora emas, to'liq fikr bo'lsin.",
+    "detailed": "\nMatn hajmi: BATAFSIL — har bir matn maydonini chegarasiga YAQIN (90–100%) to'ldir, qisqa yozma: 2–4 to'liq gap, "
+                "izoh, misol, sabab-oqibat va aniq raqamlar bilan (chegaradan oshma). Kartochka, qadam, taqqoslash va voqealar matni ham "
+                "chegarasigacha bo'lsin: bitta ibora emas, to'liq tushuntirish. Slaydda bo'sh joy kam qolsin.",
 }
 
 
 def limits_for(template_id: int, density: str = "balanced") -> dict:
     Lm = {**LIMITS, **style_of(template_id).get("limits", {})}
-    if density in ("concise", "detailed"):
-        f = CONCISE if density == "concise" else DETAILED
-        Lm = {k: max(20, int(v * f)) if k in BODY_TEXT else v for k, v in Lm.items()}
-    return Lm
+    f = FACTOR.get(density, FACTOR["balanced"])
+    return {k: max(20, int(v * f)) if k in BODY_TEXT else v for k, v in Lm.items()}
 
 
 def check_limits(template_id: int, density: str = "balanced") -> dict:

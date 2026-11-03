@@ -132,6 +132,22 @@ def _extras(plan: list[str], outline: list[str] | None, notes: bool, source: str
     return out
 
 
+# balanced / detailed: the shortest running text asked for (a share of its limit). Not checked (a slightly shorter
+# answer is still a good deck); without it the model stops at ~70% of a detailed limit, leaving the slide half empty.
+AT_LEAST = {"balanced": 0.6, "detailed": 0.8}
+
+
+def _at_least(Lm: dict, density: str, photos: bool) -> str:
+    share = AT_LEAST.get(density)
+    if not share:
+        return ""
+    m = {k: int(Lm[k] * share) for k in ("subtitle", "intro", "image_text", "card_t3", "card_t4", "step_t", "side_item", "event_t", "note", "caption")}
+    pics = f", intro text ≥{m['intro']}, image text ≥{m['image_text']}" if photos else ""
+    return (f"\nEng KAM uzunliklar (belgilarda, bundan qisqa yozma): subtitle ≥{m['subtitle']}{pics}, cards t ≥{m['card_t3']} "
+            f"(4 ta bo'lsa ≥{m['card_t4']}), process t ≥{m['step_t']}, compare items ≥{m['side_item']}, timeline t ≥{m['event_t']}, "
+            f"stats note ≥{m['note']}, statement caption ≥{m['caption']}.")
+
+
 def build_prompt(topic: str, plan: list[str], language: str, photos: bool, template_id: int = 1,
                  outline: list[str] | None = None, notes: bool = False, source: str = "", density: str = "balanced",
                  wishes: str = "") -> str:
@@ -170,7 +186,7 @@ Qoidalar:
 1. Faqat to'g'ri, tekshirsa bo'ladigan faktlar. Ishonching komil bo'lmagan raqam yoki sanani yozma.
 2. quote: faqat haqiqatan mavjud, muallifi aniq iqtibos; aks holda xalq maqoli.
 3. sources: faqat haqiqatan mavjud hujjat, qonun, rasmiy sayt yoki nashrlar. To'qima manba yozma.
-4. Sarlavhalar nuqta bilan tugamasin. Indekslar Unicode bilan: CO₂.{DENSITY_RULE.get(density, "")}{_extras(plan, outline, notes, source, wishes)}
+4. Sarlavhalar nuqta bilan tugamasin. Indekslar Unicode bilan: CO₂.{DENSITY_RULE.get(density, "")}{_at_least(Lm, density, photos)}{_extras(plan, outline, notes, source, wishes)}
 Javob: FAQAT JSON: {{"slides": [...]}}"""
 
 
