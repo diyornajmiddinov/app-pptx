@@ -64,7 +64,7 @@ def providers() -> list[str]:
     out = []
     if payme_configured() and not settings.payme_test:
         out.append("payme")
-    if click_configured():
+    if click_configured() and not settings.click_hidden:
         out.append("click")
     if settings.card_number and settings.admin_ids:  # someone has to check the screenshots
         out.append("card")

@@ -49,6 +49,14 @@ async def test_payme_in_test_mode_is_hidden_from_users_but_answers_the_sandbox(p
     assert "payme" in payments.providers()
 
 
+def test_a_hidden_click_is_not_offered(monkeypatch):
+    for k, v in (("click_service_id", "1"), ("click_merchant_id", "2"), ("click_secret_key", "s"), ("click_hidden", True)):
+        monkeypatch.setattr(settings, k, v)
+    assert "click" not in payments.providers() and payments.click_configured()
+    monkeypatch.setattr(settings, "click_hidden", False)
+    assert "click" in payments.providers()
+
+
 async def test_payme_full_cycle(payme):
     await add_user(1)
     oid = await payments.create_order(1, 30000, "payme")

@@ -398,7 +398,7 @@ async def get_settings(uid: int = Depends(admin_user)):
     return {
         "values": await app_settings.get(), "defaults": app_settings.defaults(),
         "providers": {"payme": payments.payme_configured(), "click": payments.click_configured(),
-                      "card": "card" in payments.providers(), "payme_test": settings.payme_test},
+                      "card": "card" in payments.providers(), "payme_test": settings.payme_test, "click_hidden": settings.click_hidden},
         "admins": sorted(settings.admin_ids), "webapp_url": settings.webapp_url,
         "ai": {"model": await models.current(), "choices": models.available(), "default": models.default_choice(), "photos": "Pexels" if os.getenv("PEXELS_API_KEY") else "Gemini"},
         "system": {"uptime": int(time.time() - STARTED), "disk_total": disk.total, "disk_free": disk.free,

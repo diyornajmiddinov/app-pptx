@@ -65,6 +65,7 @@ class Settings(BaseSettings):
     click_service_id: str = ""
     click_merchant_id: str = ""
     click_secret_key: str = ""
+    click_hidden: bool = False            # CLICK_HIDDEN=1: not offered to users (e.g. until Click activates the service); the endpoints still answer
     card_number: str = ""                 # manual card transfer: screenshot + admin confirmation
     card_holder: str = ""
     return_url: str = Field("", validation_alias="PAYMENT_RETURN_URL")
