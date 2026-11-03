@@ -64,8 +64,11 @@ async def test_with_payme_and_card_payme_is_recommended_as_the_fastest(tg, monke
     await bot.handle(press("topup:15000"))
     last = tg.last()
     assert "Payme — eng tez" in last["text"] and "admin tekshirgandan keyin" in last["text"]
-    buttons = [b["text"] for row in last["reply_markup"]["inline_keyboard"] for b in row]
-    assert buttons == ["Payme — Tavsiya", "💳 Karta"]
+    payme, card = last["reply_markup"]["inline_keyboard"][0]
+    assert payme["text"] == "Payme — Tavsiya" and payme["url"].startswith("https://checkout.paycom.uz/")  # the page at once
+    assert card["text"] == "💳 Karta" and card["callback_data"] == "pay:card:15000"
+    order = await db.pool().fetchrow("SELECT user_id, amount, provider, state FROM orders")
+    assert dict(order) == {"user_id": U, "amount": 15000, "provider": "payme", "state": "new"}
 
 
 async def test_only_admins_can_add_balance_or_open_the_panel(tg):

@@ -91,10 +91,14 @@ def provider_name(provider: str, lang: str) -> str:
     return t(lang, "card_name") if provider == "card" else PROVIDER_NAMES[provider]
 
 
-def provider_keyboard(amount: int, lang: str) -> dict:
-    """Payme is marked as the one to choose: it tops up at once (a card transfer waits for an admin)."""
-    return {"inline_keyboard": [[{"text": t(lang, "payme_reco") if p == "payme" else provider_name(p, lang), "callback_data": f"pay:{p}:{amount}",
-                                  "style": PRIMARY} for p in payments.providers()]]}
+def provider_keyboard(amount: int, lang: str, payme_url: str = "") -> dict:
+    """Payme is marked as the one to choose: it tops up at once (a card transfer waits for an admin). With payme_url
+    (its order made already) its button opens the payment page straight away."""
+    def button(p: str) -> dict:
+        if p == "payme" and payme_url:
+            return {"text": t(lang, "payme_reco"), "url": payme_url, "style": PRIMARY}
+        return {"text": t(lang, "payme_reco") if p == "payme" else provider_name(p, lang), "callback_data": f"pay:{p}:{amount}", "style": PRIMARY}
+    return {"inline_keyboard": [[button(p) for p in payments.providers()]]}
 
 
 def editor_keyboard(user_id: int, lang: str, doc: str | None = None) -> dict | None:
