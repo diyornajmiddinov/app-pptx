@@ -165,6 +165,14 @@ async def send_document(chat_id: int | str, path: str, caption: str = ""):
                           files={"document": (path.split("/")[-1], f)}, timeout=180)
 
 
+async def send_video(chat_id: int | str, path: str, caption: str = ""):
+    """An mp4 that plays in the chat (the caption is HTML)."""
+    with open(path, "rb") as f:
+        return await call("sendVideo", data={"chat_id": chat_id, "caption": caption[:1024], "parse_mode": "HTML", "supports_streaming": "true",
+                                             "width": "1280", "height": "720"},
+                          files={"video": (path.split("/")[-1], f)}, timeout=300)
+
+
 async def answer_callback(callback_id: str, text: str = ""):
     return await call("answerCallbackQuery", json={"callback_query_id": callback_id, "text": text})
 

@@ -45,6 +45,7 @@ class GenerateRequest(BaseModel):
     density: Literal["concise", "balanced", "detailed"] = "balanced"  # how much text (ai/catalog.py DENSITY)
     wishes: str = Field("", max_length=600)                           # "what else would you like" (optional)
     animated: bool = False                                            # an animated copy of the template (costs extra)
+    video: bool = False                                               # + its mp4 (costs extra; only with animated)
 
 
 class RestyleRequest(BaseModel):
@@ -89,6 +90,8 @@ async def generate(req: GenerateRequest, tg_user: dict = Depends(telegram_user))
     lang = await lang_of(tg_user["id"], tg_user.get("language_code"))
     if req.animated and (why := await animation.refusal(tg_user["id"], req.template_id)):
         raise HTTPException(403 if why == "animSoon" else 422, why)
+    if req.video and not req.animated:
+        raise HTTPException(422, "videoNeedsAnim")
     job_id, ahead, _ = await _order(tg_user["id"], lang, "generate", req.model_dump())  # the first deck may be free (admin panel)
     await _queued(tg_user["id"], lang, t(lang, "queued", topic=req.topic), ahead)
     return {"status": "queued", "job": job_id, "ahead": ahead}

@@ -16,8 +16,8 @@ from pathlib import Path
 
 from app.core import db
 from app.core.config import ENGINE_DIR, settings
-from app.core.telegram import send_document, send_message
-from app.services import app_settings, archive, billing, decks, papers
+from app.core.telegram import send_document, send_message, send_video
+from app.services import app_settings, archive, billing, decks, papers, video
 from app.services.ai import models, pipeline
 from app.services.ai.render import render
 from app.services.users import lang_of
@@ -27,6 +27,8 @@ log = logging.getLogger("jobs")
 TMP = Path(tempfile.gettempdir())
 MAX_ATTEMPTS = 2  # a job interrupted by a restart is run once more, then refunded
 JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini busy for minutes) -> refunded
+VIDEO_TIMEOUT = 900  # s: the mp4 of an animated deck (services/video.py), after the deck itself was sent
+VIDEO_MAX = 49_000_000  # bytes: what a bot may send
 MAX_ACTIVE = 3     # a user's jobs queued or running at once: one person cannot fill the queue for everybody
 FIRST_MAX_SLIDES = 10  # a free first deck has up to this many slides; a longer first deck costs the usual price
 
@@ -91,6 +93,9 @@ async def order(kind: str, user_id: int, payload: dict, price: int | None = None
             price = _price(cfg, await con.fetchval(_HAS_DECK, user_id), payload.get("slide_count", 0))
             if payload.get("animated"):  # an animated deck costs extra (admin panel)
                 price += cfg["price_animation"]
+                if payload.get("video"):  # and its mp4 more; kept in the job: given back alone if only the video fails
+                    payload = {**payload, "video_price": cfg["price_video"]}
+                    price += cfg["price_video"]
         assert price is not None
         if await billing.apply_in(con, user_id, -price, kind, None, False) is None:
             raise LowBalance(price)
@@ -179,6 +184,35 @@ async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".
         _drop_tmp(final.parent)
 
 
+def _for_video(path: Path) -> Path:
+    """A copy of the animated deck and its timeline for the video (deliver() renames the deck and removes its folder)."""
+    work = Path(tempfile.mkdtemp(prefix="slideai-"))
+    shutil.copy(path, work / "deck.pptx")
+    shutil.copy(f"{path}.timeline.json", work / "deck.pptx.timeline.json")
+    return work / "deck.pptx"
+
+
+async def send_video_of(job: dict, deck: Path, topic: str, lang: str):
+    """After the deck: its mp4. The deck is delivered already, so a failed video gives back only its own price."""
+    price = int(job["payload"].get("video_price") or 0)
+    try:
+        await send_message(job["user_id"], t(lang, "video_wait"))
+        film = await asyncio.wait_for(asyncio.to_thread(video.make, deck), VIDEO_TIMEOUT)
+        if film.stat().st_size > VIDEO_MAX:
+            raise video.VideoError(f"video {film.stat().st_size // 1_000_000} MB")
+        name = re.sub(r"[^\w\-]+", "_", topic)[:60] + ".mp4"
+        await send_video(job["user_id"], str(film.rename(film.with_name(name))), caption=f"<b>{esc(topic)}</b>\n{t(lang, 'video_note')}")
+    except Exception as e:
+        log.exception("Video yaratilmadi · ish %s · foydalanuvchi %s · %s", job["id"], job["user_id"], f"{type(e).__name__}: {e}"[:200])
+        if price and await billing.refund_once(job["user_id"], price, "video", f"video-refund:{job['id']}") is not None:
+            try:
+                await send_message(job["user_id"], t(lang, "video_failed", amount=som(price, lang)))
+            except Exception:
+                log.warning("could not tell user %s about the failed video of job %s", job["user_id"], job["id"])
+    finally:
+        _drop_tmp(deck.parent)
+
+
 def deck_note(lang: str, head: str, animated: bool) -> str:
     """Under a delivered deck: on a phone it may look off (the phone apps' limits), on a computer in PowerPoint it is
     right; an animated one plays in the slide show."""
@@ -193,10 +227,13 @@ async def run(job: dict):
             path, content = await asyncio.wait_for(build(req, deck_id, job["user_id"]), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, req, deck_id)
             lang = await lang_of(job["user_id"])
+            film = _for_video(path) if req.get("video") and req.get("animated") else None
             await deliver(job["user_id"], path, req["topic"], deck_note(lang, t(lang, "slides", n=len(content["slides"])), bool(req.get("animated"))),
                           copy={"kind": "generate", "facts": [f"{len(content['slides'])} slayd", f"shablon #{req['template_id']}",
-                                                              "✨ animatsiyali" if req.get("animated") else ""],
+                                                              "✨ animatsiyali" if req.get("animated") else "", "🎬 video" if film else ""],
                                 "price": job["price"], "via": req.get("via", "bot")})
+            if film:
+                await send_video_of(job, film, req["topic"], lang)
         elif job["kind"] == "restyle":
             p = job["payload"]
             deck = await decks.load(job["user_id"], p["deck_id"])

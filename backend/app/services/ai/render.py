@@ -50,7 +50,8 @@ async def render(content: dict, template_id: int, out_path: Path | str, animated
     cmd = ["node", _script(template_id, animated), str(template_id), src, str(out_path)]
     try:
         async with machine_lock_async("drawing"):
-            proc = await asyncio.create_subprocess_exec(*cmd, cwd=ENGINE_DIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+            proc = await asyncio.create_subprocess_exec(*cmd, cwd=ENGINE_DIR, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
+                                                        env={**os.environ, "SLIDEAI_TIMELINE": "1"} if animated else None)
             try:
                 out, err = await asyncio.wait_for(proc.communicate(), TIMEOUT)
             except BaseException:  # timeout or cancelled

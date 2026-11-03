@@ -15,7 +15,7 @@ async def allowed(user_id: int, cfg: dict | None = None) -> bool:
 async def info(user_id: int) -> dict:
     """For the Mini App and the site: {templates: [ids], open: may this user order, price: extra so'm}."""
     cfg = await app_settings.get()
-    return {"templates": sorted(ANIMATED), "open": await allowed(user_id, cfg), "price": cfg["price_animation"]}
+    return {"templates": sorted(ANIMATED), "open": await allowed(user_id, cfg), "price": cfg["price_animation"], "video_price": cfg["price_video"]}
 
 
 async def refusal(user_id: int, template_id: int) -> str | None:

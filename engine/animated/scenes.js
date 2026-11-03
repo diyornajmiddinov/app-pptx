@@ -204,6 +204,7 @@ function prepare(pres, content, spec, templateId) {
 async function apply(file, slides) {
   const fs = require('fs');
   const zip = await JSZip.loadAsync(fs.readFileSync(file));
+  const timeline = []; // SLIDEAI_TIMELINE=1: <file>.timeline.json for the video (backend services/video.py)
   for (let i = 0; i < slides.length; i++) {
     const p = `ppt/slides/slide${i + 1}.xml`, f = zip.file(p);
     if (!f) continue;
@@ -214,8 +215,11 @@ async function apply(file, slides) {
     const textIds = [...new Set(steps.filter((s) => s.text).map((s) => s.spid))];
     xml = xml.replace('</p:clrMapOvr>', `</p:clrMapOvr>${A.transitionXml(slides[i].transition, slides[i].speed)}${steps.length ? A.timingXml(steps, textIds) : ''}`);
     zip.file(p, xml);
+    timeline.push({ transition: slides[i].transition || 'none', speed: slides[i].speed || 'med',
+      steps: steps.map((s) => ({ spid: +s.spid, effect: s.effect, delay: s.delay, dur: s.dur, span: s.span || 0 })) });
   }
   fs.writeFileSync(file, await zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' }));
+  if (process.env.SLIDEAI_TIMELINE) fs.writeFileSync(`${file}.timeline.json`, JSON.stringify({ slides: timeline }));
 }
 
 module.exports = { SCENES, COVER, TRANSITIONS, palette, prepare, apply };

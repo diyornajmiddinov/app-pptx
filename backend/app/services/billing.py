@@ -49,6 +49,11 @@ async def refund(user_id: int, amount: int, kind: str) -> int | None:
     return await _apply(user_id, amount, f"refund:{kind}", None, allow_negative=True)
 
 
+async def refund_once(user_id: int, amount: int, kind: str, ref: str) -> int | None:
+    """Give back part of a job's price (e.g. the video of a delivered deck), at most once per `ref`. None = given already."""
+    return await _apply(user_id, amount, f"refund:{kind}", ref, allow_negative=True)
+
+
 async def top_up(user_id: int, amount: int, ref: str, kind: str = "topup") -> int | None:
     """Credit a payment (or an admin's correction, which may be negative). None = this ref was already
     counted, or a negative correction is larger than the balance."""

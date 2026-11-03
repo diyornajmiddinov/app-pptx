@@ -287,3 +287,52 @@ async def test_animated_decks_are_for_admins_until_opened_and_cost_extra(client,
     await app_settings.set_many({"animation_public": True, "price_animation": 1000}, 1)
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202  # opened to everyone
     assert await db.pool().fetchval("SELECT price FROM jobs ORDER BY id DESC LIMIT 1") == 6000 and not await billing.reconcile()
+
+
+async def _video_order(client, monkeypatch, tmp_path, make):
+    """An animated deck with its video, ordered in the Mini App and run; `make` stands in for video.make."""
+    from app.services import app_settings, video
+    await app_settings.set_many({"animation_public": True, "price_animation": 3000, "price_video": 2000}, 1)
+    await add_user(U, balance=20000)
+    content = {"meta": {"topic": "Mavzu"}, "slides": [{"type": "cover", "title": "Mavzu"}, {"type": "closing", "title": "Rahmat"}]}
+
+    async def fake_build(req, deck_id, user_id):
+        d = tmp_path / "slideai-v"; d.mkdir(exist_ok=True)
+        p = d / "deck.pptx"; p.write_bytes(b"pptx"); (d / "deck.pptx.timeline.json").write_text('{"slides": []}')
+        return p, content
+    monkeypatch.setattr(jobs, "build", fake_build)
+    monkeypatch.setattr(video, "make", make)
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu", "animated": True, "video": True}
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
+    assert await db.pool().fetchval("SELECT price FROM jobs") == 5000 + 3000 + 2000 and await billing.balance(U) == 10000
+    await jobs.run_pending()
+
+
+async def test_a_video_needs_the_animation(client, tg):
+    from app.services import app_settings
+    await app_settings.set_many({"animation_public": True}, 1)
+    await add_user(U, balance=20000)
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu", "video": True}
+    r = await client.post("/api/generate", headers=h(), json=body)
+    assert r.status_code == 422 and r.json()["detail"] == "videoNeedsAnim" and await billing.balance(U) == 20000
+    me = (await client.get("/api/me", headers=h())).json()["animation"]
+    assert me["video_price"] == 2000
+
+
+async def test_an_animated_deck_with_its_video_sends_both(client, tg, monkeypatch, tmp_path):
+    def make(deck):
+        assert deck.with_name("deck.pptx.timeline.json").exists()  # the deck's copy came with its timeline
+        out = deck.with_suffix(".mp4"); out.write_bytes(b"mp4"); return out
+    await _video_order(client, monkeypatch, tmp_path, make)
+    assert len(tg.sent("sendDocument")) == 1 and len(tg.sent("sendVideo")) == 1
+    assert "video" in tg.sent("sendVideo")[0]["caption"].lower() and await billing.balance(U) == 10000
+    assert await db.pool().fetchval("SELECT state FROM jobs") == "done"
+
+
+async def test_a_failed_video_gives_back_its_price_only(client, tg, monkeypatch, tmp_path):
+    def make(deck):
+        raise RuntimeError("ffmpeg")
+    await _video_order(client, monkeypatch, tmp_path, make)
+    assert len(tg.sent("sendDocument")) == 1 and not tg.sent("sendVideo")      # the deck came; the video did not
+    assert await billing.balance(U) == 12000 and "2\xa0000" in tg.texts()[-1]   # its 2 000 so'm back, once
+    assert await db.pool().fetchval("SELECT state FROM jobs") == "done" and not await billing.reconcile()

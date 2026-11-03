@@ -24,6 +24,7 @@ export default function App() {
   const [density, setDensity] = useState('balanced'); // how much text on the slides
   // ✨ an animated copy of the template (costs extra; admins first); the bot's "✨ Animated" button opens with it on (anim=1)
   const [animated, setAnimated] = useState(() => new URLSearchParams(window.location.search).get('anim') === '1');
+  const [video, setVideo] = useState(false); // 🎬 the animated deck's mp4 too (costs extra; only with the animation on)
   const [wishes, setWishes] = useState('');            // "what else would you like" (optional)
   // presentation language follows the interface language until the user picks another one
   const [language, setLanguage] = useState(lang);
@@ -96,7 +97,8 @@ export default function App() {
   const animTemplateOk = !!anim?.templates?.includes(selectedTemplateId);
   const sendAnimated = animated && !!anim?.open && animTemplateOk;
   const basePrice = freeMax && slideCount > freeMax ? account.prices.generate : account?.prices?.now ?? account?.prices?.generate;
-  const deckPrice = basePrice != null && sendAnimated ? basePrice + anim.price : basePrice;
+  const sendVideo = video && sendAnimated;
+  const deckPrice = basePrice != null && sendAnimated ? basePrice + anim.price + (sendVideo ? anim.video_price ?? 0 : 0) : basePrice;
 
   const handleGenerate = useCallback(async () => {
     if (submittingRef.current) return;
@@ -128,7 +130,7 @@ export default function App() {
         payload: {
           user_id: user.id, template_id: selectedTemplateId, slide_count: slideCount, language,
           topic: details.topic.trim(), author: details.author.trim(), org: details.org.trim(),
-          loc: details.loc.trim(), year: details.year.trim(), density, wishes: wishes.trim(), animated: sendAnimated,
+          loc: details.loc.trim(), year: details.year.trim(), density, wishes: wishes.trim(), animated: sendAnimated, video: sendVideo,
         },
       });
       }
@@ -142,7 +144,7 @@ export default function App() {
       tg?.MainButton.hideProgress();
       submittingRef.current = false; setSubmitting(false);
     }
-  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, deckPrice, sendAnimated, lang, hapticNotify, t, loadAccount]);
+  }, [missing, restyling, deck, tg, user, initData, isTelegram, selectedTemplateId, slideCount, language, density, wishes, details, showAlert, askConfirm, deckPrice, sendAnimated, sendVideo, lang, hapticNotify, t, loadAccount]);
 
   // MainButton is always shown; dimmed until the topic and template are filled in
   const price = restyling ? account?.prices?.restyle : deckPrice;
@@ -183,8 +185,9 @@ export default function App() {
       {!restyling && !editorTab && <DetailsForm value={details} onChange={setDetails} />}
       {!restyling && !editorTab && <SettingsPanel slideCount={slideCount} onSlideCountChange={setSlideCount} language={language} onLanguageChange={handleDeckLang}
         density={density} onDensityChange={(d) => { hapticSelect(); setDensity(d); }}
-        anim={anim} animated={animated} onAnimatedChange={(v) => { hapticSelect(); setAnimated(v); }} animTemplateOk={animTemplateOk}
-        animPriceText={anim ? money(anim.price, lang) : ''} />}
+        anim={anim} animated={animated} onAnimatedChange={(v) => { hapticSelect(); setAnimated(v); if (!v) setVideo(false); }} animTemplateOk={animTemplateOk}
+        animPriceText={anim ? money(anim.price, lang) : ''}
+        video={video} onVideoChange={(v) => { hapticSelect(); setVideo(v); }} videoPriceText={anim?.video_price != null ? money(anim.video_price, lang) : ''} />}
       {!restyling && !editorTab && (
         <section className="pb-6">
           <label htmlFor="d-wishes" className="mb-1.5 block text-[15px] font-semibold">{t('pWishes')}</label>

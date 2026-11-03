@@ -21,20 +21,17 @@ function Stepper({ value, onChange }) {
 
 export const DENSITIES = ['concise', 'balanced', 'detailed'];
 
-/** "✨ Animated": a switch for those it is open to (admins until the admin panel opens it), "coming soon" for the rest */
-function AnimSwitch({ anim, on, onChange, templateOk, priceText }) {
-  const { t } = useI18n();
-  const usable = anim.open && templateOk;
+function Switch({ title, badge, hint, on, usable, onChange }) {
   return (
     <div className="flex items-center justify-between gap-3 rounded-[10px] bg-tg-secondary-bg px-3 py-2.5">
       <div className="min-w-0">
         <div className="flex items-center gap-2 text-[15px] font-semibold">
-          <span>✨ {t('animTitle')}</span>
-          {!anim.open && <span className="rounded-full bg-tg-button px-2 py-0.5 text-[11px] font-semibold text-tg-button-text">{t('soon')}</span>}
+          <span>{title}</span>
+          {badge && <span className="rounded-full bg-tg-button px-2 py-0.5 text-[11px] font-semibold text-tg-button-text">{badge}</span>}
         </div>
-        <p className="mt-0.5 text-[12px] text-tg-hint">{!anim.open ? t('animSoonHint') : templateOk ? t('animHint', { price: priceText }) : t('animNoTpl')}</p>
+        <p className="mt-0.5 text-[12px] text-tg-hint">{hint}</p>
       </div>
-      <button type="button" role="switch" aria-checked={on && usable} aria-label={t('animTitle')} disabled={!usable} onClick={() => onChange(!on)}
+      <button type="button" role="switch" aria-checked={on && usable} aria-label={title} disabled={!usable} onClick={() => onChange(!on)}
         className={`relative h-7 w-12 shrink-0 rounded-full transition-colors disabled:opacity-40 ${on && usable ? 'bg-tg-button' : 'bg-tg-hint/40'}`}>
         <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-all ${on && usable ? 'left-[22px]' : 'left-0.5'}`} />
       </button>
@@ -42,8 +39,22 @@ function AnimSwitch({ anim, on, onChange, templateOk, priceText }) {
   );
 }
 
+/** "✨ Animated": a switch for those it is open to (admins until the admin panel opens it), "coming soon" for the rest */
+function AnimSwitch({ anim, on, onChange, templateOk, priceText }) {
+  const { t } = useI18n();
+  return <Switch title={`✨ ${t('animTitle')}`} badge={!anim.open && t('soon')} on={on} usable={anim.open && templateOk} onChange={onChange}
+    hint={!anim.open ? t('animSoonHint') : templateOk ? t('animHint', { price: priceText }) : t('animNoTpl')} />;
+}
+
+/** "🎬 Video": the animated deck's mp4 as well; it can be switched on only while the animation is on */
+function VideoSwitch({ on, onChange, animOn, priceText }) {
+  const { t } = useI18n();
+  return <Switch title={`🎬 ${t('videoTitle')}`} on={on} usable={animOn} onChange={onChange}
+    hint={animOn ? t('videoHint', { price: priceText }) : t('videoNeedsAnim')} />;
+}
+
 export default function SettingsPanel({ slideCount, onSlideCountChange, language, onLanguageChange, density, onDensityChange,
-  anim, animated, onAnimatedChange, animTemplateOk, animPriceText }) {
+  anim, animated, onAnimatedChange, animTemplateOk, animPriceText, video, onVideoChange, videoPriceText }) {
   const { t } = useI18n();
   return (
     <section className="space-y-4 pb-6" aria-label={t('settings')}>
@@ -63,6 +74,9 @@ export default function SettingsPanel({ slideCount, onSlideCountChange, language
         <p className="mt-1.5 text-[12px] text-tg-hint">{t(`d_${density}_t`)}</p>
       </div>
       {anim && <AnimSwitch anim={anim} on={animated} onChange={onAnimatedChange} templateOk={animTemplateOk} priceText={animPriceText} />}
+      {anim?.open && anim.video_price != null && (
+        <VideoSwitch on={video} onChange={onVideoChange} animOn={animated && animTemplateOk} priceText={videoPriceText} />
+      )}
     </section>
   );
 }
