@@ -53,6 +53,10 @@ def payme_configured() -> bool:
     return bool(settings.payme_merchant_id and settings.payme_key)
 
 
+def click_configured() -> bool:
+    return bool(settings.click_service_id and settings.click_merchant_id and settings.click_secret_key)
+
+
 def providers() -> list[str]:
     """Providers whose merchant settings are filled in, in the order shown to the user. Payme in test mode (PAYME_TEST=1)
     is not shown: its checkout takes test cards, so a user could get real balance for nothing. The Merchant API endpoint
@@ -60,7 +64,7 @@ def providers() -> list[str]:
     out = []
     if payme_configured() and not settings.payme_test:
         out.append("payme")
-    if settings.click_service_id and settings.click_merchant_id and settings.click_secret_key:
+    if click_configured():
         out.append("click")
     if settings.card_number and settings.admin_ids:  # someone has to check the screenshots
         out.append("card")
@@ -258,7 +262,7 @@ async def _payme_method(method: str, params: dict) -> tuple[dict, dict | None]:
             if order is None:  # the order row is gone: nothing to credit or take back
                 raise _err_no_order()
             if txn["state"] == 2:  # refund after payment: take the money back if it has not been spent yet
-                if await billing.apply_in(con, order["user_id"], -order["amount"], "refund:payme", f"payme-cancel:{txn['id']}", False) is None:
+                if not await _take_back(con, order["user_id"], order["amount"], f"payme:{txn['id']}", "refund:payme", f"payme-cancel:{txn['id']}", False):
                     raise PaymeError(-31007, "Mablag' ishlatilgan, bekor qilib bo'lmaydi",
                                      "Средства уже использованы, отмена невозможна", "Funds already used, cannot cancel")
                 state = -2
@@ -329,6 +333,21 @@ def _click_amount_ok(f: dict, order: dict) -> bool:
         return False
 
 
+async def _take_back(con, user_id: int, amount: int, ref: str, kind: str, cancel_ref: str, forced: bool) -> bool:
+    """A paid top-up was cancelled: take back the money and the campaign bonus it brought (ledger "bonus:<ref>").
+    Not forced (Payme may be refused): False when the balance is short. Forced (Click does not ask): takes what is
+    left, down to 0, and tells the admins about the rest. False also when it was already taken back."""
+    total = amount + await con.fetchval("SELECT coalesce(sum(delta), 0) FROM ledger WHERE ref = $1", f"bonus:{ref}")
+    if forced:
+        have = await billing.lock_in(con, user_id)
+        if have < total:
+            log.error("payment %s reversed: user %s had %s of %s so'm to give back", ref, user_id, have, total)
+        total = min(total, have)
+        if total == 0:
+            return not await con.fetchval("SELECT 1 FROM ledger WHERE ref = $1", cancel_ref)
+    return await billing.apply_in(con, user_id, -total, kind, cancel_ref, False) is not None
+
+
 def _click_failed(f: dict) -> bool:
     """Click itself reports an error (error < 0, e.g. the card was declined): the payment must be cancelled, -9."""
     try:
@@ -394,6 +413,11 @@ async def click_complete(f: dict) -> tuple[dict, dict | None]:
         order = await _order(con, row["order_id"])
         if not order or str(order["id"]) != str(f.get("merchant_trans_id")):
             return _click_reply(f, -5, "User does not exist"), None
+        if row["state"] == "paid" and _click_failed(f):  # Click reverses a payment it confirmed: the money went back
+            await _take_back(con, order["user_id"], order["amount"], f"click:{ctid}", "refund:click", f"click-cancel:{ctid}", True)
+            await con.execute("UPDATE click_txns SET state = 'cancelled' WHERE id = $1", prepare_id)
+            await con.execute("UPDATE orders SET state = 'cancelled' WHERE id = $1", order["id"])
+            return _click_reply(f, -9, "Transaction cancelled"), None
         if row["state"] == "paid":
             return _click_reply(f, -4, "Already paid", merchant_confirm_id=prepare_id), None
         if row["state"] == "cancelled":

@@ -148,6 +148,47 @@ async def test_click_error_cancels_the_payment(click):
     assert r["error"] == -9  # Click's error at Prepare: cancelled too
 
 
+async def test_click_reversing_a_confirmed_payment_takes_the_money_and_bonus_back(click):
+    """Click's test scenario 8: Complete with error -5017 after a successful one. The money went back to the card,
+    so the top-up and its bonus leave the balance; spent already, what is left (Click does not ask)."""
+    from app.services import topup_bonus
+    await add_user(1)
+    await topup_bonus.start(20, int(time.time()) + 3600, 1)
+    oid = await payments.create_order(1, 50000, "click")
+    base = _click_base(oid, "950")
+    reply, _ = await _click_pay(base)
+    assert reply["error"] == 0 and await billing.balance(1) == 60000
+    await billing.charge(1, 55000, "generate")                                  # most of it spent
+    back = {**base, "action": "1", "merchant_prepare_id": str(reply["merchant_confirm_id"]), "error": "-5017"}
+    r, paid = await payments.click_complete(_click_signed(back, True))
+    assert r["error"] == -9 and paid is None and await billing.balance(1) == 0
+    await billing.top_up(1, 7000, "test-after")
+    assert (await payments.click_complete(_click_signed(back, True)))[0]["error"] == -9 and await billing.balance(1) == 7000  # once
+    assert (await payments.click_complete(_click_signed({**back, "error": "0"}, True)))[0]["error"] == -9
+    assert not await billing.reconcile()
+
+
+async def test_click_reversal_with_the_money_left_takes_all_of_it(click):
+    await add_user(1, balance=1000)
+    oid = await payments.create_order(1, 50000, "click")
+    base = _click_base(oid, "951")
+    reply, _ = await _click_pay(base)
+    back = {**base, "action": "1", "merchant_prepare_id": str(reply["merchant_confirm_id"]), "error": "-5017"}
+    assert (await payments.click_complete(_click_signed(back, True)))[0]["error"] == -9 and await billing.balance(1) == 1000
+
+
+async def test_payme_refund_after_payment_takes_the_bonus_back_too(payme):
+    from app.services import topup_bonus
+    await add_user(1)
+    await topup_bonus.start(10, int(time.time()) + 3600, 1)
+    oid = await payments.create_order(1, 30000, "payme")
+    await payme("CreateTransaction", {"id": "rb", "time": int(time.time() * 1000), "amount": 3000000, "account": {settings.payme_account_field: str(oid)}})
+    await payme("PerformTransaction", {"id": "rb"})
+    assert await billing.balance(1) == 33000
+    assert (await payme("CancelTransaction", {"id": "rb", "reason": 5}))[0]["result"]["state"] == -2
+    assert await billing.balance(1) == 0 and not await billing.reconcile()
+
+
 async def test_click_money_taken_twice_for_one_order_is_credited_twice(click):
     """Two Click payment pages for one order, both Prepared before either completed: Click takes the money twice and a
     Complete after a withdrawal may not be an error (except -4 / -9 for that same payment), so both are credited."""
