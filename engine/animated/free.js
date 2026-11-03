@@ -19,11 +19,21 @@ function kit(content, F, C) {
     async photo(s, src, x, y, w, h, o = {}) { t.img(s, await L.photo(L.src(src), w, h, o), x, y, w, h, { alt: '' }); },
     async svg(key, svg, w, h, bg = false) { return (k.memo[key] ??= await L.svg(svg, w, h, bg)); },
     foot(s, o = {}) {
-      // a long topic is shortened ("…") so the line stays one line; author / org / year are kept whole
-      const w = o.w ?? 8.8, fs = o.size || 8.5, font = o.font || F.body, sep = `   ${o.sep || '\u2022'}   ${k.meta}`;
-      let topic = M.topic || '';
-      if (L.height(topic + sep, fs, w, font) > 0.24) topic = L.clip(topic, Math.max(0.5, w - L.width(sep, fs, font)), 0.2, fs, font);
-      t.text(s, `${topic}${sep}`, { x: o.x ?? 0.6, y: o.y ?? 5.27, w, h: 0.22, fontSize: fs, color: o.color || C.muted, align: o.align || 'left', fontFace: font, ...(o.rotate ? { rotate: o.rotate } : {}) });
+      // one line: topic • author | org, place, year. When it is too long for a narrow footer: a slightly smaller size
+      // first, then only the author, and only then the topic is shortened ("…"), so it never shrinks to a word or two
+      const w = o.w ?? 8.8, fs0 = o.size || 8.5, font = o.font || F.body, dot = `   ${o.sep || '\u2022'}   `;
+      const topic0 = M.topic || '', fits = (str, f) => L.width(str, f, font) <= w * 0.97; // the whole line, its runs of spaces too
+      let fs = fs0, tail = k.meta ? dot + k.meta : '', topic = topic0;
+      if (!fits(topic + tail, fs)) {
+        const small = Math.max(6, fs0 * 0.85);
+        if (fits(topic + tail, small)) fs = small;
+        else {
+          fs = small;
+          tail = M.author ? dot + M.author : '';
+          if (!fits(topic + tail, fs)) topic = L.clip(topic, Math.max(0.5, w * 0.97 - L.width(tail, fs, font)), 0.2, fs, font);
+        }
+      }
+      t.text(s, `${topic}${tail}`, { x: o.x ?? 0.6, y: o.y ?? 5.27, w, h: 0.22, fontSize: fs, color: o.color || C.muted, align: o.align || 'left', fontFace: font, ...(o.rotate ? { rotate: o.rotate } : {}) });
     },
     async icon(name, color, sw = 2) { return L.icon(name, color, sw); },
   };
