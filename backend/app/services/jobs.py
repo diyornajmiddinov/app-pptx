@@ -28,7 +28,7 @@ TMP = Path(tempfile.gettempdir())
 MAX_ATTEMPTS = 2  # a job interrupted by a restart is run once more, then refunded
 JOB_TIMEOUT = 600  # s: AI + photos + drawing; longer than this (e.g. Gemini busy for minutes) -> refunded
 MAX_ACTIVE = 3     # a user's jobs queued or running at once: one person cannot fill the queue for everybody
-FIRST_MAX_SLIDES = 7  # a free first deck has up to this many slides; a longer first deck costs the usual price
+FIRST_MAX_SLIDES = 10  # a free first deck has up to this many slides; a longer first deck costs the usual price
 
 
 class LowBalance(Exception):
