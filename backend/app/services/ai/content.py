@@ -13,6 +13,7 @@ from app.services.ai.catalog import (
     PHOTO_TEMPLATES,
     SECTION_TITLES,
     TEMPLATE_INFO,
+    check_limits,
     limits_for,
     plan_for,
     style_of,
@@ -220,7 +221,7 @@ async def generate_content(topic: str, slide_count: int, language: str = "uz", t
     messages = [{"role": "user", "content": build_prompt(topic, plan, language, photos, template_id, outline, notes, source, density, wishes)}]
     # the prompt asks for the density's limits; the check allows what the slide holds, so a concise deck a little
     # longer than asked is still delivered (it fits) instead of failing
-    data = await until_valid(messages, plan, photos, limits_for(template_id), ask, retries)
+    data = await until_valid(messages, plan, photos, check_limits(template_id, density), ask, retries)
     for s in data["slides"]:  # notes are optional extras: never fail a paid deck over them, just keep them sane
         if not notes or not isinstance(s.get("notes"), str):
             s.pop("notes", None)
@@ -268,7 +269,7 @@ Faqat matnning ohangi, so'z tanlovi va uzunligini moslashtir. Tilni o'zgartirma.
 Javob: FAQAT JSON: {{"slides": [...]}}
 
 {json.dumps({"slides": content["slides"]}, ensure_ascii=False)}"""
-    out = await until_valid([{"role": "user", "content": prompt}], plan, template_id in PHOTO_TEMPLATES, limits_for(template_id), ask, retries)
+    out = await until_valid([{"role": "user", "content": prompt}], plan, template_id in PHOTO_TEMPLATES, check_limits(template_id, density), ask, retries)
     for a, b in zip(content["slides"], out["slides"], strict=True):  # facts that must never drift
         for k in ("image", "items", "notes") if a["type"] == "sources" else ("image", "notes"):
             if k in a: b[k] = a[k]

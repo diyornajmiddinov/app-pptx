@@ -81,24 +81,31 @@ LIMITS = {  # characters
 }
 
 
-# How much text a deck gets (the user's choice), evenly apart: concise ~45% of what a slide holds, balanced ~70%
-# (text and air), detailed ~100%. The template's limits are the most a slide holds (more would not fit); concise
-# asks for lower limits of the running text, balanced and detailed say how far to fill them. The answer is always
-# checked against the full limits (content.py), so a deck is never failed for missing the level a little.
+# How much text a deck gets (the user's choice): concise ~45% of the template's limits, balanced ~60%, detailed up to
+# 140% of the running text. The limits leave air; 140% was checked on all 200 templates at full length (no box spills
+# or clips, the shared fit only shrinks the font a little). The answer is checked against the balanced limits, or the
+# detailed ones for a detailed deck (content.py), so a deck is never failed for missing the level a little.
 DENSITY = ("concise", "balanced", "detailed")
 BODY_TEXT = ("subtitle", "intro", "image_text", "card_t3", "card_t4", "step_t", "side_item", "stmt", "caption", "event_t", "quote", "note")
-CONCISE = 0.45
+CONCISE, DETAILED = 0.45, 1.4
 DENSITY_RULE = {
     "concise": "\nMatn hajmi: LO'NDA — har bir maydonda qisqa ibora va kalit fikrlar, ortiqcha so'zsiz; tomoshabin bir qarashda ilg'ab olsin.",
     "balanced": "\nMatn hajmi: MUVOZANATLI — har bir matn maydoni chegarasining taxminan YARMIDAN uchdan ikkisigacha (50–65%): "
                 "bitta aniq, ixcham gap; slaydda matn va bo'sh joy teng bo'lsin. Chegaragacha cho'zma.",
-    "detailed": "\nMatn hajmi: BATAFSIL — har bir matn maydonini chegarasiga YAQIN (90–100%) to'ldir, qisqa yozma: 1–2 to'liq gap, "
-                "izoh, misol yoki aniq raqam bilan (chegaradan oshma). Kartochka, qadam va voqealar matni ham chegarasigacha bo'lsin.",
+    "detailed": "\nMatn hajmi: BATAFSIL — har bir matn maydonini chegarasiga YAQIN (85–100%) to'ldir, qisqa yozma: 2–3 to'liq gap, "
+                "izoh, misol, sabab-oqibat yoki aniq raqam bilan (chegaradan oshma). Kartochka, qadam, taqqoslash va voqealar matni ham "
+                "chegarasigacha bo'lsin: bitta ibora emas, to'liq tushuntirish.",
 }
 
 
 def limits_for(template_id: int, density: str = "balanced") -> dict:
     Lm = {**LIMITS, **style_of(template_id).get("limits", {})}
-    if density == "concise":
-        Lm = {k: max(20, int(v * CONCISE)) if k in BODY_TEXT else v for k, v in Lm.items()}
+    if density in ("concise", "detailed"):
+        f = CONCISE if density == "concise" else DETAILED
+        Lm = {k: max(20, int(v * f)) if k in BODY_TEXT else v for k, v in Lm.items()}
     return Lm
+
+
+def check_limits(template_id: int, density: str = "balanced") -> dict:
+    """What the answer is checked against: the balanced limits, a detailed deck's own (it is asked for more)."""
+    return limits_for(template_id, "detailed" if density == "detailed" else "balanced")

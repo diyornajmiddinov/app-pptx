@@ -229,9 +229,11 @@ async def test_the_provider_is_chosen_by_ai_provider(net, monkeypatch):
 
 # ---------------------------------------------------------------- how much text (density)
 
-def test_density_lowers_running_text_only_when_concise():
+def test_density_changes_running_text_only():
     full, short, detailed = catalog.limits_for(25), catalog.limits_for(25, "concise"), catalog.limits_for(25, "detailed")
-    assert detailed == full  # the template's limits are the most a slide holds
+    assert detailed["intro"] == int(full["intro"] * 1.4) and detailed["card_t3"] > full["card_t3"]  # detailed: more text
+    assert detailed["title"] == full["title"] and detailed["stat_v"] == full["stat_v"]
+    assert catalog.check_limits(25, "detailed") == detailed and catalog.check_limits(25, "concise") == full
     assert short["intro"] < full["intro"] * 0.6 and short["card_t3"] < full["card_t3"]
     assert short["title"] == full["title"] and short["stat_v"] == full["stat_v"]  # titles and numbers keep their room
 
