@@ -107,7 +107,7 @@ async def test_first_deck_free_in_the_mini_app_once(client, tg):
     await app_settings.set_many({"first_generate_price": 0}, 1000)
     await add_user(U)  # no money at all
     assert (await client.get("/api/me", headers=h())).json()["prices"]["now"] == 0
-    body = {"user_id": U, "template_id": 3, "slide_count": 8, "language": "uz", "topic": "Mavzu"}
+    body = {"user_id": U, "template_id": 3, "slide_count": 7, "language": "uz", "topic": "Mavzu"}
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
     assert await billing.balance(U) == 0
     assert await db.pool().fetchval("SELECT price FROM jobs") == 0
@@ -115,13 +115,13 @@ async def test_first_deck_free_in_the_mini_app_once(client, tg):
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 402  # the second one is paid
 
 
-async def test_a_free_first_deck_has_up_to_ten_slides_a_longer_one_is_paid(client, tg):
+async def test_a_free_first_deck_has_up_to_seven_slides_a_longer_one_is_paid(client, tg):
     from app.services import app_settings
     await app_settings.set_many({"first_generate_price": 0}, 1000)
     await add_user(U)  # no money
-    assert (await client.get("/api/me", headers=h())).json()["prices"]["first_max_slides"] == jobs.FIRST_MAX_SLIDES == 10
-    body = {"user_id": U, "template_id": 3, "slide_count": 11, "language": "uz", "topic": "Mavzu"}
-    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 402  # 11 slides: the usual price
+    assert (await client.get("/api/me", headers=h())).json()["prices"]["first_max_slides"] == jobs.FIRST_MAX_SLIDES == 7
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "language": "uz", "topic": "Mavzu"}
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 402  # 8 slides: the usual price
     assert "Kerak: <b>5\xa0000" in tg.texts()[-1]  # the top-up message names that price, not 0
     assert not await db.pool().fetchval("SELECT count(*) FROM jobs")
     await billing.top_up(U, 5000, "test-1")
@@ -130,11 +130,11 @@ async def test_a_free_first_deck_has_up_to_ten_slides_a_longer_one_is_paid(clien
     assert (await client.get("/api/me", headers=h())).json()["prices"]["now"] == 5000  # that was the first deck
 
 
-async def test_ten_slides_stay_free(tg):
+async def test_seven_slides_stay_free(tg):
     from app.services import app_settings
     await app_settings.set_many({"first_generate_price": 0}, 1000)
     await add_user(U)
-    assert (await jobs.order("generate", U, {"topic": "Mavzu", "template_id": 1, "slide_count": 10}))[2] == 0
+    assert (await jobs.order("generate", U, {"topic": "Mavzu", "template_id": 1, "slide_count": 7}))[2] == 0
 
 
 async def test_two_requests_at_once_get_one_free_deck(tg):
@@ -143,7 +143,7 @@ async def test_two_requests_at_once_get_one_free_deck(tg):
     from app.services import app_settings
     await app_settings.set_many({"first_generate_price": 0}, 1000)
     await add_user(U, balance=10000)
-    payload = {"topic": "Mavzu", "template_id": 1, "slide_count": 8}
+    payload = {"topic": "Mavzu", "template_id": 1, "slide_count": 7}
     results = await asyncio.gather(*(jobs.order("generate", U, payload) for _ in range(3)), return_exceptions=True)
     assert sorted(r[2] for r in results) == [0, 5000, 5000]  # 10 000 so'm: one free deck + two paid
     await db.pool().execute("UPDATE jobs SET state = 'done'")
@@ -160,7 +160,7 @@ async def test_a_failed_first_deck_leaves_the_free_one(tg, monkeypatch):
     async def broken(*a, **k):
         raise RuntimeError("test")
     monkeypatch.setattr(jobs, "build", broken)
-    assert (await jobs.order("generate", U, {"topic": "Mavzu", "template_id": 1, "slide_count": 8}))[2] == 0
+    assert (await jobs.order("generate", U, {"topic": "Mavzu", "template_id": 1, "slide_count": 7}))[2] == 0
     await jobs.run_pending()  # failed, "refunded" 0
     assert await jobs.generate_price(U) == 0  # still the first deck
     await db.pool().execute("INSERT INTO decks (id, user_id, request, content) VALUES ('1', $1, '{}', '{}')", U)
