@@ -49,10 +49,16 @@ async def _order(con, order_id) -> dict | None:
     return dict(row) if row else None
 
 
+def payme_configured() -> bool:
+    return bool(settings.payme_merchant_id and settings.payme_key)
+
+
 def providers() -> list[str]:
-    """Providers whose merchant settings are filled in, in the order shown to the user."""
+    """Providers whose merchant settings are filled in, in the order shown to the user. Payme in test mode (PAYME_TEST=1)
+    is not shown: its checkout takes test cards, so a user could get real balance for nothing. The Merchant API endpoint
+    still answers the sandbox."""
     out = []
-    if settings.payme_merchant_id and settings.payme_key:
+    if payme_configured() and not settings.payme_test:
         out.append("payme")
     if settings.click_service_id and settings.click_merchant_id and settings.click_secret_key:
         out.append("click")

@@ -31,10 +31,11 @@ async def test_payme_and_click_links_come_back_to_the_site(client, tg, monkeypat
     await sign_in(client, tg)
     assert (await client.post("/api/web/topup", json={"amount": 15000, "provider": "payme"})).json()["detail"] == "noProvider"
     monkeypatch.setattr(web.settings, "payme_merchant_id", "m1"); monkeypatch.setattr(web.settings, "payme_key", "k")
+    monkeypatch.setattr(web.settings, "payme_test", False)
     monkeypatch.setattr(web.settings, "click_service_id", "1"); monkeypatch.setattr(web.settings, "click_merchant_id", "2")
     monkeypatch.setattr(web.settings, "click_secret_key", "s")
     r = (await client.post("/api/web/topup", json={"amount": 15000, "provider": "payme"})).json()
-    assert r["url"].startswith("https://test.paycom.uz/")
+    assert r["url"].startswith("https://checkout.paycom.uz/")
     import base64
     assert "c=https://site.test/#/app/balance" in base64.b64decode(r["url"].rsplit("/", 1)[1]).decode()
     r = (await client.post("/api/web/topup", json={"amount": 30000, "provider": "click"})).json()

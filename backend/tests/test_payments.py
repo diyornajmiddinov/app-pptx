@@ -39,6 +39,16 @@ def payme(monkeypatch):
     return lambda method, params, a=auth: payments.payme_rpc({"id": 1, "method": method, "params": params}, a)
 
 
+async def test_payme_in_test_mode_is_hidden_from_users_but_answers_the_sandbox(payme, monkeypatch):
+    monkeypatch.setattr(settings, "payme_test", True)
+    assert "payme" not in payments.providers() and payments.payme_configured()  # test cards must not buy real balance
+    await add_user(1)
+    oid = await payments.create_order(1, 30000, "payme")
+    assert (await payme("CheckPerformTransaction", {"amount": 3000000, "account": {settings.payme_account_field: str(oid)}}))[0]["result"] == {"allow": True}
+    monkeypatch.setattr(settings, "payme_test", False)
+    assert "payme" in payments.providers()
+
+
 async def test_payme_full_cycle(payme):
     await add_user(1)
     oid = await payments.create_order(1, 30000, "payme")
