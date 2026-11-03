@@ -56,6 +56,18 @@ async def test_card_topup_screenshot_admin_approval(tg):
     assert await billing.balance(U) == 15000
 
 
+async def test_with_payme_and_card_payme_is_recommended_as_the_fastest(tg, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "payme_merchant_id", "m"); monkeypatch.setattr(settings, "payme_key", "k")
+    monkeypatch.setattr(settings, "payme_test", False)
+    await add_user(U)
+    await bot.handle(press("topup:15000"))
+    last = tg.last()
+    assert "Payme — eng tez" in last["text"] and "admin tekshirgandan keyin" in last["text"]
+    buttons = [b["text"] for row in last["reply_markup"]["inline_keyboard"] for b in row]
+    assert buttons == ["Payme — Tavsiya", "💳 Karta"]
+
+
 async def test_only_admins_can_add_balance_or_open_the_panel(tg):
     await add_user(U)
     await bot.handle(msg(f"/addbalance {U} 5000"))

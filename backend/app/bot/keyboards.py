@@ -92,7 +92,9 @@ def provider_name(provider: str, lang: str) -> str:
 
 
 def provider_keyboard(amount: int, lang: str) -> dict:
-    return {"inline_keyboard": [[{"text": provider_name(p, lang), "callback_data": f"pay:{p}:{amount}", "style": PRIMARY} for p in payments.providers()]]}
+    """Payme is marked as the one to choose: it tops up at once (a card transfer waits for an admin)."""
+    return {"inline_keyboard": [[{"text": t(lang, "payme_reco") if p == "payme" else provider_name(p, lang), "callback_data": f"pay:{p}:{amount}",
+                                  "style": PRIMARY} for p in payments.providers()]]}
 
 
 def editor_keyboard(user_id: int, lang: str, doc: str | None = None) -> dict | None:

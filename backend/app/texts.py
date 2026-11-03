@@ -88,7 +88,10 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "topup_btn": "+ {amount}",
         "pay_link": "💳 <b>{amount}</b> — {provider} orqali to'lash uchun tugmani bosing.\n<i>To'lov o'tgach, balans avtomatik to'ldiriladi.</i>",
         "pay_btn": "{provider} orqali to'lash",
-        "choose_provider": "💳 <b>{amount}</b> — to'lov usulini tanlang:",
+        "choose_provider": "💳 <b>{amount}</b> — to'lov usulini tanlang:\n\n"
+                           "⚡ <b>Payme — eng tez.</b> To'lov o'tishi bilan balans bir zumda, avtomatik to'ldiriladi.\n"
+                           "💳 <b>Karta orqali</b> — pulni kartaga o'tkazib, chek rasmini yuborasiz. Balans admin tekshirgandan keyin to'ldiriladi, bu biroz vaqt oladi.",
+        "payme_reco": "Payme — Tavsiya",
         "card_name": "💳 Karta",
         "card_details": "💳 <b>Karta orqali to'lov</b>\n\nTo'lov ID: <code>{code}</code>\nSumma: <b>{amount}</b>\nKarta: <code>{card}</code>{holder}\n\n<b>1.</b> Shu kartaga aynan <b>{amount}</b> o'tkazing.\n<b>2.</b> To'lov chekining skrinshotini shu chatga yuboring (izohga <code>{code}</code> yozsangiz yanada yaxshi).\n\n<i>Admin tekshirgach balansingiz to'ldiriladi.</i>",
         "card_holder": "\nEgasi: <b>{name}</b>",
@@ -206,7 +209,10 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "topup_btn": "+ {amount}",
         "pay_link": "💳 <b>{amount}</b> — нажмите кнопку, чтобы оплатить через {provider}.\n<i>После оплаты баланс пополнится автоматически.</i>",
         "pay_btn": "Оплатить через {provider}",
-        "choose_provider": "💳 <b>{amount}</b> — выберите способ оплаты:",
+        "choose_provider": "💳 <b>{amount}</b> — выберите способ оплаты:\n\n"
+                           "⚡ <b>Payme — быстрее всего.</b> Баланс пополняется сразу после оплаты, автоматически.\n"
+                           "💳 <b>Переводом на карту</b> — переводите деньги на карту и отправляете фото чека. Баланс пополнится после проверки админом, это займёт некоторое время.",
+        "payme_reco": "Payme — Рекомендуем",
         "card_name": "💳 Карта",
         "card_details": "💳 <b>Оплата картой</b>\n\nID платежа: <code>{code}</code>\nСумма: <b>{amount}</b>\nКарта: <code>{card}</code>{holder}\n\n<b>1.</b> Переведите ровно <b>{amount}</b> на эту карту.\n<b>2.</b> Отправьте скриншот чека в этот чат (лучше с подписью <code>{code}</code>).\n\n<i>После проверки админом баланс пополнится.</i>",
         "card_holder": "\nВладелец: <b>{name}</b>",
@@ -324,7 +330,10 @@ T = {  # HTML (telegram.send_message parses it); t() escapes the values put into
         "topup_btn": "+ {amount}",
         "pay_link": "💳 <b>{amount}</b> — tap the button to pay with {provider}.\n<i>Your balance is topped up automatically after payment.</i>",
         "pay_btn": "Pay with {provider}",
-        "choose_provider": "💳 <b>{amount}</b> — choose a payment method:",
+        "choose_provider": "💳 <b>{amount}</b> — choose a payment method:\n\n"
+                           "⚡ <b>Payme — the fastest.</b> Your balance is topped up instantly and automatically after payment.\n"
+                           "💳 <b>Card transfer</b> — transfer the money to the card and send a photo of the receipt. Your balance is topped up once an admin checks it, which takes a while.",
+        "payme_reco": "Payme — Recommended",
         "card_name": "💳 Card",
         "card_details": "💳 <b>Card transfer</b>\n\nPayment ID: <code>{code}</code>\nAmount: <b>{amount}</b>\nCard: <code>{card}</code>{holder}\n\n<b>1.</b> Transfer exactly <b>{amount}</b> to this card.\n<b>2.</b> Send a screenshot of the receipt to this chat (ideally with <code>{code}</code> in the caption).\n\n<i>Your balance is topped up once an admin checks it.</i>",
         "card_holder": "\nHolder: <b>{name}</b>",
