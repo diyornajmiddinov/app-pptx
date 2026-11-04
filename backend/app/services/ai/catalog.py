@@ -14,9 +14,9 @@ def style_of(template_id: int) -> dict:
 
 
 SECTION_TITLES = {  # titles of the fixed slides, in the presentation language
-    "uz": {"intro": "Kirish", "agenda": "Reja", "sources": "Foydalanilgan manbalar"},
-    "ru": {"intro": "Введение", "agenda": "План", "sources": "Список источников"},
-    "en": {"intro": "Introduction", "agenda": "Outline", "sources": "References"},
+    "uz": {"intro": "Kirish", "agenda": "Reja", "summary": "Xulosa", "sources": "Foydalanilgan manbalar"},
+    "ru": {"intro": "Введение", "agenda": "План", "summary": "Выводы", "sources": "Список источников"},
+    "en": {"intro": "Introduction", "agenda": "Outline", "summary": "Conclusions", "sources": "References"},
 }
 LANG = {"uz": "o'zbek tilida, lotin yozuvida", "ru": "на русском языке", "en": "in English"}
 
@@ -30,11 +30,11 @@ ICONS = ["FiTarget", "FiTrendingUp", "FiUsers", "FiUser", "FiFlag", "FiSun", "Fi
 # ---------------------------------------------------------------- plans
 CLASSIC = {
     5: ["cover", "cards", "process", "stats", "closing"],
-    10: ["cover", "agenda", "cards", "process", "stats", "compare", "statement", "timeline", "quote", "closing"],
+    10: ["cover", "agenda", "cards", "process", "stats", "compare", "statement", "timeline", "summary", "closing"],
     15: ["cover", "agenda", "statement", "cards", "process", "stats", "compare", "timeline",
-         "cards", "process", "stats", "compare", "statement", "quote", "closing"],
+         "cards", "process", "stats", "compare", "statement", "summary", "closing"],
     20: ["cover", "agenda", "statement", "cards", "process", "stats", "compare", "timeline", "cards", "statement",
-         "process", "stats", "compare", "cards", "timeline", "stats", "compare", "statement", "quote", "closing"],
+         "process", "stats", "compare", "cards", "timeline", "stats", "compare", "statement", "summary", "closing"],
 }
 MIDDLE_POOL = ["image", "cards", "stats", "process", "compare", "image", "timeline", "statement",
                "cards", "image", "process", "stats", "compare", "timeline", "cards", "statement"]
@@ -67,8 +67,8 @@ def plan_for(n: int, template_id: int) -> list[str]:
         if tp == "image" and middle.count("image") >= 3:   # cover+intro+closing = 3 photos, max 6 in total
             continue
         middle.append(tp)
-    if m >= 6:                                             # a quote near the end when there is room
-        middle[-1] = "quote"
+    if m >= 6:                                             # the conclusions near the end when there is room
+        middle[-1] = "summary"
     return ["cover", "intro", "agenda", *middle, "sources", "closing"]
 
 

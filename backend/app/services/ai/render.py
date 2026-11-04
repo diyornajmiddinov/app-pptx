@@ -38,8 +38,10 @@ def add_notes(path: Path, content: dict) -> Path:
 
 
 def _content_file(content: dict) -> str:
+    """What the engine reads. A summary slide is drawn as cards: every template has them."""
+    slides = [{**s, "type": "cards"} if s.get("type") == "summary" else s for s in content.get("slides", [])]
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
-        json.dump(content, f, ensure_ascii=False)
+        json.dump({**content, "slides": slides}, f, ensure_ascii=False)
     return f.name
 
 

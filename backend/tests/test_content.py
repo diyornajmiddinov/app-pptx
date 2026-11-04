@@ -12,6 +12,44 @@ def test_plan_has_fixed_slides():
     assert plan[0] == "cover" and plan[-1] == "closing" and "sources" in plan and len(plan) == 12
 
 
+def test_a_long_deck_ends_with_conclusions_and_no_quote():
+    for tid in (1, 4, 50, 200):
+        for n in range(11, 31):
+            plan = catalog.plan_for(n, tid)
+            assert plan[-3:] == ["summary", "sources", "closing"] and "quote" not in plan
+    assert "summary" not in catalog.plan_for(10, 1) and "quote" not in catalog.plan_for(10, 1)
+
+
+def test_the_prompt_asks_for_conclusions_not_for_a_proverb():
+    prompt = content.build_prompt("Mavzu", catalog.plan_for(12, 1), "ru", True, 1)
+    assert 'summary: title = "Выводы"' in prompt and "maqol" not in prompt and "quote" not in prompt
+
+
+def test_a_summary_is_checked_like_cards():
+    bad = content.check_slide({"type": "summary", "title": "Xulosa", "items": [{"icon": "FiStar", "h": "A", "t": "B"}]}, True)
+    assert "items: 3 yoki 4 ta kartochka kerak" in bad
+    item = {"icon": "FiStar", "h": "Asosiy natija", "t": "Undan kelib chiqadigan tavsiya"}
+    assert content.check_slide({"type": "summary", "title": "Xulosa", "items": [item] * 3}, True) == []
+
+
+async def test_the_outline_gives_the_conclusions_their_title():
+    async def model(messages):
+        return json.dumps({"titles": ["boshqa"] * 12})
+    rows = await content.generate_outline("Mavzu", 12, "uz", 1, ask=model)
+    assert rows[-3] == {"type": "summary", "title": "Xulosa"}
+
+
+def test_the_engine_gets_a_summary_as_cards():
+    from pathlib import Path
+
+    from app.services.ai import render
+    path = Path(render._content_file({"meta": {}, "slides": [{"type": "summary", "title": "Xulosa", "items": []}, {"type": "quote", "text": "x"}]}))
+    try:
+        assert [s["type"] for s in json.loads(path.read_text(encoding="utf-8"))["slides"]] == ["cards", "quote"]
+    finally:
+        path.unlink()
+
+
 def test_slightly_long_text_is_accepted_after_retries():
     assert content.only_slightly_long(["slayd 3 (agenda): items[0]: 33 belgi, ko'pi bilan 32"])
     assert not content.only_slightly_long(["slayd 3 (agenda): items[0]: 60 belgi, ko'pi bilan 32"])
