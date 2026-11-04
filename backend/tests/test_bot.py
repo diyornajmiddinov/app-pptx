@@ -64,11 +64,30 @@ async def test_with_payme_and_card_payme_is_recommended_as_the_fastest(tg, monke
     await bot.handle(press("topup:15000"))
     last = tg.last()
     assert "Payme — eng tez" in last["text"] and "admin tekşirgandan keyin" in last["text"]
-    payme, card = last["reply_markup"]["inline_keyboard"][0]
+    [payme], [card] = last["reply_markup"]["inline_keyboard"]
     assert payme["text"] == "Payme — Tavsiya" and payme["url"].startswith("https://checkout.paycom.uz/")  # the page at once
     assert card["text"] == "💳 Karta" and card["callback_data"] == "pay:card:15000"
     order = await db.pool().fetchrow("SELECT user_id, amount, provider, state FROM orders")
     assert dict(order) == {"user_id": U, "amount": 15000, "provider": "payme", "state": "new"}
+
+
+async def test_click_is_offered_just_like_payme(tg, monkeypatch):
+    from app.core.config import settings
+    monkeypatch.setattr(settings, "payme_merchant_id", "m"); monkeypatch.setattr(settings, "payme_key", "k")
+    monkeypatch.setattr(settings, "payme_test", False)
+    monkeypatch.setattr(settings, "click_service_id", "1"); monkeypatch.setattr(settings, "click_merchant_id", "2")
+    monkeypatch.setattr(settings, "click_secret_key", "s"); monkeypatch.setattr(settings, "click_hidden", False)
+    await add_user(U)
+    await bot.handle(press("topup:15000"))
+    last = tg.last()
+    assert "Payme va Click — eng tez" in last["text"]
+    [payme, click], [card] = last["reply_markup"]["inline_keyboard"]
+    assert payme["text"] == "Payme — Tavsiya" and payme["url"].startswith("https://checkout.paycom.uz/")
+    assert click["text"] == "Click — Tavsiya" and click["url"].startswith("https://my.click.uz/services/pay?")  # the page at once
+    assert click["style"] == payme["style"] and card["callback_data"] == "pay:card:15000"
+    orders = await db.pool().fetch("SELECT id, provider, amount, state FROM orders ORDER BY id")
+    assert [(o["provider"], o["amount"], o["state"]) for o in orders] == [("payme", 15000, "new"), ("click", 15000, "new")]
+    assert f"transaction_param={orders[1]['id']}" in click["url"]  # Click's page pays Click's own order
 
 
 async def test_only_admins_can_add_balance_or_open_the_panel(tg):

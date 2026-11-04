@@ -135,9 +135,11 @@ async def on_callback(q: dict, data: str, chat_id: int, uid: int, lang: str) -> 
             await send_pay_link(chat_id, uid, amount, lang, available[0])
         else:
             await answer_callback(q["id"])
-            # Payme's button is its payment page itself: its order is made now (an unpaid one just stays "new")
-            url = payments.payme_link(await payments.create_order(uid, amount, "payme"), amount) if "payme" in available else ""
-            await send_message(chat_id, t(lang, "choose_provider", amount=som(amount, lang)), provider_keyboard(amount, lang, url))
+            # Payme's and Click's buttons are their payment pages themselves: their orders are made now (an unpaid one just stays "new")
+            links = {"payme": payments.payme_link, "click": payments.click_link}
+            urls = {p: links[p](await payments.create_order(uid, amount, p), amount) for p in available if p in links}
+            fast = f" {t(lang, 'and')} ".join(PROVIDER_NAMES[p] for p in urls)
+            await send_message(chat_id, t(lang, "choose_provider", amount=som(amount, lang), fast=fast), provider_keyboard(amount, lang, urls))
     elif data.split(":")[0] in ("card_ok", "card_no") and data.split(":")[-1].isdigit():
         if uid in settings.admin_ids:
             await card_decision(q, data.startswith("card_ok"), int(data.split(":")[-1]))

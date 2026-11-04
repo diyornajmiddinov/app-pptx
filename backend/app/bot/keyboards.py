@@ -94,14 +94,18 @@ def provider_name(provider: str, lang: str) -> str:
     return t(lang, "card_name") if provider == "card" else PROVIDER_NAMES[provider]
 
 
-def provider_keyboard(amount: int, lang: str, payme_url: str = "") -> dict:
-    """Payme is marked as the one to choose: it tops up at once (a card transfer waits for an admin). With payme_url
-    (its order made already) its button opens the payment page straight away."""
+def provider_keyboard(amount: int, lang: str, urls: dict[str, str] | None = None) -> dict:
+    """Payme and Click are marked as the ones to choose: they top up at once (a card transfer waits for an admin). A
+    provider in urls (its order made already) has a button that opens its payment page straight away. Payme and Click
+    share a row, the card has its own: three in one row would cut the labels."""
     def button(p: str) -> dict:
-        if p == "payme" and payme_url:
-            return {"text": t(lang, "payme_reco"), "url": payme_url, "style": PRIMARY}
-        return {"text": t(lang, "payme_reco") if p == "payme" else provider_name(p, lang), "callback_data": f"pay:{p}:{amount}", "style": PRIMARY}
-    return {"inline_keyboard": [[button(p) for p in payments.providers()]]}
+        if p == "card":
+            return {"text": provider_name(p, lang), "callback_data": f"pay:{p}:{amount}", "style": PRIMARY}
+        text = t(lang, "provider_reco", provider=PROVIDER_NAMES[p])
+        return {"text": text, "url": urls[p], "style": PRIMARY} if urls and p in urls else {"text": text, "callback_data": f"pay:{p}:{amount}", "style": PRIMARY}
+    available = payments.providers()
+    rows = [[button(p) for p in available if p != "card"], [button("card")] if "card" in available else []]
+    return {"inline_keyboard": [r for r in rows if r]}
 
 
 def editor_keyboard(user_id: int, lang: str, doc: str | None = None) -> dict | None:
