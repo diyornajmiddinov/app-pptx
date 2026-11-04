@@ -176,4 +176,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "yo'lga chiqishdek aniq va tartibli: qisqa, bosqichma-bosqich, 'qayerdan-qayerga' mantig'i", limits: { agenda_item: 30, event_h: 14 }, prefer: null };
-module.exports = { id: 47, slug: 'chipta', name: 'Chipta', category: 'business', photos: true, build, style: STYLE };
+module.exports = { id: 47, slug: 'chipta', name: 'Çipta', category: 'business', photos: true, build, style: STYLE };

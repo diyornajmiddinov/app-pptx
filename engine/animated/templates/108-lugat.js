@@ -36,7 +36,7 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI Lug'at", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.cloth, lt2: C.paper, accent1: C.accent, accent2: C.cloth, accent3: C.gold, accent4: '4F6D7A', accent5: C.muted, accent6: C.rule, hlink: C.accent, folHlink: C.muted } });
 }
-module.exports = { id: 108, slug: 'lugat', name: "Lug'at", category: 'academic', photos: true, build, style: { tone: "lug'at maqolasi kabi: aniq ta'riflar, atamalar va izohlar; ixcham va ilmiy", limits: {}, prefer: 'text' } };
+module.exports = { id: 108, slug: 'lugat', name: "Luğat", category: 'academic', photos: true, build, style: { tone: "lug'at maqolasi kabi: aniq ta'riflar, atamalar va izohlar; ixcham va ilmiy", limits: {}, prefer: 'text' } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["technical", "elegant"], "transitions": ["fade", "pull:l", "wipe:r"], "cover": ["fadeLetters", "typeLetters"], "mark": "fade", "deco": "wipe:r", "sig": {"title": "typeLetters", "body": "fadeWords", "item": "wipe:r", "image": "fade", "number": "fade", "order": "seq", "stagger": 0.18}, "tempo": 1.1, "kenburns": false};

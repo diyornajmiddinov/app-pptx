@@ -35,4 +35,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI Chizg'ich", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: '3A3A3A', lt2: C.bg, accent1: C.dim, accent2: C.ruler, accent3: '1D3557', accent4: '457B9D', accent5: C.muted, accent6: C.rulerEdge, hlink: C.dim, folHlink: C.muted } });
 }
-module.exports = { id: 131, slug: 'chizgich', name: "Chizg'ich", category: 'academic', photos: true, build, style: { tone: "o'lchanadigan aniqlik: raqamlar, me'yorlar va solishtirma; qisqa va texnik", limits: {}, prefer: 'data' } };
+module.exports = { id: 131, slug: 'chizgich', name: "Çizğiç", category: 'academic', photos: true, build, style: { tone: "o'lchanadigan aniqlik: raqamlar, me'yorlar va solishtirma; qisqa va texnik", limits: {}, prefer: 'data' } };

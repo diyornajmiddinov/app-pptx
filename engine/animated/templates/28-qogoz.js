@@ -172,7 +172,7 @@ async function build(content, out) {
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
 const STYLE = {"tone": "yumshoq, do'stona va tushunarli", "limits": {}};
-module.exports = { id: 28, slug: 'qogoz', name: "Qog'oz", category: 'creative', photos: true, build, style: STYLE };
+module.exports = { id: 28, slug: 'qogoz', name: "Qoğoz", category: 'creative', photos: true, build, style: STYLE };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["calm", "playful"], "transitions": ["pull:u", "fade", "cover:u"], "cover": ["riseWords", "fadeWords"], "mark": "swing", "deco": "drop", "sig": {"title": "fadeDown", "body": "fadeUp", "item": "swing", "image": "drop", "number": "springIn", "order": "diagonal", "stagger": 0.18}, "tempo": 1.05, "kenburns": false};

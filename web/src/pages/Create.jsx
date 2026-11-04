@@ -5,7 +5,7 @@
 import { useRef, useState } from 'react';
 import { api } from '../api.js';
 import { Alert, Button, Card, Field, Segmented, Spinner, TemplateGrid, inputCls } from '../components/ui.jsx';
-import { LANGS, useI18n } from '../i18n.jsx';
+import { CONTENT_LANGS, useI18n } from '../i18n.jsx';
 import Jobs from './Jobs.jsx';
 
 const FIXED = new Set(['intro', 'agenda', 'sources']); // their titles are set by the language, not edited
@@ -134,7 +134,7 @@ export default function Create({ me, refreshMe, go }) {
               </div>
             </Field>
             <Field label={t('deckLang')}>
-              <Segmented value={form.language} onChange={set('language')} label={t('deckLang')} options={LANGS.map((l) => ({ id: l.id, label: l.label }))} />
+              <Segmented value={form.language} onChange={set('language')} label={t('deckLang')} options={CONTENT_LANGS.map((l) => ({ id: l.id, label: l.label }))} />
             </Field>
           </div>
           <Field label={t('wishes')}>

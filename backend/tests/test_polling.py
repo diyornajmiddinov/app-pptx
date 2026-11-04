@@ -30,7 +30,7 @@ async def test_the_command_list_has_the_three_makers(tg):
     await polling.set_commands()
     uz = tg.sent("setMyCommands")[0]["commands"]
     assert [c["command"] for c in uz][:4] == ["start", "taqdimot", "referat", "mustaqil"]
-    assert {c["command"]: c["description"] for c in uz}["referat"] == "Referat yozish"
+    assert {c["command"]: c["description"] for c in uz}["referat"] == "Referat yoziş"
 
 
 async def test_one_failing_update_does_not_stop_the_bot(monkeypatch, caplog):

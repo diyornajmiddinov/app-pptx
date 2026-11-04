@@ -43,7 +43,7 @@ async def test_a_new_deck_is_copied_with_who_made_it(tg, made):
     assert len(to_user) == 2 and len(copy) == 1  # the PDF is not archived
     cap = copy[0]["caption"]
     assert "📊 <b>Taqdimot</b>" in cap and "Ali &lt;Vali&gt; (@ali)" in cap and f"<code>{U}</code>" in cap
-    assert "«Soliq &amp; byudjet»" in cap and "9 slayd · shablon #3" in cap and "5 000 so'm · sayt" in cap
+    assert "«Soliq &amp; byudjet»" in cap and "9 slayd · shablon #3" in cap and "5 000 söm · sayt" in cap
 
 
 async def test_a_sent_file_goes_by_its_id_not_uploaded_again(tg, monkeypatch):

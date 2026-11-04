@@ -73,10 +73,10 @@ SAMPLES = DATA_DIR / "samples"
 
 # what the bot writes to the user's chat on behalf of the site
 TEXTS = {
-    "uz": {"code": "🔐 slidechi.uz saytiga kirish kodi: <code>{code}</code>\n\nKod 5 daqiqa amal qiladi. Uni hech kimga bermang. "
-                   "Kirishni siz so'ramagan bo'lsangiz, bu xabarga e'tibor bermang.",
-           "signed_in": "✅ slidechi.uz saytiga kirildi.\n{device}\n\nBu siz bo'lmasangiz, saytda «Barcha qurilmalardan chiqish» tugmasini bosing.",
-           "receipt": "Saytdan yuborilgan chek · {code}"},
+    "uz": {"code": "🔐 slidechi.uz saytiga kiriş kodi: <code>{code}</code>\n\nKod 5 daqiqa amal qiladi. Uni heç kimga bermang. "
+                   "Kirişni siz söramagan bölsangiz, bu xabarga e'tibor bermang.",
+           "signed_in": "✅ slidechi.uz saytiga kirildi.\n{device}\n\nBu siz bölmasangiz, saytda «Barça qurilmalardan çiqiş» tugmasini bosing.",
+           "receipt": "Saytdan yuborilgan çek · {code}"},
     "ru": {"code": "🔐 Код для входа на slidechi.uz: <code>{code}</code>\n\nКод действует 5 минут. Никому его не сообщайте. "
                    "Если вы не запрашивали вход, просто проигнорируйте это сообщение.",
            "signed_in": "✅ Выполнен вход на slidechi.uz.\n{device}\n\nЕсли это были не вы, нажмите на сайте «Выйти на всех устройствах».",
@@ -206,7 +206,7 @@ async def history(uid: int = Depends(web_user)):
 class OutlineRequest(BaseModel):
     template_id: int = Field(ge=1, le=200)
     slide_count: int = Field(ge=6, le=30)
-    language: Literal["uz", "ru", "en"] = "uz"
+    language: Literal["uz", "uzn", "ru", "en"] = "uz"
     topic: str = Field(min_length=3, max_length=200)
     source: str = Field("", max_length=ai_content.SOURCE_MAX)
     wishes: str = Field("", max_length=ai_content.WISHES_MAX)  # "what else would you like" (optional)

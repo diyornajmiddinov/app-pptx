@@ -19,6 +19,7 @@ from app.services.ai.catalog import (
     style_of,
 )
 from app.services.ai.models import Ask, Messages, ai
+from app.services.alphabet import NEW, content_to_new
 
 
 class Meta(BaseModel):
@@ -230,8 +231,12 @@ async def generate_content(topic: str, slide_count: int, language: str = "uz", t
                            outline: list[str] | None = None, notes: bool = False, source: str = "", density: str = "balanced",
                            wishes: str = "") -> dict:
     """First generation: plan, tone and limits all come from the chosen template. outline / notes / source are the
-    website's options (approved titles, speaker notes, the user's document)."""
-    if language not in LANG: raise ValueError("language: uz, ru yoki en")
+    website's options (approved titles, speaker notes, the user's document). The new Uzbek alphabet (uzn): written in
+    the Latin the model knows best, then turned letter by letter (alphabet.py)."""
+    if language == NEW:
+        data = await generate_content(topic, slide_count, "uz", template_id, ask, retries, outline, notes, source, density, wishes)
+        return {**content_to_new(data), "language": NEW}
+    if language not in LANG: raise ValueError("language: uz, uzn, ru yoki en")
     photos = template_id in PHOTO_TEMPLATES
     plan = plan_for(slide_count, template_id)
     messages = [{"role": "user", "content": build_prompt(topic, plan, language, photos, template_id, outline, notes, source, density, wishes)}]
@@ -249,7 +254,9 @@ async def generate_content(topic: str, slide_count: int, language: str = "uz", t
 async def generate_outline(topic: str, slide_count: int, language: str = "uz", template_id: int = 1, source: str = "",
                            ask: Ask = ai, wishes: str = "") -> list[dict]:
     """The deck's plan with a proposed title per slide, for the user to edit before paying: [{type, title}]."""
-    if language not in LANG: raise ValueError("language: uz, ru yoki en")
+    if language == NEW:
+        return content_to_new(await generate_outline(topic, slide_count, "uz", template_id, source, ask, wishes))
+    if language not in LANG: raise ValueError("language: uz, uzn, ru yoki en")
     plan = plan_for(slide_count, template_id)
     ST, Lm = SECTION_TITLES[language], limits_for(template_id)
     fixed = {"intro": ST["intro"], "agenda": ST["agenda"], "sources": ST["sources"]}
@@ -289,4 +296,5 @@ Javob: FAQAT JSON: {{"slides": [...]}}
     for a, b in zip(content["slides"], out["slides"], strict=True):  # facts that must never drift
         for k in ("image", "items", "notes") if a["type"] == "sources" else ("image", "notes"):
             if k in a: b[k] = a[k]
-    return {**content, "slides": out["slides"]}
+    slides = content_to_new(out["slides"]) if content.get("language") == NEW else out["slides"]  # whatever letters the model used
+    return {**content, "slides": slides}

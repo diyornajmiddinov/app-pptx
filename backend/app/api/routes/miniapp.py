@@ -36,7 +36,7 @@ class GenerateRequest(BaseModel):
     user_id: int
     template_id: int = Field(ge=1, le=200)
     slide_count: int = Field(ge=6, le=30)
-    language: Literal["uz", "ru", "en"] = "uz"
+    language: Literal["uz", "uzn", "ru", "en"] = "uz"
     topic: str = Field(min_length=3, max_length=200)
     author: str = Field("", max_length=80)
     org: str = Field("", max_length=120)

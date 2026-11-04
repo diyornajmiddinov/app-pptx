@@ -19,7 +19,7 @@ export default function SegmentedControl({ label, options, value, onChange }) {
             aria-checked={active}
             onClick={() => onChange(opt.value)}
             className={[
-              'h-9 rounded-[8px] text-[14px] font-medium transition-colors duration-150',
+              `h-9 rounded-[8px] ${options.length > 4 ? 'text-[12px]' : 'text-[14px]'} font-medium transition-colors duration-150`,
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-tg-link',
               active
                 ? 'bg-tg-bg text-tg-text shadow-[0_1px_3px_rgba(0,0,0,0.12)]'

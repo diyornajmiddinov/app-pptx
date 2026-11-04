@@ -125,4 +125,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "qat'iy va ixcham: sarlavhalar 2–5 so'z, kuchli fe'llar, ortiqcha so'zsiz", limits: { title: 40, stmt: 55, card_h: 18 }, prefer: 'data' };
-module.exports = { id: 49, slug: 'shrift', name: 'Shrift', category: 'minimalist', photos: true, build, style: STYLE };
+module.exports = { id: 49, slug: 'shrift', name: 'Şrift', category: 'minimalist', photos: true, build, style: STYLE };

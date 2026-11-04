@@ -30,7 +30,7 @@ const K = {
     metaFooter({ color: C.muted, font: 'Cambria', align: 'center' })(ctx, s);
   },
 };
-module.exports = { id: 94, slug: 'qolyozma', name: "Qo'lyozma", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "tarixiy bitik ohangi: salobatli, ravon, an'anaviy ifoda; faktlarga sodiq", limits: {}, prefer: 'text' } };
+module.exports = { id: 94, slug: 'qolyozma', name: "Qölyozma", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "tarixiy bitik ohangi: salobatli, ravon, an'anaviy ifoda; faktlarga sodiq", limits: {}, prefer: 'text' } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["elegant", "calm"], "transitions": ["fade", "dissolve", "p14:flip|dir=\"l\""], "cover": ["fadeLetters", "fadeWords"], "mark": "fade", "deco": "wipe:r", "sig": {"title": "fadeLetters", "body": "fadeWords", "item": "wipe:r", "image": "dissolve", "number": "fade", "order": "seq", "stagger": 0.26}, "tempo": 1.4, "kenburns": true};

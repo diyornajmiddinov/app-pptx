@@ -40,4 +40,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI Ilon yo'l", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.road, lt2: C.bg, accent1: C.pal[0], accent2: C.pal[1], accent3: C.pal[2], accent4: C.road, accent5: C.muted, accent6: 'C9D7BD', hlink: C.pal[0], folHlink: C.muted } });
 }
-module.exports = { id: 118, slug: 'ilon-yol', name: "Ilon yo'l", category: 'business', photos: true, build, style: { tone: "sayohat kabi: yo'l, bekat va manzil; ketma-ket va qiziqarli bayon", limits: {}, prefer: null } };
+module.exports = { id: 118, slug: 'ilon-yol', name: "Ilon yöl", category: 'business', photos: true, build, style: { tone: "sayohat kabi: yo'l, bekat va manzil; ketma-ket va qiziqarli bayon", limits: {}, prefer: null } };

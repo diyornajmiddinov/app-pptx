@@ -49,7 +49,7 @@ async def test_a_new_user_is_asked_to_join_right_after_the_language(tg, channel)
     await bot.handle(msg("/start"))
     await bot.handle(press("lang:uz"))
     prompt = join_prompt(tg)
-    assert prompt and "a'zo bo'ling" in prompt["text"]
+    assert prompt and "a'zo böling" in prompt["text"]
     rows = prompt["reply_markup"]["inline_keyboard"]
     assert rows[0][0]["url"] == "https://t.me/slidechi_news" and rows[1][0]["callback_data"] == "sub_check"
     assert not any("keyboard" in (kw.get("reply_markup") or {}) for m, kw in tg.calls)  # no menu before joining

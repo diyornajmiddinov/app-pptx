@@ -36,4 +36,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI Lug'at", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.cloth, lt2: C.paper, accent1: C.accent, accent2: C.cloth, accent3: C.gold, accent4: '4F6D7A', accent5: C.muted, accent6: C.rule, hlink: C.accent, folHlink: C.muted } });
 }
-module.exports = { id: 108, slug: 'lugat', name: "Lug'at", category: 'academic', photos: true, build, style: { tone: "lug'at maqolasi kabi: aniq ta'riflar, atamalar va izohlar; ixcham va ilmiy", limits: {}, prefer: 'text' } };
+module.exports = { id: 108, slug: 'lugat', name: "Luğat", category: 'academic', photos: true, build, style: { tone: "lug'at maqolasi kabi: aniq ta'riflar, atamalar va izohlar; ixcham va ilmiy", limits: {}, prefer: 'text' } };

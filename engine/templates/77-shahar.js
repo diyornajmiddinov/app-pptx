@@ -29,4 +29,4 @@ const K = {
     metaFooter({ color: C.muted, y: 5.32 })(ctx, s);
   },
 };
-module.exports = { id: 77, slug: 'shahar', name: 'Shahar', category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "zamonaviy shahar ritmi: dinamik, amaliy, natijaga yo'naltirilgan", limits: {}, prefer: 'data' } };
+module.exports = { id: 77, slug: 'shahar', name: 'Şahar', category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "zamonaviy shahar ritmi: dinamik, amaliy, natijaga yo'naltirilgan", limits: {}, prefer: 'data' } };

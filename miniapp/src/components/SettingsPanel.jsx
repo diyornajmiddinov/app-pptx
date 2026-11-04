@@ -1,11 +1,11 @@
 import SegmentedControl from './SegmentedControl.jsx';
 import { useI18n } from '../i18n/index.jsx';
-import { LANGS } from '../i18n/messages.js';
+import { CONTENT_LANGS } from '../i18n/messages.js';
 
 export const MIN_SLIDES = 6;
 export const MAX_SLIDES = 30;
 
-export const LANGUAGES = LANGS.map((l) => ({ value: l.id, label: l.label }));
+export const LANGUAGES = CONTENT_LANGS.map((l) => ({ value: l.id, label: l.label }));
 
 function Stepper({ value, onChange }) {
   const { t } = useI18n();

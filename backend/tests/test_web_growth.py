@@ -192,6 +192,13 @@ async def test_generate_outline_fills_fixed_titles_and_survives_a_bad_answer():
     assert len(out) == 8 and out[1] == {"type": "intro", "title": "Kirish"} and out[-2]["title"] == "Foydalanilgan manbalar"
 
 
+async def test_an_outline_in_the_new_alphabet():
+    async def model(messages):
+        return json.dumps({"titles": ["Quyosh energiyasi"] + ["O'zgarishlar va chiqish"] * 7})
+    out = await content.generate_outline("Quyosh", 8, "uzn", 3, ask=model)
+    assert out[0]["title"] == "Quyoş energiyasi" and out[3]["title"] == "Özgarişlar va çiqiş" and out[1]["title"] == "Kiriş"
+
+
 # ---------------------------------------------------------------- documents
 
 def docx(text: str) -> bytes:

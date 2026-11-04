@@ -63,7 +63,7 @@ async def test_with_payme_and_card_payme_is_recommended_as_the_fastest(tg, monke
     await add_user(U)
     await bot.handle(press("topup:15000"))
     last = tg.last()
-    assert "Payme — eng tez" in last["text"] and "admin tekshirgandan keyin" in last["text"]
+    assert "Payme — eng tez" in last["text"] and "admin tekşirgandan keyin" in last["text"]
     payme, card = last["reply_markup"]["inline_keyboard"][0]
     assert payme["text"] == "Payme — Tavsiya" and payme["url"].startswith("https://checkout.paycom.uz/")  # the page at once
     assert card["text"] == "💳 Karta" and card["callback_data"] == "pay:card:15000"
@@ -137,7 +137,7 @@ async def test_admin_adds_bot_to_a_channel(tg, tmp_path, monkeypatch):
 async def test_the_menu_has_one_referat_and_mustaqil_ish_button(tg):
     from app.bot.keyboards import main_keyboard
     rows = main_keyboard("uz", U)["keyboard"]
-    assert [b["text"] for b in rows[1]] == ["📝 Referat / Mustaqil ish"]
+    assert [b["text"] for b in rows[1]] == ["📝 Referat / Mustaqil iş"]
     url = rows[1][0]["web_app"]["url"]
     assert "mode=paper" in url and "type=" not in url and "&t=" in url  # the form asks which
     await add_user(U)
@@ -169,7 +169,7 @@ async def test_the_animated_button_opens_the_app_for_admins_and_says_soon_to_use
 async def test_invite_button_gives_the_link_and_a_friend_by_it_is_counted(tg):
     from app.bot.keyboards import main_keyboard
     from app.services import growth
-    assert [b["text"] for b in main_keyboard("uz", U)["keyboard"][3]] == ["💰 Balans", "🎁 Taklif qilish"]
+    assert [b["text"] for b in main_keyboard("uz", U)["keyboard"][3]] == ["💰 Balans", "🎁 Taklif qiliş"]
     await add_user(U)
     await bot.handle(msg("🎁 Do'stlarni taklif qilish"))  # the earlier label still works
     code = await growth.ref_code(U)
@@ -178,6 +178,12 @@ async def test_invite_button_gives_the_link_and_a_friend_by_it_is_counted(tg):
     friend = 777
     await bot.handle(msg(f"/start ref_{code}", uid=friend, mid=2))  # a new user comes by the link
     assert await db.pool().fetchval("SELECT referrer_id FROM referrals WHERE referred_id = $1", friend) == U
-    assert any("havolangiz orqali qo'shildi" in x for x in tg.texts())  # the inviter is told
+    assert any("havolangiz orqali qöşildi" in x for x in tg.texts())  # the inviter is told
     await bot.handle(msg(f"/start ref_{code}", uid=U, mid=3))  # one's own link does nothing
     assert await db.pool().fetchval("SELECT count(*) FROM referrals") == 1
+
+
+def test_a_keyboard_from_before_the_new_alphabet_still_works():
+    from app.bot.keyboards import BUTTONS
+    assert BUTTONS["📊 Taqdimot yaratish"] == BUTTONS["📊 Taqdimot yaratiş"] == "kb_create"
+    assert BUTTONS["Referat / Mustaqil ish"] == "kb_paper" and BUTTONS["❌ Bekor qilish"] == "kb_pdf_cancel"

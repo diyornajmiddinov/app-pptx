@@ -14,7 +14,7 @@ describe('Login', () => {
     const done = vi.fn();
     renderUz(<Login onSignedIn={done} />);
     fireEvent.change(screen.getByPlaceholderText('@username'), { target: { value: '@vali' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Kod yuborish' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Kod yuboriş' }));
     const code = await screen.findByPlaceholderText('••••••');
     await act(async () => { fireEvent.change(code, { target: { value: '12 34 56' } }); }); // 6 digits: sent at once
     await waitFor(() => expect(done).toHaveBeenCalled());
@@ -26,8 +26,8 @@ describe('Login', () => {
     fakeFetch({ 'POST /login': [404, { detail: 'notFound' }] });
     renderUz(<Login onSignedIn={() => {}} />);
     fireEvent.change(screen.getByPlaceholderText('@username'), { target: { value: 'nobody' } });
-    fireEvent.click(screen.getByRole('button', { name: 'Kod yuborish' }));
-    expect(await screen.findByRole('alert')).toHaveTextContent('foydalanuvchi topilmadi');
+    fireEvent.click(screen.getByRole('button', { name: 'Kod yuboriş' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('foydalanuvçi topilmadi');
   });
 });
 
@@ -37,8 +37,8 @@ describe('Create', () => {
   it('low balance: no create button, a top-up one instead', async () => {
     fakeFetch(noJobs);
     renderUz(<Create me={{ ...ME, balance: 1000 }} refreshMe={() => {}} go={() => {}} />);
-    expect(screen.queryByRole('button', { name: /Taqdimot yaratish ·/ })).toBeNull();
-    expect(screen.getByRole('button', { name: "To'ldirish" })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /Taqdimot yaratiş ·/ })).toBeNull();
+    expect(screen.getByRole('button', { name: "Töldiriş" })).toBeTruthy();
   });
 
   it('outline: made, edited, sent with the deck', async () => {
@@ -46,11 +46,11 @@ describe('Create', () => {
     const calls = fakeFetch({ ...noJobs, 'POST /outline': [200, { slides: outline }], 'POST /generate': [202, { job: 1, ahead: 0 }] });
     renderUz(<Create me={ME} refreshMe={() => {}} go={() => {}} />);
     fireEvent.change(screen.getByPlaceholderText(/Soliq islohotlari/), { target: { value: 'Quyosh energiyasi' } });
-    fireEvent.click(screen.getByRole('button', { name: /rejani ko'rish/ }));
+    fireEvent.click(screen.getByRole('button', { name: /rejani köriş/ }));
     const first = await screen.findByDisplayValue('S0');
     fireEvent.change(first, { target: { value: 'Mening sarlavham' } });
     expect(screen.getByDisplayValue('S1')).toBeDisabled(); // intro: fixed title
-    fireEvent.click(screen.getByRole('button', { name: /Taqdimot yaratish · 5\u00a0000 so'm/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Taqdimot yaratiş · 5\u00a0000 söm/ }));
     await screen.findByText(/Qabul qilindi/);
     const body = calls.find((c) => c.key === 'POST /generate').body;
     expect(body.outline[0]).toBe('Mening sarlavham');
@@ -61,7 +61,7 @@ describe('Create', () => {
   it('the first-deck price is shown when it is lower', () => {
     fakeFetch(noJobs);
     renderUz(<Create me={{ ...ME, prices: { ...ME.prices, now: 0 } }} refreshMe={() => {}} go={() => {}} />);
-    expect(screen.getByText('Birinchi taqdimot: Bepul')).toBeTruthy();
+    expect(screen.getByText('Birinçi taqdimot: Bepul')).toBeTruthy();
   });
 });
 

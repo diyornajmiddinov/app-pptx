@@ -29,7 +29,7 @@ const K = {
     metaFooter({ color: 'FFFFFF', y: 5.3 })(ctx, s);
   },
 };
-module.exports = { id: 76, slug: 'tog', name: "Tog'", category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "maqsadga intilish: cho'qqi, bosqich va natija; qat'iy va ilhomlantiruvchi", limits: {}, prefer: null } };
+module.exports = { id: 76, slug: 'tog', name: "Toğ", category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "maqsadga intilish: cho'qqi, bosqich va natija; qat'iy va ilhomlantiruvchi", limits: {}, prefer: null } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["calm", "energetic"], "transitions": ["p14:pan|dir=\"u\"", "fade", "p14:flythrough|dir=\"in\""], "cover": ["riseWords", "focusIn"], "mark": "riseSettle", "deco": "peekUp", "sig": {"title": "peekUp", "body": "fadeUp", "item": "riseSettle", "image": "peekUp", "number": "riseSettle", "order": "seq", "stagger": 0.18}, "tempo": 1.1, "kenburns": true};

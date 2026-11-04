@@ -155,4 +155,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "maktubdek samimiy, lekin aniq: tinglovchiga murojaat qilgandek, qisqa xabarlar", limits: {}, prefer: null };
-module.exports = { id: 40, slug: 'pochta', name: 'Pochta', category: 'creative', photos: true, build, style: STYLE };
+module.exports = { id: 40, slug: 'pochta', name: 'Poçta', category: 'creative', photos: true, build, style: STYLE };

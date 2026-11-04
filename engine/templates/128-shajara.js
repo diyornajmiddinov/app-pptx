@@ -36,4 +36,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: 'SlideAI Shajara', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.node, lt2: C.bg, accent1: C.node, accent2: '2A6F97', accent3: C.node2, accent4: 'E76F51', accent5: C.muted, accent6: C.line, hlink: '2A6F97', folHlink: C.muted } });
 }
-module.exports = { id: 128, slug: 'shajara', name: 'Shajara', category: 'academic', photos: true, build, style: { tone: "tuzilma va kelib chiqish: umumiydan xususiyga, har bir tarmoq aniq nomlangan", limits: {}, prefer: null } };
+module.exports = { id: 128, slug: 'shajara', name: 'Şajara', category: 'academic', photos: true, build, style: { tone: "tuzilma va kelib chiqish: umumiydan xususiyga, har bir tarmoq aniq nomlangan", limits: {}, prefer: null } };

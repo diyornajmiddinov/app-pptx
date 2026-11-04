@@ -29,4 +29,4 @@ const K = {
     metaFooter({ color: 'FFFFFF', y: 5.3 })(ctx, s);
   },
 };
-module.exports = { id: 76, slug: 'tog', name: "Tog'", category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "maqsadga intilish: cho'qqi, bosqich va natija; qat'iy va ilhomlantiruvchi", limits: {}, prefer: null } };
+module.exports = { id: 76, slug: 'tog', name: "Toğ", category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "maqsadga intilish: cho'qqi, bosqich va natija; qat'iy va ilhomlantiruvchi", limits: {}, prefer: null } };

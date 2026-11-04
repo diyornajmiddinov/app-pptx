@@ -184,7 +184,7 @@ async function build(content, out) {
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
 const STYLE = {"tone": "muhandislik-texnik: aniq, bosqichma-bosqich, atamalar bilan", "limits": {}, "prefer": "data"};
-module.exports = { id: 13, slug: 'blueprint', name: 'Chizma', category: 'academic', build, style: STYLE };
+module.exports = { id: 13, slug: 'blueprint', name: 'Çizma', category: 'academic', build, style: STYLE };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["technical"], "transitions": ["wipe:r", "p14:pan|dir=\"u\"", "morph"], "cover": ["typeLetters", "sweepIn"], "mark": "appear", "deco": "wipe:r", "sig": {"title": "sweepIn", "body": "wipeWords", "item": "box", "image": "wipe:r", "number": "appear", "order": "seq", "stagger": 0.18}, "tempo": 1.1, "kenburns": false};

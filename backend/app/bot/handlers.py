@@ -143,7 +143,7 @@ async def came_by_invite(m: Msg):
     inviter = await db.pool().fetchval("SELECT referrer_id FROM referrals WHERE referred_id = $1", m.uid)
     bonus = (await app_settings.get())["referral_bonus"]
     if inviter and bonus:
-        name = " ".join(x for x in (m.user.get("first_name"), m.user.get("last_name")) if x) or "Do'stingiz"
+        name = " ".join(x for x in (m.user.get("first_name"), m.user.get("last_name")) if x) or "Döstingiz"
         lang = await lang_of(inviter)
         try:
             await send_message(inviter, t(lang, "invite_joined", name=name, bonus=som(bonus, lang)))

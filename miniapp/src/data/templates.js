@@ -40,7 +40,7 @@ export const TEMPLATES = [
   },
   {
     "id": 6,
-    "name": "Shveytsar",
+    "name": "Şveytsar",
     "category": "minimalist",
     "thumbnail": "/templates/6.jpg?v=2"
   },
@@ -82,7 +82,7 @@ export const TEMPLATES = [
   },
   {
     "id": 13,
-    "name": "Chizma",
+    "name": "Çizma",
     "category": "academic",
     "thumbnail": "/templates/13.jpg?v=2"
   },
@@ -172,7 +172,7 @@ export const TEMPLATES = [
   },
   {
     "id": 28,
-    "name": "Qog'oz",
+    "name": "Qoğoz",
     "category": "creative",
     "thumbnail": "/templates/28.jpg?v=2"
   },
@@ -244,7 +244,7 @@ export const TEMPLATES = [
   },
   {
     "id": 40,
-    "name": "Pochta",
+    "name": "Poçta",
     "category": "creative",
     "thumbnail": "/templates/40.jpg?v=2"
   },
@@ -286,7 +286,7 @@ export const TEMPLATES = [
   },
   {
     "id": 47,
-    "name": "Chipta",
+    "name": "Çipta",
     "category": "business",
     "thumbnail": "/templates/47.jpg?v=2"
   },
@@ -298,7 +298,7 @@ export const TEMPLATES = [
   },
   {
     "id": 49,
-    "name": "Shrift",
+    "name": "Şrift",
     "category": "minimalist",
     "thumbnail": "/templates/49.jpg?v=2"
   },
@@ -382,7 +382,7 @@ export const TEMPLATES = [
   },
   {
     "id": 63,
-    "name": "Chek",
+    "name": "Çek",
     "category": "business",
     "thumbnail": "/templates/63.jpg?v=2"
   },
@@ -406,7 +406,7 @@ export const TEMPLATES = [
   },
   {
     "id": 67,
-    "name": "Shaxmat",
+    "name": "Şaxmat",
     "category": "business",
     "thumbnail": "/templates/67.jpg?v=2"
   },
@@ -448,7 +448,7 @@ export const TEMPLATES = [
   },
   {
     "id": 74,
-    "name": "O'rmon",
+    "name": "Örmon",
     "category": "academic",
     "thumbnail": "/templates/74.jpg?v=2"
   },
@@ -460,13 +460,13 @@ export const TEMPLATES = [
   },
   {
     "id": 76,
-    "name": "Tog'",
+    "name": "Toğ",
     "category": "business",
     "thumbnail": "/templates/76.jpg?v=2"
   },
   {
     "id": 77,
-    "name": "Shahar",
+    "name": "Şahar",
     "category": "business",
     "thumbnail": "/templates/77.jpg?v=2"
   },
@@ -568,7 +568,7 @@ export const TEMPLATES = [
   },
   {
     "id": 94,
-    "name": "Qo'lyozma",
+    "name": "Qölyozma",
     "category": "academic",
     "thumbnail": "/templates/94.jpg?v=2"
   },
@@ -580,7 +580,7 @@ export const TEMPLATES = [
   },
   {
     "id": 96,
-    "name": "Yog'och",
+    "name": "Yoğoç",
     "category": "creative",
     "thumbnail": "/templates/96.jpg?v=2"
   },
@@ -634,7 +634,7 @@ export const TEMPLATES = [
   },
   {
     "id": 105,
-    "name": "Chiziqlar",
+    "name": "Çiziqlar",
     "category": "business",
     "thumbnail": "/templates/105.jpg?v=2"
   },
@@ -652,7 +652,7 @@ export const TEMPLATES = [
   },
   {
     "id": 108,
-    "name": "Lug'at",
+    "name": "Luğat",
     "category": "academic",
     "thumbnail": "/templates/108.jpg?v=2"
   },
@@ -682,7 +682,7 @@ export const TEMPLATES = [
   },
   {
     "id": 113,
-    "name": "Chorak",
+    "name": "Çorak",
     "category": "creative",
     "thumbnail": "/templates/113.jpg?v=2"
   },
@@ -712,13 +712,13 @@ export const TEMPLATES = [
   },
   {
     "id": 118,
-    "name": "Ilon yo'l",
+    "name": "Ilon yöl",
     "category": "business",
     "thumbnail": "/templates/118.jpg?v=2"
   },
   {
     "id": 119,
-    "name": "Hoshiya",
+    "name": "Hoşiya",
     "category": "academic",
     "thumbnail": "/templates/119.jpg?v=2"
   },
@@ -766,13 +766,13 @@ export const TEMPLATES = [
   },
   {
     "id": 127,
-    "name": "O'rgimchak",
+    "name": "Örgimçak",
     "category": "business",
     "thumbnail": "/templates/127.jpg?v=2"
   },
   {
     "id": 128,
-    "name": "Shajara",
+    "name": "Şajara",
     "category": "academic",
     "thumbnail": "/templates/128.jpg?v=2"
   },
@@ -790,7 +790,7 @@ export const TEMPLATES = [
   },
   {
     "id": 131,
-    "name": "Chizg'ich",
+    "name": "Çizğiç",
     "category": "academic",
     "thumbnail": "/templates/131.jpg?v=2"
   },
@@ -880,7 +880,7 @@ export const TEMPLATES = [
   },
   {
     "id": 146,
-    "name": "Bitiktosh",
+    "name": "Bitiktoş",
     "category": "academic",
     "thumbnail": "/templates/146.jpg?v=2"
   },
@@ -898,7 +898,7 @@ export const TEMPLATES = [
   },
   {
     "id": 149,
-    "name": "Yo'l belgilari",
+    "name": "Yöl belgilari",
     "category": "business",
     "thumbnail": "/templates/149.jpg?v=2"
   },
@@ -976,7 +976,7 @@ export const TEMPLATES = [
   },
   {
     "id": 162,
-    "name": "Shom",
+    "name": "Şom",
     "category": "minimalist",
     "thumbnail": "/templates/162.jpg?v=2"
   },
@@ -1000,13 +1000,13 @@ export const TEMPLATES = [
   },
   {
     "id": 166,
-    "name": "Yashil choy",
+    "name": "Yaşil çoy",
     "category": "minimalist",
     "thumbnail": "/templates/166.jpg?v=2"
   },
   {
     "id": 167,
-    "name": "Ko'mir",
+    "name": "Kömir",
     "category": "minimalist",
     "thumbnail": "/templates/167.jpg?v=2"
   },
@@ -1018,7 +1018,7 @@ export const TEMPLATES = [
   },
   {
     "id": 169,
-    "name": "Shaftoli",
+    "name": "Şaftoli",
     "category": "minimalist",
     "thumbnail": "/templates/169.jpg?v=2"
   },
@@ -1066,7 +1066,7 @@ export const TEMPLATES = [
   },
   {
     "id": 177,
-    "name": "Pushti",
+    "name": "Puşti",
     "category": "minimalist",
     "thumbnail": "/templates/177.jpg?v=2"
   },

@@ -32,7 +32,7 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: 'SlideAI Hoshiya', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: '333333', lt2: C.paper, accent1: C.accent, accent2: '1F4E79', accent3: '5B7F3A', accent4: 'B8860B', accent5: C.muted, accent6: C.rule, hlink: C.accent, folHlink: C.muted } });
 }
-module.exports = { id: 119, slug: 'hoshiya', name: 'Hoshiya', category: 'academic', photos: true, build, style: { tone: "ilmiy esse: asosiy matn ravon, izohlar qisqa va aniq; dalillarga tayangan", limits: {}, prefer: 'text' } };
+module.exports = { id: 119, slug: 'hoshiya', name: 'Hoşiya', category: 'academic', photos: true, build, style: { tone: "ilmiy esse: asosiy matn ravon, izohlar qisqa va aniq; dalillarga tayangan", limits: {}, prefer: 'text' } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["elegant", "technical"], "transitions": ["fade", "wipe:l", "pull:l"], "cover": ["fadeLetters", "sweepIn"], "mark": "fadeLeft", "deco": "wipe:d", "sig": {"title": "sweepIn", "body": "fadeWords", "item": "fadeLeft", "image": "wipe:r", "number": "fade", "order": "seq", "stagger": 0.2}, "tempo": 1.15, "kenburns": false};

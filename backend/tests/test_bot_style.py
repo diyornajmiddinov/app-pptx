@@ -75,7 +75,7 @@ async def test_admin_sets_animated_emoji_and_the_bot_uses_them(tg):
     w = tg.last()
     assert '<tg-emoji emoji-id="111">📊</tg-emoji>' in w["text"]
     create = w["reply_markup"]["keyboard"][0][0]
-    assert create["icon_custom_emoji_id"] == "111" and create["text"] == "Taqdimot yaratish"
+    assert create["icon_custom_emoji_id"] == "111" and create["text"] == "Taqdimot yaratiş"
     tg.calls.clear()
     await bot.handle(msg("Muharrir"))  # the editor button pressed: its text comes without the emoji now
     assert "editor.html" in str(tg.last()["reply_markup"])

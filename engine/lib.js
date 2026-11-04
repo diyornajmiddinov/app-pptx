@@ -400,5 +400,6 @@ const I18N = {
     author_l: 'Author', org_l: 'Organization', city_l: 'City', year_l: 'Year', slide_l: 'Slide', specimen: 'Specimen', caption: 'Photo',
     deck_file: 'Presentation', end_file: 'Closing', image_file: 'image', next: 'Next >', finish: 'Finish', message: 'Message', form: 'Form', sign: 'Signature', date_l: 'Date', basis: 'Basis', approved: 'APPROVED' },
 };
+I18N.uzn = { ...I18N.uz, step: (n) => `${n}-bosqi\u00e7`, indicator: 'K\u00f6rsatki\u00e7', org_l: 'Ta\u015fkilot', city_l: '\u015eahar', form: '\u015eakl' }; // the new Uzbek alphabet (2026)
 /** labels for the deck's language (falls back to Uzbek) */
 module.exports.tr = (content) => I18N[(content && content.language) || 'uz'] || I18N.uz;

@@ -6,44 +6,44 @@ export const LEGAL = {
   oferta: {
     uz: { // the main text; ru / en follow it section by section
       title: 'Ommaviy oferta',
-      intro: "Ushbu hujjat {name} (keyingi o'rinlarda — «Ijrochi») tomonidan slidechi.uz sayti va @slidechibot Telegram boti (birgalikda — «Xizmat») orqali taqdimot tayyorlash xizmatlarini ko'rsatish bo'yicha ommaviy ofertadir (O'zbekiston Respublikasi Fuqarolik kodeksining 367-moddasi). Xizmatdan foydalanish yoki balansni to'ldirish ushbu shartlarni to'liq qabul qilishni (aksept) anglatadi.",
+      intro: "Uşbu hujjat {name} (keyingi örinlarda — «Ijroçi») tomonidan slidechi.uz sayti va @slidechibot Telegram boti (birgalikda — «Xizmat») orqali taqdimot tayyorlaş xizmatlarini körsatiş böyiça ommaviy ofertadir (Özbekiston Respublikasi Fuqarolik kodeksining 367-moddasi). Xizmatdan foydalaniş yoki balansni töldiriş uşbu şartlarni töliq qabul qilişni (aksept) anglatadi.",
       sections: [
         ['1. Xizmat mazmuni', [
-          "Ijrochi foydalanuvchi kiritgan mavzu va sozlamalar asosida sun'iy intellekt yordamida PowerPoint (.pptx) formatidagi taqdimot faylini tayyorlaydi, mavjud taqdimotni boshqa shablonda qayta chizadi, rasmlardan PDF fayl yaratadi va boshqa qo'shimcha imkoniyatlarni taqdim etadi.",
-          "Taqdimot matni va rasmlari avtomatik tarzda yaratiladi. Foydalanuvchi tayyor faylni ishlatishdan oldin uning mazmunini, faktlar va manbalarni o'zi tekshiradi.",
+          "Ijroçi foydalanuvçi kiritgan mavzu va sozlamalar asosida sun'iy intellekt yordamida PowerPoint (.pptx) formatidagi taqdimot faylini tayyorlaydi, mavjud taqdimotni boşqa şablonda qayta çizadi, rasmlardan PDF fayl yaratadi va boşqa qöşimça imkoniyatlarni taqdim etadi.",
+          "Taqdimot matni va rasmlari avtomatik tarzda yaratiladi. Foydalanuvçi tayyor faylni işlatişdan oldin uning mazmunini, faktlar va manbalarni özi tekşiradi.",
         ]],
         ['2. Hisob', [
-          "Xizmatdan foydalanish uchun Telegram hisobi kerak. Saytga kirish @slidechibot yuboradigan bir martalik kod orqali amalga oshiriladi. Sayt va botdagi hisob, balans va taqdimotlar umumiy.",
-          "Foydalanuvchi kirish kodini boshqalarga bermaslik va o'z hisobi orqali qilingan harakatlar uchun javobgar.",
+          "Xizmatdan foydalaniş uçun Telegram hisobi kerak. Saytga kiriş @slidechibot yuboradigan bir martalik kod orqali amalga oşiriladi. Sayt va botdagi hisob, balans va taqdimotlar umumiy.",
+          "Foydalanuvçi kiriş kodini boşqalarga bermaslik va öz hisobi orqali qilingan harakatlar uçun javobgar.",
         ]],
-        ['3. Narxlar va to\'lov', [
-          "Xizmatlar narxi saytning «Narxlar» bo'limida va botda so'mda ko'rsatiladi. Ijrochi narxlarni o'zgartirishi mumkin; o'zgarish allaqachon to'langan buyurtmalarga ta'sir qilmaydi.",
-          "To'lov oldindan, ichki balansni to'ldirish orqali amalga oshiriladi: bank kartasiga o'tkazma (chek administrator tomonidan tekshiriladi), Payme yoki Click. Pul xizmat buyurtma qilingan paytda balansdan yechiladi.",
-          "Promokod va taklif bonuslari balansga qo'shiladi, naqd pulga almashtirilmaydi.",
+        ['3. Narxlar va tölov', [
+          "Xizmatlar narxi saytning «Narxlar» bölimida va botda sömda körsatiladi. Ijroçi narxlarni özgartirişi mumkin; özgariş allaqaçon tölangan buyurtmalarga ta'sir qilmaydi.",
+          "Tölov oldindan, içki balansni töldiriş orqali amalga oşiriladi: bank kartasiga ötkazma (çek administrator tomonidan tekşiriladi), Payme yoki Click. Pul xizmat buyurtma qilingan paytda balansdan yeçiladi.",
+          "Promokod va taklif bonuslari balansga qöşiladi, naqd pulga almaştirilmaydi.",
         ]],
-        ['4. Xizmatni ko\'rsatish', [
-          "Taqdimot odatda 1–5 daqiqada tayyorlanadi va saytdagi kabinetda yuklab olish uchun hamda Telegram chatga yuboriladi. Navbat bo'lsa, vaqt uzayishi mumkin.",
-          "Xizmat fayl tayyorlangan va foydalanuvchiga taqdim etilgan paytda ko'rsatilgan hisoblanadi.",
+        ['4. Xizmatni körsatiş', [
+          "Taqdimot odatda 1–5 daqiqada tayyorlanadi va saytdagi kabinetda yuklab oliş uçun hamda Telegram çatga yuboriladi. Navbat bölsa, vaqt uzayişi mumkin.",
+          "Xizmat fayl tayyorlangan va foydalanuvçiga taqdim etilgan paytda körsatilgan hisoblanadi.",
         ]],
-        ['5. Pulni qaytarish', [
-          "Taqdimot texnik sabablarga ko'ra tayyorlanmasa, yechilgan summa avtomatik ravishda balansga qaytariladi.",
-          "Foydalanilmagan balans qoldig'ini qaytarish foydalanuvchining Ijrochiga yozma murojaati asosida, to'lov qilingan usul orqali, murojaatdan keyin 10 ish kuni ichida amalga oshiriladi. Promokod va bonus summalari qaytarilmaydi.",
-          "Tayyorlangan taqdimotning mazmuni foydalanuvchini qoniqtirmasa, u boshqa shablonda qayta chizdirishi yoki yangi taqdimot buyurtma qilishi mumkin; bunday holatda to'langan summa qaytarilmaydi.",
+        ['5. Pulni qaytariş', [
+          "Taqdimot texnik sabablarga köra tayyorlanmasa, yeçilgan summa avtomatik ravişda balansga qaytariladi.",
+          "Foydalanilmagan balans qoldiğini qaytariş foydalanuvçining Ijroçiga yozma murojaati asosida, tölov qilingan usul orqali, murojaatdan keyin 10 iş kuni içida amalga oşiriladi. Promokod va bonus summalari qaytarilmaydi.",
+          "Tayyorlangan taqdimotning mazmuni foydalanuvçini qoniqtirmasa, u boşqa şablonda qayta çizdirişi yoki yangi taqdimot buyurtma qilişi mumkin; bunday holatda tölangan summa qaytarilmaydi.",
         ]],
         ['6. Taraflarning majburiyatlari', [
-          "Foydalanuvchi Xizmatdan O'zbekiston Respublikasi qonunchiligiga zid maqsadlarda, boshqalarning huquqlarini buzadigan, haqoratli yoki noqonuniy mazmun yaratish uchun foydalanmaslikka majbur.",
-          "Foydalanuvchi yuklagan hujjat va rasmlar uchun, ularga bo'lgan huquqlar uchun o'zi javobgar.",
-          "Ijrochi Xizmatning uzluksiz ishlashi uchun oqilona choralarni ko'radi, lekin texnik ishlar, uchinchi tomon xizmatlaridagi (Telegram, AI provayderlari, to'lov tizimlari) uzilishlar uchun javobgar emas.",
+          "Foydalanuvçi Xizmatdan Özbekiston Respublikasi qonunçiligiga zid maqsadlarda, boşqalarning huquqlarini buzadigan, haqoratli yoki noqonuniy mazmun yaratiş uçun foydalanmaslikka majbur.",
+          "Foydalanuvçi yuklagan hujjat va rasmlar uçun, ularga bölgan huquqlar uçun özi javobgar.",
+          "Ijroçi Xizmatning uzluksiz işlaşi uçun oqilona çoralarni köradi, lekin texnik işlar, uçinçi tomon xizmatlaridagi (Telegram, AI provayderlari, tölov tizimlari) uzilişlar uçun javobgar emas.",
         ]],
         ['7. Intellektual mulk', [
-          "Tayyorlangan taqdimot fayli foydalanuvchiga shaxsiy va tijorat maqsadlarida cheklovsiz foydalanish uchun beriladi. Shablon dizayni va Xizmatning dasturiy ta'minoti Ijrochiga tegishli.",
+          "Tayyorlangan taqdimot fayli foydalanuvçiga şaxsiy va tijorat maqsadlarida çeklovsiz foydalaniş uçun beriladi. Şablon dizayni va Xizmatning dasturiy ta'minoti Ijroçiga tegişli.",
           "Rasmlar fotostok (Pexels) litsenziyasi asosida yoki sun'iy intellekt orqali yaratiladi.",
         ]],
         ['8. Javobgarlik', [
-          "Ijrochining javobgarligi har qanday holatda tegishli buyurtma uchun foydalanuvchi to'lagan summa bilan cheklanadi. Ijrochi taqdimot mazmunidan foydalanish natijasida yuzaga kelgan bilvosita zararlar uchun javobgar emas.",
+          "Ijroçining javobgarligi har qanday holatda tegişli buyurtma uçun foydalanuvçi tölagan summa bilan çeklanadi. Ijroçi taqdimot mazmunidan foydalaniş natijasida yuzaga kelgan bilvosita zararlar uçun javobgar emas.",
         ]],
-        ['9. Boshqa shartlar', [
-          "Ijrochi ofertani o'zgartirishi mumkin; yangi tahrir saytga joylangan paytdan kuchga kiradi. Nizolar muzokaralar yo'li bilan, kelishilmasa O'zbekiston Respublikasi qonunchiligiga muvofiq sudda hal qilinadi.",
+        ['9. Boşqa şartlar', [
+          "Ijroçi ofertani özgartirişi mumkin; yangi tahrir saytga joylangan paytdan kuçga kiradi. Nizolar muzokaralar yöli bilan, kelişilmasa Özbekiston Respublikasi qonunçiligiga muvofiq sudda hal qilinadi.",
         ]],
       ],
     },
@@ -81,35 +81,35 @@ export const LEGAL = {
   privacy: {
     uz: {
       title: 'Maxfiylik siyosati',
-      intro: "Ushbu siyosat {name} slidechi.uz sayti va @slidechibot boti orqali qanday shaxsiy ma'lumotlarni yig'ishi, nima uchun ishlatishi va qanday himoya qilishini tushuntiradi («Shaxsga doir ma'lumotlar to'g'risida»gi O'zbekiston Respublikasi Qonuni).",
+      intro: "Uşbu siyosat {name} slidechi.uz sayti va @slidechibot boti orqali qanday şaxsiy ma'lumotlarni yiğişi, nima uçun işlatişi va qanday himoya qilişini tuşuntiradi («Şaxsga doir ma'lumotlar töğrisida»gi Özbekiston Respublikasi Qonuni).",
       sections: [
-        ["1. Qanday ma'lumotlar yig'iladi", [
+        ["1. Qanday ma'lumotlar yiğiladi", [
           "Telegram ma'lumotlari: Telegram ID, ism, familiya, username, til.",
-          "Xizmat ma'lumotlari: kiritilgan mavzular, titul sahifa ma'lumotlari (muallif, tashkilot, shahar, yil), yaratilgan taqdimotlar, yuklangan hujjat va rasmlar, balans va to'lovlar tarixi, to'lov cheki rasmlari.",
-          "Texnik ma'lumotlar: IP manzil va brauzer turi (xavfsizlik va suiiste'mollikning oldini olish uchun), sayt sessiyasi uchun cookie.",
+          "Xizmat ma'lumotlari: kiritilgan mavzular, titul sahifa ma'lumotlari (muallif, taşkilot, şahar, yil), yaratilgan taqdimotlar, yuklangan hujjat va rasmlar, balans va tölovlar tarixi, tölov çeki rasmlari.",
+          "Texnik ma'lumotlar: IP manzil va brauzer turi (xavfsizlik va suiiste'mollikning oldini oliş uçun), sayt sessiyasi uçun cookie.",
         ]],
-        ["2. Nima uchun ishlatiladi", [
-          "Xizmatni ko'rsatish: taqdimot tayyorlash, faylni yetkazish, balansni yuritish va to'lovlarni tekshirish.",
-          "Xavfsizlik: kirish kodlarini yuborish, qurilmadan kirish haqida xabar berish, urinishlar sonini cheklash.",
-          "Xizmat haqida xabarlar va (siz roziligingiz bilan bot orqali) yangiliklar yuborish; umumlashtirilgan statistika.",
+        ["2. Nima uçun işlatiladi", [
+          "Xizmatni körsatiş: taqdimot tayyorlaş, faylni yetkaziş, balansni yuritiş va tölovlarni tekşiriş.",
+          "Xavfsizlik: kiriş kodlarini yuboriş, qurilmadan kiriş haqida xabar beriş, urinişlar sonini çeklaş.",
+          "Xizmat haqida xabarlar va (siz roziligingiz bilan bot orqali) yangiliklar yuboriş; umumlaştirilgan statistika.",
         ]],
-        ["3. Uchinchi tomonlar", [
-          "Taqdimot matnini yaratish uchun mavzu va yuklangan hujjat matni sun'iy intellekt provayderiga (Google Gemini) yuboriladi; rasm qidirish uchun qisqa inglizcha so'rov fotostokka (Pexels) yuboriladi. Ularga ism, Telegram ID yoki to'lov ma'lumotlari berilmaydi.",
-          "To'lovlar Payme va Click tizimlari orqali o'tadi; karta ma'lumotlaringiz bizga kelmaydi.",
-          "Ma'lumotlar sotilmaydi va reklama maqsadida berilmaydi. Qonunda nazarda tutilgan hollarda vakolatli organlarga berilishi mumkin.",
+        ["3. Uçinçi tomonlar", [
+          "Taqdimot matnini yaratiş uçun mavzu va yuklangan hujjat matni sun'iy intellekt provayderiga (Google Gemini) yuboriladi; rasm qidiriş uçun qisqa inglizça sörov fotostokka (Pexels) yuboriladi. Ularga ism, Telegram ID yoki tölov ma'lumotlari berilmaydi.",
+          "Tölovlar Payme va Click tizimlari orqali ötadi; karta ma'lumotlaringiz bizga kelmaydi.",
+          "Ma'lumotlar sotilmaydi va reklama maqsadida berilmaydi. Qonunda nazarda tutilgan hollarda vakolatli organlarga berilişi mumkin.",
         ]],
-        ['4. Saqlash va himoya', [
-          "Ma'lumotlar Ijrochi serverida saqlanadi. Ulanish HTTPS orqali shifrlanadi; kirish kodlari va sessiya tokenlari bazada faqat xesh ko'rinishida saqlanadi; sessiya cookie'si sahifa skriptlariga ko'rinmaydi.",
-          "Ma'lumotlar hisob faol bo'lgan muddat davomida, to'lov yozuvlari esa qonunchilikda belgilangan muddatlarda saqlanadi. Kirish kodlari 1 kundan keyin, tashrif statistikasi 90 kundan keyin o'chiriladi.",
+        ['4. Saqlaş va himoya', [
+          "Ma'lumotlar Ijroçi serverida saqlanadi. Ulaniş HTTPS orqali şifrlanadi; kiriş kodlari va sessiya tokenlari bazada faqat xeş körinişida saqlanadi; sessiya cookie'si sahifa skriptlariga körinmaydi.",
+          "Ma'lumotlar hisob faol bölgan muddat davomida, tölov yozuvlari esa qonunçilikda belgilangan muddatlarda saqlanadi. Kiriş kodlari 1 kundan keyin, taşrif statistikasi 90 kundan keyin öçiriladi.",
         ]],
         ['5. Cookie', [
-          "Sayt faqat kirgan holatingizni eslab qolish uchun bitta zaruriy cookie (sessiya) va interfeys tilini eslab qolish uchun brauzer xotirasidan foydalanadi. Reklama va kuzatuv cookie'lari ishlatilmaydi.",
+          "Sayt faqat kirgan holatingizni eslab qoliş uçun bitta zaruriy cookie (sessiya) va interfeys tilini eslab qoliş uçun brauzer xotirasidan foydalanadi. Reklama va kuzatuv cookie'lari işlatilmaydi.",
         ]],
         ['6. Sizning huquqlaringiz', [
-          "Siz o'z ma'lumotlaringiz haqida ma'lumot olish, ularni tuzatish yoki o'chirishni so'rashingiz mumkin. Taqdimotlarni kabinetda o'zingiz o'chira olasiz; hisobni to'liq o'chirish uchun quyidagi aloqa orqali murojaat qiling.",
+          "Siz öz ma'lumotlaringiz haqida ma'lumot oliş, ularni tuzatiş yoki öçirişni söraşingiz mumkin. Taqdimotlarni kabinetda özingiz öçira olasiz; hisobni töliq öçiriş uçun quyidagi aloqa orqali murojaat qiling.",
         ]],
-        ["7. O'zgarishlar va aloqa", [
-          "Siyosat o'zgarsa, yangi tahrir shu sahifaga joylanadi.",
+        ["7. Özgarişlar va aloqa", [
+          "Siyosat özgarsa, yangi tahrir şu sahifaga joylanadi.",
         ]],
       ],
     },

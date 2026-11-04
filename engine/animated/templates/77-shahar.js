@@ -29,7 +29,7 @@ const K = {
     metaFooter({ color: C.muted, y: 5.32 })(ctx, s);
   },
 };
-module.exports = { id: 77, slug: 'shahar', name: 'Shahar', category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "zamonaviy shahar ritmi: dinamik, amaliy, natijaga yo'naltirilgan", limits: {}, prefer: 'data' } };
+module.exports = { id: 77, slug: 'shahar', name: 'Şahar', category: 'business', photos: true, build: (c, o) => run(c, o, K), style: { tone: "zamonaviy shahar ritmi: dinamik, amaliy, natijaga yo'naltirilgan", limits: {}, prefer: 'data' } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["energetic", "technical"], "transitions": ["push:l", "p14:flythrough|dir=\"in\"", "morph"], "cover": ["flyRight", "fadeLetters"], "mark": "appear", "deco": "wipe:u", "sig": {"title": "sweepIn", "body": "fadeUp", "item": "wipe:u", "image": "wipe:u", "number": "popIn", "order": "cascade", "stagger": 0.1}, "tempo": 0.9, "kenburns": true};

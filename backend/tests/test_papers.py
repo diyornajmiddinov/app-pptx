@@ -254,3 +254,14 @@ async def test_the_literature_and_references_follow_the_work_s_language():
     await paper_ai.plan("Аускультация", 10, "ru", ask=model, doc_type="mustaqil")
     assert "Москва: Издательство" in seen[0] and "Toshkent" not in seen[0] and "mustaqil ish rejasini" in seen[0]
     assert paper_ai.PAGE_REF["en"] == "[n, p. 45]" and paper_ai.PAGE_REF["ru"] == "[n, с. 45]"
+
+
+async def test_in_the_new_alphabet_the_paper_is_written_then_turned_and_its_title_page_too(tmp_path):
+    ai = FakeAI()
+    c = await paper_ai.write({**ORDER, "language": "uzn"}, FMT, ask=ai)
+    assert c["meta"]["language"] == "uzn" and c["meta"]["topic"] == "Inflyatsiya va uning ta'siri"
+    assert c["meta"]["student"] == "Aliyev Vali" and c["meta"]["city"] == "Toshkent"  # the names as typed
+    assert "söz" in c["intro"][0] and "so'z" not in json.dumps(c, ensure_ascii=False).replace(c["meta"]["topic"], "")
+    assert all("lotin yozuvida" in m[0]["content"] for m in ai.prompts)  # the model wrote the Latin it knows best
+    body = xml(paper_docx.write(sample_content("uzn"), FMT, tmp_path / "n.docx"))
+    assert "ÖZBEKISTON RESPUBLIKASI" in body and "KIRIŞ" in body and "ADABIYOTLAR RÖYXATI" in body

@@ -29,4 +29,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI Yo'l belgilari", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.green, lt2: C.sky, accent1: C.green, accent2: C.blue, accent3: C.yellow, accent4: C.red, accent5: C.brown, accent6: C.post, hlink: C.blue, folHlink: '555555' } });
 }
-module.exports = { id: 149, slug: 'yol-belgilari', name: "Yo'l belgilari", category: 'business', photos: true, build, style: { tone: "yo'riqnoma ohangi: aniq yo'nalish, qisqa ko'rsatma va ogohlantirish; tez o'qiladigan", limits: { card_t4: 110, step_t: 100, side_item: 55 }, prefer: null } };
+module.exports = { id: 149, slug: 'yol-belgilari', name: "Yöl belgilari", category: 'business', photos: true, build, style: { tone: "yo'riqnoma ohangi: aniq yo'nalish, qisqa ko'rsatma va ogohlantirish; tez o'qiladigan", limits: { card_t4: 110, step_t: 100, side_item: 55 }, prefer: null } };

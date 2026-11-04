@@ -37,7 +37,7 @@ def demo_content(req: dict) -> dict:
     return {"meta": {"topic": req["topic"], "language": req.get("language", "uz"), "doc_type": req.get("doc_type", "referat"),
                      **{k: req.get(k, "") for k in ("ministry", "university", "faculty", "department", "subject", "student",
                                                     "group", "teacher", "city", "year")}},
-            "intro": [f"**{p}** {para}" for p in paper_ai.INTRO_PARTS[req.get("language", "uz")]],
+            "intro": [f"**{p}** {para}" for p in paper_ai.INTRO_PARTS.get(req.get("language", "uz"), paper_ai.INTRO_PARTS["uz"])],
             "chapters": [{"title": f"Mavzuning {i + 1}-jihati", "sections": [{"title": f"{i + 1}-bobning {j + 1}-masalasi",
                                                                               "paragraphs": [para] * 4} for j in range(n_sec)]}
                          for i in range(n_ch)],

@@ -36,7 +36,7 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: 'SlideAI Chiziqlar', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: B[1][0], lt2: B[5][0], accent1: B[3][0], accent2: B[2][0], accent3: B[4][0], accent4: '1C2541', accent5: C.muted, accent6: 'D8FBF6', hlink: B[3][0], folHlink: C.muted } });
 }
-module.exports = { id: 105, slug: 'chiziqlar', name: 'Chiziqlar', category: 'business', photos: true, build, style: { tone: "tartibli va ravshan: har bir band bitta to'liq fikr, ketma-ket va izchil", limits: {}, prefer: null } };
+module.exports = { id: 105, slug: 'chiziqlar', name: 'Çiziqlar', category: 'business', photos: true, build, style: { tone: "tartibli va ravshan: har bir band bitta to'liq fikr, ketma-ket va izchil", limits: {}, prefer: null } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["technical", "bold"], "transitions": ["blinds", "wipe:r", "push:l"], "cover": ["sweepIn", "stretch"], "mark": "stretch", "deco": "stretch", "sig": {"title": "stretch", "body": "wipe:r", "item": "sweepIn", "image": "blinds", "number": "stretch", "order": "cascade", "stagger": 0.1}, "tempo": 0.9, "kenburns": false};

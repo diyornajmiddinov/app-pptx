@@ -38,7 +38,7 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI O'rgimchak", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: '312E81', lt2: C.bg, accent1: C.fill, accent2: C.accent, accent3: '06B6D4', accent4: 'F43F5E', accent5: C.muted, accent6: C.web, hlink: C.fill, folHlink: C.muted } });
 }
-module.exports = { id: 127, slug: 'orgimchak', name: "O'rgimchak", category: 'business', photos: true, build, style: { tone: "ko'p o'lchovli tahlil: har bir yo'nalish alohida, lekin umumiy markazga bog'langan", limits: { card_t4: 110, card_t3: 120, side_item: 50 }, prefer: 'data' } };
+module.exports = { id: 127, slug: 'orgimchak', name: "Örgimçak", category: 'business', photos: true, build, style: { tone: "ko'p o'lchovli tahlil: har bir yo'nalish alohida, lekin umumiy markazga bog'langan", limits: { card_t4: 110, card_t3: 120, side_item: 50 }, prefer: 'data' } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["technical", "elegant"], "transitions": ["circle", "p14:vortex|dir=\"r\"", "fade"], "cover": ["focusIn", "wheel"], "mark": "wheel", "deco": "wheel", "sig": {"title": "wheel", "body": "fade", "item": "wheel", "image": "wheel", "number": "popOver", "order": "centerOut", "stagger": 0.14}, "tempo": 1.0, "kenburns": false};

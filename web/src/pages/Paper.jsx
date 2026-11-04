@@ -13,7 +13,7 @@ import Jobs from './Jobs.jsx';
 const KEEP = 'paperTitlePage';
 const TITLE_FIELDS = [['ministry', 200], ['university', 200], ['faculty', 120], ['department', 120], ['student', 80], ['group', 80], ['teacher', 80], ['city', 60]];
 export const STANDARD = { font_size: 14, spacing: 1.5, margin_left: 30, margin_right: 15, margin_top: 20, margin_bottom: 20, page_numbers: 'bottom_center', toc_title: 'mundarija' };
-const LANGS = [['uz', "O'zbekcha"], ['uzc', null], ['ru', 'Русский'], ['en', 'English']];
+const LANGS = [['uz', "O'zbekcha"], ['uzn', 'Özbekça'], ['uzc', null], ['ru', 'Русский'], ['en', 'English']];  // uzn: the new alphabet
 
 function remembered() {
   try { return JSON.parse(localStorage.getItem(KEEP) || '{}') || {}; } catch { return {}; }

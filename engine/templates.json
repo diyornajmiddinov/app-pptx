@@ -50,7 +50,7 @@
  },
  {
   "id": 6,
-  "name": "Shveytsar",
+  "name": "Şveytsar",
   "category": "minimalist",
   "style": {
    "tone": "minimal: imkon qadar qisqa, bitta so'z ham ortiqcha bo'lmasin",
@@ -128,7 +128,7 @@
  },
  {
   "id": 13,
-  "name": "Chizma",
+  "name": "Çizma",
   "category": "academic",
   "style": {
    "tone": "muhandislik-texnik: aniq, bosqichma-bosqich, atamalar bilan",
@@ -290,7 +290,7 @@
  },
  {
   "id": 28,
-  "name": "Qog'oz",
+  "name": "Qoğoz",
   "category": "creative",
   "style": {
    "tone": "yumshoq, do'stona va tushunarli",
@@ -429,7 +429,7 @@
  },
  {
   "id": 40,
-  "name": "Pochta",
+  "name": "Poçta",
   "category": "creative",
   "style": {
    "tone": "maktubdek samimiy, lekin aniq: tinglovchiga murojaat qilgandek, qisqa xabarlar",
@@ -507,7 +507,7 @@
  },
  {
   "id": 47,
-  "name": "Chipta",
+  "name": "Çipta",
   "category": "business",
   "style": {
    "tone": "yo'lga chiqishdek aniq va tartibli: qisqa, bosqichma-bosqich, 'qayerdan-qayerga' mantig'i",
@@ -533,7 +533,7 @@
  },
  {
   "id": 49,
-  "name": "Shrift",
+  "name": "Şrift",
   "category": "minimalist",
   "style": {
    "tone": "qat'iy va ixcham: sarlavhalar 2–5 so'z, kuchli fe'llar, ortiqcha so'zsiz",
@@ -677,7 +677,7 @@
  },
  {
   "id": 63,
-  "name": "Chek",
+  "name": "Çek",
   "category": "business",
   "style": {
    "tone": "hisob-kitob kabi aniq: band-band sanab o'tish, raqamlar va yakuniy xulosa, ortiqcha so'zsiz",
@@ -717,7 +717,7 @@
  },
  {
   "id": 67,
-  "name": "Shaxmat",
+  "name": "Şaxmat",
   "category": "business",
   "style": {
    "tone": "strategik fikrlash: maqsad, yurish va natija; mantiqiy, asosli, bosqichma-bosqich",
@@ -792,7 +792,7 @@
  },
  {
   "id": 74,
-  "name": "O'rmon",
+  "name": "Örmon",
   "category": "academic",
   "style": {
    "tone": "o'sish va ildizlar tili: sabab, rivojlanish va barqarorlik; sokin, asosli",
@@ -812,7 +812,7 @@
  },
  {
   "id": 76,
-  "name": "Tog'",
+  "name": "Toğ",
   "category": "business",
   "style": {
    "tone": "maqsadga intilish: cho'qqi, bosqich va natija; qat'iy va ilhomlantiruvchi",
@@ -822,7 +822,7 @@
  },
  {
   "id": 77,
-  "name": "Shahar",
+  "name": "Şahar",
   "category": "business",
   "style": {
    "tone": "zamonaviy shahar ritmi: dinamik, amaliy, natijaga yo'naltirilgan",
@@ -996,7 +996,7 @@
  },
  {
   "id": 94,
-  "name": "Qo'lyozma",
+  "name": "Qölyozma",
   "category": "academic",
   "style": {
    "tone": "tarixiy bitik ohangi: salobatli, ravon, an'anaviy ifoda; faktlarga sodiq",
@@ -1020,7 +1020,7 @@
  },
  {
   "id": 96,
-  "name": "Yog'och",
+  "name": "Yoğoç",
   "category": "creative",
   "style": {
    "tone": "hunarmand kabi: puxta, tabiiy, qo'l mehnatiga hurmat; sodda va iliq",
@@ -1120,7 +1120,7 @@
  },
  {
   "id": 105,
-  "name": "Chiziqlar",
+  "name": "Çiziqlar",
   "category": "business",
   "style": {
    "tone": "tartibli va ravshan: har bir band bitta to'liq fikr, ketma-ket va izchil",
@@ -1150,7 +1150,7 @@
  },
  {
   "id": 108,
-  "name": "Lug'at",
+  "name": "Luğat",
   "category": "academic",
   "style": {
    "tone": "lug'at maqolasi kabi: aniq ta'riflar, atamalar va izohlar; ixcham va ilmiy",
@@ -1207,7 +1207,7 @@
  },
  {
   "id": 113,
-  "name": "Chorak",
+  "name": "Çorak",
   "category": "creative",
   "style": {
    "tone": "ixcham va dinamik: qisqa sarlavha, aniq bandlar",
@@ -1271,7 +1271,7 @@
  },
  {
   "id": 118,
-  "name": "Ilon yo'l",
+  "name": "Ilon yöl",
   "category": "business",
   "style": {
    "tone": "sayohat kabi: yo'l, bekat va manzil; ketma-ket va qiziqarli bayon",
@@ -1281,7 +1281,7 @@
  },
  {
   "id": 119,
-  "name": "Hoshiya",
+  "name": "Hoşiya",
   "category": "academic",
   "style": {
    "tone": "ilmiy esse: asosiy matn ravon, izohlar qisqa va aniq; dalillarga tayangan",
@@ -1384,7 +1384,7 @@
  },
  {
   "id": 127,
-  "name": "O'rgimchak",
+  "name": "Örgimçak",
   "category": "business",
   "style": {
    "tone": "ko'p o'lchovli tahlil: har bir yo'nalish alohida, lekin umumiy markazga bog'langan",
@@ -1398,7 +1398,7 @@
  },
  {
   "id": 128,
-  "name": "Shajara",
+  "name": "Şajara",
   "category": "academic",
   "style": {
    "tone": "tuzilma va kelib chiqish: umumiydan xususiyga, har bir tarmoq aniq nomlangan",
@@ -1434,7 +1434,7 @@
  },
  {
   "id": 131,
-  "name": "Chizg'ich",
+  "name": "Çizğiç",
   "category": "academic",
   "style": {
    "tone": "o'lchanadigan aniqlik: raqamlar, me'yorlar va solishtirma; qisqa va texnik",
@@ -1620,7 +1620,7 @@
  },
  {
   "id": 146,
-  "name": "Bitiktosh",
+  "name": "Bitiktoş",
   "category": "academic",
   "style": {
    "tone": "tarixiy bitik: abadiy haqiqatlar kabi qisqa, salobatli, aniq iboralar",
@@ -1661,7 +1661,7 @@
  },
  {
   "id": 149,
-  "name": "Yo'l belgilari",
+  "name": "Yöl belgilari",
   "category": "business",
   "style": {
    "tone": "yo'riqnoma ohangi: aniq yo'nalish, qisqa ko'rsatma va ogohlantirish; tez o'qiladigan",
@@ -1819,7 +1819,7 @@
  },
  {
   "id": 162,
-  "name": "Shom",
+  "name": "Şom",
   "category": "minimalist",
   "style": {
    "tone": "kechki osoyishtalik: mulohazali, ravon va qisqa iboralar",
@@ -1859,7 +1859,7 @@
  },
  {
   "id": 166,
-  "name": "Yashil choy",
+  "name": "Yaşil çoy",
   "category": "minimalist",
   "style": {
    "tone": "osoyishta va tabiiy: sog'lom muvozanat, sodda tushuntirish",
@@ -1869,7 +1869,7 @@
  },
  {
   "id": 167,
-  "name": "Ko'mir",
+  "name": "Kömir",
   "category": "minimalist",
   "style": {
    "tone": "qat'iy va lo'nda: kuchli sarlavhalar, kam so'z, aniq raqamlar",
@@ -1889,7 +1889,7 @@
  },
  {
   "id": 169,
-  "name": "Shaftoli",
+  "name": "Şaftoli",
   "category": "minimalist",
   "style": {
    "tone": "iliq va do'stona: yengil ohang, ijobiy va sodda bayon",
@@ -1969,7 +1969,7 @@
  },
  {
   "id": 177,
-  "name": "Pushti",
+  "name": "Puşti",
   "category": "minimalist",
   "style": {
    "tone": "mehrli va yumshoq: g'amxo'rlik, iliq va sodda til",

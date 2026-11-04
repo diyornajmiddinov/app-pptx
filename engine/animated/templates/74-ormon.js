@@ -30,7 +30,7 @@ const K = {
     metaFooter({ color: 'E3EDD8', y: 5.3 })(ctx, s);
   },
 };
-module.exports = { id: 74, slug: 'ormon', name: "O'rmon", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "o'sish va ildizlar tili: sabab, rivojlanish va barqarorlik; sokin, asosli", limits: {}, prefer: 'text' } };
+module.exports = { id: 74, slug: 'ormon', name: "Örmon", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "o'sish va ildizlar tili: sabab, rivojlanish va barqarorlik; sokin, asosli", limits: {}, prefer: 'text' } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["calm", "playful"], "transitions": ["fade", "p14:pan|dir=\"u\"", "dissolve"], "cover": ["riseWords", "fadeWords"], "mark": "swing", "deco": "riseUp", "sig": {"title": "riseUp", "body": "fadeUp", "item": "riseSettle", "image": "peekUp", "number": "swing", "order": "seq", "stagger": 0.2}, "tempo": 1.2, "kenburns": true};

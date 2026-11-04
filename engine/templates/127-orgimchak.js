@@ -38,4 +38,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: "SlideAI O'rgimchak", colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: '312E81', lt2: C.bg, accent1: C.fill, accent2: C.accent, accent3: '06B6D4', accent4: 'F43F5E', accent5: C.muted, accent6: C.web, hlink: C.fill, folHlink: C.muted } });
 }
-module.exports = { id: 127, slug: 'orgimchak', name: "O'rgimchak", category: 'business', photos: true, build, style: { tone: "ko'p o'lchovli tahlil: har bir yo'nalish alohida, lekin umumiy markazga bog'langan", limits: { card_t4: 110, card_t3: 120, side_item: 50 }, prefer: 'data' } };
+module.exports = { id: 127, slug: 'orgimchak', name: "Örgimçak", category: 'business', photos: true, build, style: { tone: "ko'p o'lchovli tahlil: har bir yo'nalish alohida, lekin umumiy markazga bog'langan", limits: { card_t4: 110, card_t3: 120, side_item: 50 }, prefer: 'data' } };

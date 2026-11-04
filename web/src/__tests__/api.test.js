@@ -39,7 +39,7 @@ describe('api client', () => {
 
 describe('formatting', () => {
   it('money as in the bot', () => {
-    expect(money(15000, 'uz')).toBe("15 000 so'm");
+    expect(money(15000, 'uz')).toBe("15 000 söm");
     expect(money(15000, 'ru')).toBe('15 000 сум');
     expect(money(15000, 'en')).toBe('15,000 UZS');
   });

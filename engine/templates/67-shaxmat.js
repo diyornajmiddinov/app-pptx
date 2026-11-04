@@ -149,4 +149,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "strategik fikrlash: maqsad, yurish va natija; mantiqiy, asosli, bosqichma-bosqich", limits: {}, prefer: null };
-module.exports = { id: 67, slug: 'shaxmat', name: 'Shaxmat', category: 'business', photos: true, build, style: STYLE };
+module.exports = { id: 67, slug: 'shaxmat', name: 'Şaxmat', category: 'business', photos: true, build, style: STYLE };

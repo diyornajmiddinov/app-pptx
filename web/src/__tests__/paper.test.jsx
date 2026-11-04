@@ -12,12 +12,12 @@ describe('Paper', () => {
     const calls = fakeFetch({ ...empty, 'POST /paper': [202, { job: 1, ahead: 0 }] });
     renderUz(<Paper me={ME} refreshMe={() => {}} go={() => {}} />);
     fireEvent.change(screen.getByPlaceholderText(/inflyatsiya va uni/), { target: { value: 'Raqamli iqtisodiyot' } });
-    fireEvent.change(screen.getByPlaceholderText(/Toshkent davlat iqtisodiyot/), { target: { value: 'TDIU' } });
+    fireEvent.change(screen.getByPlaceholderText(/Toşkent davlat iqtisodiyot/), { target: { value: 'TDIU' } });
     fireEvent.change(screen.getByPlaceholderText('Aliyev Vali'), { target: { value: 'Karimova Nodira' } });
-    fireEvent.click(screen.getByRole('radio', { name: 'Mustaqil ish' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Mustaqil iş' }));
     // the layout options are folded by default (no accessible name while hidden)
     fireEvent.click(screen.getAllByRole('radio', { hidden: true }).find((r) => r.textContent === '12'));
-    fireEvent.click(screen.getByRole('button', { name: /Yozish · 7\u00a0000 so'm/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Yoziş · 7\u00a0000 söm/ }));
     await screen.findByText(/Qabul qilindi/);
     const body = calls.find((c) => c.key === 'POST /paper').body;
     expect(body).toMatchObject({ topic: 'Raqamli iqtisodiyot', university: 'TDIU', student: 'Karimova Nodira', doc_type: 'mustaqil', pages: 15 });
@@ -30,9 +30,9 @@ describe('Paper', () => {
     const calls = fakeFetch({ ...empty, 'POST /paper/outline': [200, { chapters }], 'POST /paper': [202, { job: 1, ahead: 0 }] });
     renderUz(<Paper me={ME} refreshMe={() => {}} go={() => {}} />);
     fireEvent.change(screen.getByPlaceholderText(/inflyatsiya va uni/), { target: { value: 'Inflyatsiya' } });
-    fireEvent.click(screen.getByRole('button', { name: /rejani ko'rish/ }));
+    fireEvent.click(screen.getByRole('button', { name: /rejani köriş/ }));
     fireEvent.change(await screen.findByDisplayValue('Nazariya'), { target: { value: 'Nazariy asoslar' } });
-    fireEvent.click(screen.getByRole('button', { name: /Yozish ·/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Yoziş ·/ }));
     await screen.findByText(/Qabul qilindi/);
     expect(calls.find((c) => c.key === 'POST /paper').body.outline[0]).toEqual({ title: 'Nazariy asoslar', sections: ['A', 'B'] });
   });
@@ -44,8 +44,8 @@ describe('Paper', () => {
     expect(screen.getByText(/14 bet/)).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Word' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'PDF' })).toBeTruthy();
-    expect(screen.queryByRole('button', { name: /Yozish ·/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /Yoziş ·/ })).toBeNull();
     await act(async () => {});
-    await waitFor(() => expect(screen.getByRole('button', { name: "To'ldirish" })).toBeTruthy());
+    await waitFor(() => expect(screen.getByRole('button', { name: "Töldiriş" })).toBeTruthy());
   });
 });

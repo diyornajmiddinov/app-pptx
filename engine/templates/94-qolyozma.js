@@ -30,4 +30,4 @@ const K = {
     metaFooter({ color: C.muted, font: 'Cambria', align: 'center' })(ctx, s);
   },
 };
-module.exports = { id: 94, slug: 'qolyozma', name: "Qo'lyozma", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "tarixiy bitik ohangi: salobatli, ravon, an'anaviy ifoda; faktlarga sodiq", limits: {}, prefer: 'text' } };
+module.exports = { id: 94, slug: 'qolyozma', name: "Qölyozma", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "tarixiy bitik ohangi: salobatli, ravon, an'anaviy ifoda; faktlarga sodiq", limits: {}, prefer: 'text' } };

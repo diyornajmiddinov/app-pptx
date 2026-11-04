@@ -149,7 +149,7 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "strategik fikrlash: maqsad, yurish va natija; mantiqiy, asosli, bosqichma-bosqich", limits: {}, prefer: null };
-module.exports = { id: 67, slug: 'shaxmat', name: 'Shaxmat', category: 'business', photos: true, build, style: STYLE };
+module.exports = { id: 67, slug: 'shaxmat', name: 'Şaxmat', category: 'business', photos: true, build, style: STYLE };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["elegant", "technical"], "transitions": ["checker", "fade", "morph"], "cover": ["focusIn", "fadeLetters"], "mark": "drop", "deco": "checker", "sig": {"title": "focusIn", "body": "fade", "item": "drop", "image": "checker", "number": "drop", "order": "diagonal", "stagger": 0.16}, "tempo": 1.05, "kenburns": false};

@@ -12,6 +12,7 @@ import re
 
 from app.services.ai.content import SOURCE_MAX, parse_json
 from app.services.ai.models import Ask, Messages, ai
+from app.services.alphabet import NEW, content_to_new, to_new
 
 PAGES_MIN, PAGES_MAX = 8, 30
 WISHES_MAX = 600
@@ -172,6 +173,8 @@ def _check_plan(data: dict, n_chapters: int, n_sections: int, fixed: list[dict] 
 async def plan(topic: str, pages: int, language: str = "uz", subject: str = "", source: str = "", wishes: str = "",
                chapters: list[dict] | None = None, ask: Ask | None = None, doc_type: str = "referat") -> dict:
     ask = ask or ai  # looked up at call time: tests replace the module's model
+    if language == NEW:  # the new Uzbek alphabet: planned in the Latin the model knows best, then turned (alphabet.py)
+        return content_to_new(await plan(topic, pages, "uz", subject, source, wishes, chapters, ask, doc_type))
     n_ch, n_sec = shape(pages)
     n_refs = 8 if pages <= 12 else 12
     doc = DOC.get(doc_type, "referat")
@@ -266,6 +269,10 @@ Javob: FAQAT JSON: {{"paragraphs": ["...", ...]}}"""
 async def write(req: dict, fmt: dict, ask: Ask | None = None) -> dict:
     """req: the website order (topic, subject, language, pages, source, wishes, outline, title-page fields)."""
     ask = ask or ai
+    if req.get("language") == NEW:  # written in the old Latin, then turned letter by letter; the names on the title page stay as typed
+        out = await write({**req, "language": "uz"}, fmt, ask)
+        return {**content_to_new({k: v for k, v in out.items() if k != "meta"}),
+                "meta": {**out["meta"], "language": NEW, "topic": to_new(out["meta"]["topic"])}}
     language, pages = req.get("language", "uz"), req["pages"]
     p = await plan(req["topic"], pages, language, req.get("subject", ""), req.get("source", ""), req.get("wishes", ""),
                    req.get("outline"), ask, req.get("doc_type", "referat"))

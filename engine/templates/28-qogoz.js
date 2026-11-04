@@ -172,4 +172,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
 const STYLE = {"tone": "yumshoq, do'stona va tushunarli", "limits": {}};
-module.exports = { id: 28, slug: 'qogoz', name: "Qog'oz", category: 'creative', photos: true, build, style: STYLE };
+module.exports = { id: 28, slug: 'qogoz', name: "Qoğoz", category: 'creative', photos: true, build, style: STYLE };

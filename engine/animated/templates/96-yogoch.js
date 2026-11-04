@@ -29,7 +29,7 @@ const K = {
     metaFooter({ color: 'F3E3C8', font: 'Cambria' })(ctx, s);
   },
 };
-module.exports = { id: 96, slug: 'yogoch', name: "Yog'och", category: 'creative', photos: true, build: (c, o) => run(c, o, K), style: { tone: "hunarmand kabi: puxta, tabiiy, qo'l mehnatiga hurmat; sodda va iliq", limits: {}, prefer: null } };
+module.exports = { id: 96, slug: 'yogoch', name: "Yoğoç", category: 'creative', photos: true, build: (c, o) => run(c, o, K), style: { tone: "hunarmand kabi: puxta, tabiiy, qo'l mehnatiga hurmat; sodda va iliq", limits: {}, prefer: null } };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["calm", "playful"], "transitions": ["pull:r", "fade", "cover:r"], "cover": ["riseWords", "fadeWords"], "mark": "swing", "deco": "slideRight", "sig": {"title": "slideRight", "body": "fadeUp", "item": "slideRight", "image": "wipe:r", "number": "swing", "order": "seq", "stagger": 0.18}, "tempo": 1.15, "kenburns": false};

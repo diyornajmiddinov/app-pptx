@@ -155,7 +155,7 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "maktubdek samimiy, lekin aniq: tinglovchiga murojaat qilgandek, qisqa xabarlar", limits: {}, prefer: null };
-module.exports = { id: 40, slug: 'pochta', name: 'Pochta', category: 'creative', photos: true, build, style: STYLE };
+module.exports = { id: 40, slug: 'pochta', name: 'Poçta', category: 'creative', photos: true, build, style: STYLE };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["playful", "calm"], "transitions": ["cover:l", "pull:r", "fade"], "cover": ["fadeWords", "swingRight"], "mark": "swing", "deco": "drop", "sig": {"title": "swingRight", "body": "fadeUp", "item": "drop", "image": "swingLeft", "number": "springIn", "order": "seq", "stagger": 0.16}, "tempo": 1.0, "kenburns": false};

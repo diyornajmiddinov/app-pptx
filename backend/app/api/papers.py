@@ -29,7 +29,7 @@ class PaperFormat(BaseModel):
 class PaperOutlineRequest(BaseModel):
     topic: str = Field(min_length=3, max_length=200)
     subject: str = Field("", max_length=120)
-    language: Literal["uz", "uzc", "ru", "en"] = "uz"
+    language: Literal["uz", "uzn", "uzc", "ru", "en"] = "uz"
     pages: int = Field(15, ge=paper_ai.PAGES_MIN, le=paper_ai.PAGES_MAX)
     wishes: str = Field("", max_length=paper_ai.WISHES_MAX)
     source: str = Field("", max_length=ai_content.SOURCE_MAX)

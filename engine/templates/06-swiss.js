@@ -154,4 +154,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
 const STYLE = {"tone": "minimal: imkon qadar qisqa, bitta so'z ham ortiqcha bo'lmasin", "limits": {"card_t3": 70, "card_t4": 60, "stmt": 60}};
-module.exports = { id: 6, slug: 'swiss', name: 'Shveytsar', category: 'minimalist', build, style: STYLE };
+module.exports = { id: 6, slug: 'swiss', name: 'Şveytsar', category: 'minimalist', build, style: STYLE };

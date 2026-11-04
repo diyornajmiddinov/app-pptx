@@ -31,4 +31,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: 'SlideAI Bitiktosh', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.stone2, lt2: C.sky, accent1: C.stone2, accent2: '8C6D2C', accent3: C.ground, accent4: '5E5C57', accent5: C.muted, accent6: C.stone, hlink: '8C6D2C', folHlink: C.muted } });
 }
-module.exports = { id: 146, slug: 'bitiktosh', name: 'Bitiktosh', category: 'academic', photos: true, build, style: { tone: "tarixiy bitik: abadiy haqiqatlar kabi qisqa, salobatli, aniq iboralar", limits: { card_t4: 100, step_t: 100, event_t: 90 }, prefer: 'text' } };
+module.exports = { id: 146, slug: 'bitiktosh', name: 'Bitiktoş', category: 'academic', photos: true, build, style: { tone: "tarixiy bitik: abadiy haqiqatlar kabi qisqa, salobatli, aniq iboralar", limits: { card_t4: 100, step_t: 100, event_t: 90 }, prefer: 'text' } };

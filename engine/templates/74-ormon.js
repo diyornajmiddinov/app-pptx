@@ -30,4 +30,4 @@ const K = {
     metaFooter({ color: 'E3EDD8', y: 5.3 })(ctx, s);
   },
 };
-module.exports = { id: 74, slug: 'ormon', name: "O'rmon", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "o'sish va ildizlar tili: sabab, rivojlanish va barqarorlik; sokin, asosli", limits: {}, prefer: 'text' } };
+module.exports = { id: 74, slug: 'ormon', name: "Örmon", category: 'academic', photos: true, build: (c, o) => run(c, o, K), style: { tone: "o'sish va ildizlar tili: sabab, rivojlanish va barqarorlik; sokin, asosli", limits: {}, prefer: 'text' } };

@@ -159,7 +159,7 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "hisob-kitob kabi aniq: band-band sanab o'tish, raqamlar va yakuniy xulosa, ortiqcha so'zsiz", limits: {}, prefer: 'data' };
-module.exports = { id: 63, slug: 'chek', name: 'Chek', category: 'business', photos: true, build, style: STYLE };
+module.exports = { id: 63, slug: 'chek', name: 'Çek', category: 'business', photos: true, build, style: STYLE };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["technical", "calm"], "transitions": ["push:u", "wipe:u", "fade"], "cover": ["typeLetters", "wipeWords"], "mark": "appear", "deco": "wipe:d", "sig": {"title": "typeLetters", "body": "wipe:d", "item": "wipe:d", "image": "wipe:d", "number": "appear", "order": "seq", "stagger": 0.1}, "tempo": 0.9, "kenburns": false};

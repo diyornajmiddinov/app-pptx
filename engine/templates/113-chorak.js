@@ -40,4 +40,4 @@ async function build(content, out) {
   for (const d of content.slides) await R[d.type](d);
   return L.save(k.pres, out, { name: 'SlideAI Chorak', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: '370617', lt2: C.bg, accent1: C.q, accent2: C.q2, accent3: 'DC2F02', accent4: '9D0208', accent5: C.muted, accent6: C.rule, hlink: C.q, folHlink: C.muted } });
 }
-module.exports = { id: 113, slug: 'chorak', name: 'Chorak', category: 'creative', photos: true, build, style: { tone: "ixcham va dinamik: qisqa sarlavha, aniq bandlar", limits: { title: 40 }, prefer: null } };
+module.exports = { id: 113, slug: 'chorak', name: 'Çorak', category: 'creative', photos: true, build, style: { tone: "ixcham va dinamik: qisqa sarlavha, aniq bandlar", limits: { title: 40 }, prefer: null } };

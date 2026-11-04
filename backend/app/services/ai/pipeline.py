@@ -7,6 +7,7 @@ from app.services.ai.content import Meta, generate_content, restyle
 from app.services.ai.images import Search, resolve_images
 from app.services.ai.models import Ask, ai
 from app.services.ai.render import render
+from app.services.alphabet import NEW, to_new
 
 
 def workdir() -> Path:
@@ -21,7 +22,7 @@ async def build_presentation(topic: str, template_id: int, slide_count: int = 10
     """Returns (pptx path, content) — the content is kept to switch templates later."""
     content = await generate_content(topic, slide_count, language, template_id, ask=ask, outline=outline, notes=notes, source=source,
                                      density=density, wishes=wishes)
-    content["meta"] = Meta(topic=topic, **(meta or {})).model_dump()
+    content["meta"] = Meta(topic=to_new(topic) if language == NEW else topic, **(meta or {})).model_dump()
     work = workdir()
     if template_id in PHOTO_TEMPLATES:
         await resolve_images(content, work, search)

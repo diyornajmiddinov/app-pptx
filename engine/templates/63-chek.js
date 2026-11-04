@@ -159,4 +159,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti */
 const STYLE = { tone: "hisob-kitob kabi aniq: band-band sanab o'tish, raqamlar va yakuniy xulosa, ortiqcha so'zsiz", limits: {}, prefer: 'data' };
-module.exports = { id: 63, slug: 'chek', name: 'Chek', category: 'business', photos: true, build, style: STYLE };
+module.exports = { id: 63, slug: 'chek', name: 'Çek', category: 'business', photos: true, build, style: STYLE };

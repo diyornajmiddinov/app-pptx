@@ -184,4 +184,4 @@ async function build(content, out) {
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
 const STYLE = {"tone": "muhandislik-texnik: aniq, bosqichma-bosqich, atamalar bilan", "limits": {}, "prefer": "data"};
-module.exports = { id: 13, slug: 'blueprint', name: 'Chizma', category: 'academic', build, style: STYLE };
+module.exports = { id: 13, slug: 'blueprint', name: 'Çizma', category: 'academic', build, style: STYLE };

@@ -19,7 +19,7 @@ const MIN_PAGES = 8;
 const MAX_PAGES = 30;
 const TITLE_FIELDS = [['university', 200], ['faculty', 120], ['department', 120], ['student', 80], ['group', 80], ['teacher', 80], ['city', 60]];
 const STANDARD = { font_size: 14, spacing: 1.5, margin_left: 30, margin_right: 15, margin_top: 20, margin_bottom: 20, page_numbers: 'bottom_center', toc_title: 'mundarija' };
-const PAPER_LANGS = [['uz', "O'zbekcha"], ['uzc', 'Ўзбекча'], ['ru', 'Русский'], ['en', 'English']];
+const PAPER_LANGS = [['uz', "O'zbekcha"], ['uzn', 'Özbekça'], ['uzc', 'Ўзбекча'], ['ru', 'Русский'], ['en', 'English']];  // uzn: the new alphabet
 
 const inputCls = 'w-full rounded-[10px] bg-tg-secondary-bg px-3 py-2.5 text-[15px] text-tg-text placeholder:text-tg-hint outline-none focus:ring-1 focus:ring-tg-button';
 const labelCls = 'mb-1.5 block text-[13px] text-tg-hint';

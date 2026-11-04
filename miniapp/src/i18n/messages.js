@@ -11,46 +11,55 @@ const ruSlides = (n) => { // 1 слайд, 2–4 слайда, 5–20 слайд
 
 /** 15000 -> "15 000 so'm" / "15 000 сум" / "15,000 UZS" (same format as the bot) */
 export const money = (n, lang) => (lang === 'en' ? `${n.toLocaleString('en-US')} UZS`
-  : `${n.toLocaleString('en-US').replace(/,/g, '\u00a0')} ${lang === 'ru' ? 'сум' : "so'm"}`);
+  : `${n.toLocaleString('en-US').replace(/,/g, '\u00a0')} ${lang === 'ru' ? 'сум' : "söm"}`);
 
 export const LANGS = [
-  { id: 'uz', label: "O'zbekcha", short: 'UZ' },
+  { id: 'uz', label: "Özbekça", short: 'UZ' },
   { id: 'ru', label: 'Русский', short: 'RU' },
   { id: 'en', label: 'English', short: 'EN' },
 ];
 
+/** What a deck or a paper can be written in: Uzbek in the old Latin script and in the new alphabet (2026: Ş, Ç, Ö, Ğ),
+ * each label in its own letters; the interface itself speaks the new alphabet. */
+export const CONTENT_LANGS = [
+  { id: 'uz', label: "O'zbekcha" },
+  { id: 'uzn', label: 'Özbekça' },
+  { id: 'ru', label: 'Русский' },
+  { id: 'en', label: 'English' },
+];
+
 export const MESSAGES = {
   uz: {
-    hello: 'Salom, {name}', guest: 'mehmon', subtitle: 'Mavzuni yozing va shablonni tanlang.', uiLang: 'Interfeys tili',
-    details: "Taqdimot ma'lumotlari", topic: 'Mavzu', topicPh: "Masalan: Soliq islohotlari va iqtisodiy o'sish",
-    author: 'Muallif', authorPh: 'Ism Familiya', org: 'Tashkilot', orgPh: 'Masalan, TDIU', loc: 'Shahar', locPh: 'Toshkent', year: 'Yil',
-    settings: 'Sozlamalar', deckLang: 'Taqdimot tili', deckLangHint: 'Butun taqdimot shu tilda yoziladi.',
-    slides: 'Slaydlar soni', slidesValue: (n) => `${n} ta slayd`, slidesHint: "Titul, Kirish, Reja, Manbalar va yakun slaydi doim bo'ladi.",
-    dec: 'Kamaytirish', inc: "Ko'paytirish",
-    templates: 'Shablonlar', count: (n) => `${n} ta`, categories: 'Shablon toifalari',
-    cat_all: 'Barchasi', cat_business: 'Biznes', cat_academic: 'Akademik', cat_creative: 'Kreativ', cat_minimalist: 'Minimalist',
-    mainBtn: 'Slayd tayyorlash', restyleBtn: 'Shu shablonda qayta olish', sending: 'Yuborilmoqda…',
+    hello: 'Salom, {name}', guest: 'mehmon', subtitle: 'Mavzuni yozing va şablonni tanlang.', uiLang: 'Interfeys tili',
+    details: "Taqdimot ma'lumotlari", topic: 'Mavzu', topicPh: "Masalan: Soliq islohotlari va iqtisodiy ösiş",
+    author: 'Muallif', authorPh: 'Ism Familiya', org: 'Taşkilot', orgPh: 'Masalan, TDIU', loc: 'Şahar', locPh: 'Toşkent', year: 'Yil',
+    settings: 'Sozlamalar', deckLang: 'Taqdimot tili', deckLangHint: "Butun taqdimot şu tilda yoziladi. «Özbekça» — yangi alifbo (Ş, Ç, Ö, Ğ), «O'zbekcha» — eski lotin yozuvi.",
+    slides: 'Slaydlar soni', slidesValue: (n) => `${n} ta slayd`, slidesHint: "Titul, Kiriş, Reja, Manbalar va yakun slaydi doim böladi.",
+    dec: 'Kamaytiriş', inc: "Köpaytiriş",
+    templates: 'Şablonlar', count: (n) => `${n} ta`, categories: 'Şablon toifalari',
+    cat_all: 'Barçasi', cat_business: 'Biznes', cat_academic: 'Akademik', cat_creative: 'Kreativ', cat_minimalist: 'Minimalist',
+    mainBtn: 'Slayd tayyorlaş', restyleBtn: 'Şu şablonda qayta oliş', sending: 'Yuborilmoqda…',
     mode: 'Rejim', modeNew: 'Yangi taqdimot', modeEditor: 'Muharrir',
-    edTitle: 'Taqdimot muharriri', edText: "Istalgan .pptx faylni o'zgartiring: matnni slaydning o'zida yozing, elementlarni suring, rasmlarni almashtiring, slaydlarni qo'shing.",
-    edMobile: "💻 Muharrir faqat kompyuterda ishlaydi. Botni kompyuterdagi Telegram'da (Desktop yoki web.telegram.org) oching va shu bo'limga kiring yoki botga /editor yuboring.",
-    edOpen: 'Muharrirni ochish', edOpening: 'Ochilmoqda…', edFile: "Faylni botga yuborsangiz ham muharrirda paydo bo'ladi.", modeRestyle: 'Mening taqdimotlarim', decksTitle: 'Qaysi taqdimotni boshqa shablonga o\'tkazamiz?',
+    edTitle: 'Taqdimot muharriri', edText: "Istalgan .pptx faylni özgartiring: matnni slaydning özida yozing, elementlarni suring, rasmlarni almaştiring, slaydlarni qöşing.",
+    edMobile: "💻 Muharrir faqat kompyuterda işlaydi. Botni kompyuterdagi Telegram'da (Desktop yoki web.telegram.org) oçing va şu bölimga kiring yoki botga /editor yuboring.",
+    edOpen: 'Muharrirni oçiş', edOpening: 'Oçilmoqda…', edFile: "Faylni botga yuborsangiz ham muharrirda paydo böladi.", modeRestyle: 'Mening taqdimotlarim', decksTitle: 'Qaysi taqdimotni boşqa şablonga ötkazamiz?',
     deckMeta: '{slides} · {tpl} · {date}',
-    restyleNote: ({ topic, n }) => `«${topic}» (${n} ta slayd) tanlangan shablonda qayta chiziladi. Faktlar o'zgarmaydi, matn ohangi shablonga moslashtiriladi.`,
-    noUser: 'Telegram foydalanuvchisi aniqlanmadi. Ilovani bot orqali oching.',
-    needTopic: 'Mavzuni yozing (kamida 3 ta belgi).', needTemplate: "Pastdagi ro'yxatdan shablon tanlang.",
+    restyleNote: ({ topic, n }) => `«${topic}» (${n} ta slayd) tanlangan şablonda qayta çiziladi. Faktlar özgarmaydi, matn ohangi şablonga moslaştiriladi.`,
+    noUser: 'Telegram foydalanuvçisi aniqlanmadi. Ilovani bot orqali oçing.',
+    needTopic: 'Mavzuni yozing (kamida 3 ta belgi).', needTemplate: "Pastdagi röyxatdan şablon tanlang.",
     needDeck: 'Avval taqdimotni ustiga bosib tanlang.',
-    confirmTopic: ({ topic, n, price }) => `Mavzu: «${topic}»\n\nMavzu to'g'ri yozilganmi? Xato bo'lsa, AI boshqa narsa haqida yozib qo'yishi mumkin.\n\n${n} ta slayd${price ? ` · ${price}` : ''}`,
-    needOtherTemplate: 'Bu taqdimot allaqachon shu shablonda. Boshqa shablon tanlang.',
-    e401: 'Sessiya eskirgan. Mini ilovani yopib, qayta oching.', e402: "Balans yetarli emas. To'ldirish tugmalarini botga yubordim.", balance: 'Balans: {balance}', topupHint: "to'ldirish — botda /balance", firstFree: '🎁 Birinchi taqdimotingiz tekin!', firstPrice: '🎁 Birinchi taqdimot: {price}', free: 'tekin',
-    e403: "Bu amalga ruxsat yo'q.", eAnimSoon: "✨ Animatsiyali taqdimotlar tez orada qo'shiladi.", eAnimTemplate: 'Bu shablonning animatsiyali turi hali tayyor emas. Boshqa shablon tanlang.', animTitle: 'Animatsiyali', soon: 'Tez orada', animSoonHint: "Slaydlar jonli chiqadi — tez orada qo'shiladi", animHint: 'Har bir element jonli chiqadi · +{price}', animNoTpl: "Bu shablon uchun hali tayyor emas", videoTitle: 'Video taqdimot', videoHint: "Pptx bilan birga MP4 video ham keladi · +{price}", videoNeedsAnim: 'Avval «Animatsiyali»ni yoqing', eVideoNeedsAnim: "Video taqdimot uchun avval «Animatsiyali»ni yoqing.", eSubscribe: "📢 Avval kanalimizga a'zo bo'ling — havolani botga yubordim.", firstMax: '{n} ta slaydgacha', firstOver: "{n} tadan ko'p slayd — {price}", e404: 'Taqdimot topilmadi.', e422: "Kiritilgan ma'lumotlarda xato bor. Mavzu va slaydlar sonini tekshiring.",
-    e429: "So'rovlar juda ko'p. Bir daqiqadan so'ng urinib ko'ring.", eServer: ({ status }) => `Server xatosi (${status}). Qayta urinib ko'ring.`,
-    eTimeout: "Server javob bermadi. Qayta urinib ko'ring.", eNetwork: "Internet aloqasini tekshirib, qayta urinib ko'ring.",
+    confirmTopic: ({ topic, n, price }) => `Mavzu: «${topic}»\n\nMavzu töğri yozilganmi? Xato bölsa, AI boşqa narsa haqida yozib qöyişi mumkin.\n\n${n} ta slayd${price ? ` · ${price}` : ''}`,
+    needOtherTemplate: 'Bu taqdimot allaqaçon şu şablonda. Boşqa şablon tanlang.',
+    e401: 'Sessiya eskirgan. Mini ilovani yopib, qayta oçing.', e402: "Balans yetarli emas. Töldiriş tugmalarini botga yubordim.", balance: 'Balans: {balance}', topupHint: "töldiriş — botda /balance", firstFree: '🎁 Birinçi taqdimotingiz tekin!', firstPrice: '🎁 Birinçi taqdimot: {price}', free: 'tekin',
+    e403: "Bu amalga ruxsat yöq.", eAnimSoon: "✨ Animatsiyali taqdimotlar tez orada qöşiladi.", eAnimTemplate: 'Bu şablonning animatsiyali turi hali tayyor emas. Boşqa şablon tanlang.', animTitle: 'Animatsiyali', soon: 'Tez orada', animSoonHint: "Slaydlar jonli çiqadi — tez orada qöşiladi", animHint: 'Har bir element jonli çiqadi · +{price}', animNoTpl: "Bu şablon uçun hali tayyor emas", videoTitle: 'Video taqdimot', videoHint: "Pptx bilan birga MP4 video ham keladi · +{price}", videoNeedsAnim: 'Avval «Animatsiyali»ni yoqing', eVideoNeedsAnim: "Video taqdimot uçun avval «Animatsiyali»ni yoqing.", eSubscribe: "📢 Avval kanalimizga a'zo böling — havolani botga yubordim.", firstMax: '{n} ta slaydgaça', firstOver: "{n} tadan köp slayd — {price}", e404: 'Taqdimot topilmadi.', e422: "Kiritilgan ma'lumotlarda xato bor. Mavzu va slaydlar sonini tekşiring.",
+    e429: "Sörovlar juda köp. Bir daqiqadan söng urinib köring.", eServer: ({ status }) => `Server xatosi (${status}). Qayta urinib köring.`,
+    eTimeout: "Server javob bermadi. Qayta urinib köring.", eNetwork: "Internet aloqasini tekşirib, qayta urinib köring.",
   },
   ru: {
     hello: 'Привет, {name}', guest: 'гость', subtitle: 'Напишите тему и выберите шаблон.', uiLang: 'Язык интерфейса',
     details: 'Данные презентации', topic: 'Тема', topicPh: 'Например: Налоговые реформы и экономический рост',
     author: 'Автор', authorPh: 'Имя Фамилия', org: 'Организация', orgPh: 'Например, ТГЭУ', loc: 'Город', locPh: 'Ташкент', year: 'Год',
-    settings: 'Настройки', deckLang: 'Язык презентации', deckLangHint: 'Вся презентация будет написана на этом языке.',
+    settings: 'Настройки', deckLang: 'Язык презентации', deckLangHint: "Вся презентация будет написана на этом языке. «Özbekça» — узбекский на новом алфавите (Ş, Ç, Ö, Ğ), «O'zbekcha» — на прежней латинице.",
     slides: 'Количество слайдов', slidesValue: ruSlides, slidesHint: 'Титульный слайд, введение, план, источники и заключение есть всегда.',
     dec: 'Уменьшить', inc: 'Увеличить',
     templates: 'Шаблоны', count: (n) => `${n}`, categories: 'Категории шаблонов',
@@ -76,7 +85,7 @@ export const MESSAGES = {
     hello: 'Hi, {name}', guest: 'guest', subtitle: 'Enter a topic and pick a template.', uiLang: 'Interface language',
     details: 'Presentation details', topic: 'Topic', topicPh: 'e.g. Tax reforms and economic growth',
     author: 'Author', authorPh: 'Full name', org: 'Organization', orgPh: 'e.g. TSUE', loc: 'City', locPh: 'Tashkent', year: 'Year',
-    settings: 'Settings', deckLang: 'Presentation language', deckLangHint: 'The whole presentation is written in this language.',
+    settings: 'Settings', deckLang: 'Presentation language', deckLangHint: "The whole presentation is written in this language. «Özbekça» is Uzbek in the new alphabet (Ş, Ç, Ö, Ğ), «O'zbekcha» in the old Latin script.",
     slides: 'Number of slides', slidesValue: (n) => `${n} slides`, slidesHint: 'Title, introduction, outline, references and closing slides are always included.',
     dec: 'Decrease', inc: 'Increase',
     templates: 'Templates', count: (n) => `${n}`, categories: 'Template categories',

@@ -27,6 +27,7 @@ from docx.oxml.ns import qn
 from docx.shared import Cm, Mm, Pt, RGBColor
 
 from app.core.locks import machine_lock
+from app.services import alphabet
 
 log = logging.getLogger("paper")
 FONT = "Times New Roman"
@@ -57,7 +58,8 @@ LABELS = {
            "intro": "INTRODUCTION", "conclusion": "CONCLUSION", "references": "REFERENCES",
            "chapter": "CHAPTER {n}.", "lang": "en-US"},
 }
-QUOTES = {"uz": "“{}”", "uzc": "«{}»", "ru": "«{}»", "en": "“{}”"}
+LABELS["uzn"] = {k: v if k == "lang" else alphabet.to_new(v) for k, v in LABELS["uz"].items()}  # the new alphabet: ÖZBEKISTON, KIRIŞ...
+QUOTES = {"uz": "“{}”", "uzn": "“{}”", "uzc": "«{}»", "ru": "«{}»", "en": "“{}”"}
 
 
 def chapter_title(language: str, i: int, title: str) -> str:

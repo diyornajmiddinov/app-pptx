@@ -154,7 +154,7 @@ async function build(content, out) {
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
 const STYLE = {"tone": "minimal: imkon qadar qisqa, bitta so'z ham ortiqcha bo'lmasin", "limits": {"card_t3": 70, "card_t4": 60, "stmt": 60}};
-module.exports = { id: 6, slug: 'swiss', name: 'Shveytsar', category: 'minimalist', build, style: STYLE };
+module.exports = { id: 6, slug: 'swiss', name: 'Şveytsar', category: 'minimalist', build, style: STYLE };
 
 // animated copy: this template's own motion (animated/specs.py, animated/scenes.js)
 module.exports.anim = {"moods": ["bold", "technical"], "transitions": ["push:u", "cut", "split:h"], "cover": ["stretch", "wipe:r"], "mark": "appear", "deco": "wipe:r", "sig": {"title": "wipe:r", "body": "wipe:r", "item": "fadeUp", "image": "wipe:d", "number": "appear", "order": "seq", "stagger": 0.1}, "tempo": 0.8, "kenburns": false};
