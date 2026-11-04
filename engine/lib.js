@@ -129,8 +129,23 @@ const plain = (t) => String(t).replace(/[\u2080-\u2089]/g, (c) => SUB.indexOf(c)
 const pad2 = (n) => String(n).padStart(2, '0');
 const ROMAN = ['I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
 
+// pptxgenjs names a background given as data "*.png" whatever it holds, so a JPEG background went out as image/png:
+// PowerPoint sniffs and shows it, iPhone (Quick Look) refuses the deck. The name now follows the data's own type.
+function typedBackgrounds(slide) {
+  const proto = Object.getPrototypeOf(slide), d = Object.getOwnPropertyDescriptor(proto, 'background');
+  if (d.set.typed) return;
+  const set = function (props) {
+    const m = props && props.data && !props.path && /^(?:data:)?image\/(\w+)/.exec(props.data);
+    d.set.call(this, m ? { ...props, path: `background.${m[1]}` } : props);
+  };
+  set.typed = true;
+  Object.defineProperty(proto, 'background', { ...d, set });
+}
+
 function deck(fonts, title) {
   const pres = new pptxgen();
+  const addSlide = pres.addSlide.bind(pres);
+  pres.addSlide = (...a) => { const s = addSlide(...a); typedBackgrounds(s); return s; };
   pres.layout = 'LAYOUT_16x9';
   pres.author = 'SlideAI';
   pres.title = title;

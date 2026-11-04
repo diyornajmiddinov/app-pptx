@@ -59,3 +59,15 @@ def test_not_animated_is_drawn_still(sample, tmp_path):
     import zipfile
     out = render_sync(sample, 150, tmp_path / "s.pptx")
     assert "<p:timing>" not in zipfile.ZipFile(out).read("ppt/slides/slide2.xml").decode()
+
+
+@pytest.mark.parametrize(("template_id", "animated"), [(75, False), (165, False), (80, True)])
+def test_every_picture_is_named_by_what_it_holds(template_id, animated, sample, tmp_path):  # a JPEG behind a .png name: iPhone won't open the deck
+    import zipfile
+    z = zipfile.ZipFile(render_sync(sample, template_id, tmp_path / "m.pptx", animated=animated))
+    media = [n for n in z.namelist() if n.startswith("ppt/media/") and not n.endswith("/")]
+    assert any(z.read(n).startswith(b"\xff\xd8\xff") for n in media)  # these templates do draw JPEG backgrounds
+    for n in media:
+        head = z.read(n)[:4]
+        assert n.endswith((".jpeg", ".jpg")) == head.startswith(b"\xff\xd8\xff"), n
+        assert n.endswith(".png") == head.startswith(b"\x89PNG"), n
