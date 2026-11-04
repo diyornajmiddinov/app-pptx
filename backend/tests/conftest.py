@@ -88,6 +88,14 @@ def tg(monkeypatch):
 
 
 @pytest.fixture(autouse=True)
+def quick_deck_pdf(monkeypatch):
+    from app.services import jobs
+    def pdf(deck):  # LibreOffice takes seconds per deck; the PDF of a delivered deck is only its copy here
+        out = deck.with_suffix(".pdf"); out.write_bytes(b"%PDF-1.4"); return out
+    monkeypatch.setattr(jobs, "deck_pdf", pdf)
+
+
+@pytest.fixture(autouse=True)
 def quick_album_wait(monkeypatch):
     from app.bot import pdf
     monkeypatch.setattr(pdf, "ACK_WAIT", 0.05)  # images -> PDF: the pause before "received: N"

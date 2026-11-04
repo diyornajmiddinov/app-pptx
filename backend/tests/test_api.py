@@ -72,8 +72,9 @@ async def test_successful_generation_saves_the_deck_and_sends_the_file(client, t
     assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
     await jobs.run_pending()  # what the worker does
     assert await billing.balance(U) == 5000
-    sent = str(tg.sent("sendDocument")[0])
-    assert "Kompyuterda PowerPoint" in sent and "slayd-shou" not in sent  # the phone note; not animated: no slide-show line
+    deck, pdf = tg.sent("sendDocument")
+    assert "PowerPoint" in str(deck) and "PDF" in str(deck) and "slayd-shou" not in str(deck)  # the phone note; not animated: no slide-show line
+    assert "iPhone" in pdf["caption"]  # then the same deck as a PDF, for the phones
     lst = (await client.get("/api/decks", headers=h())).json()["decks"]
     assert lst[0]["topic"] == "Mavzu" and lst[0]["slides"] == 2
 
@@ -324,7 +325,7 @@ async def test_an_animated_deck_with_its_video_sends_both(client, tg, monkeypatc
         assert deck.with_name("deck.pptx.timeline.json").exists()  # the deck's copy came with its timeline
         out = deck.with_suffix(".mp4"); out.write_bytes(b"mp4"); return out
     await _video_order(client, monkeypatch, tmp_path, make)
-    assert len(tg.sent("sendDocument")) == 1 and len(tg.sent("sendVideo")) == 1
+    assert len(tg.sent("sendDocument")) == 2 and len(tg.sent("sendVideo")) == 1
     assert "video" in tg.sent("sendVideo")[0]["caption"].lower() and await billing.balance(U) == 10000
     assert await db.pool().fetchval("SELECT state FROM jobs") == "done"
 
@@ -333,6 +334,22 @@ async def test_a_failed_video_gives_back_its_price_only(client, tg, monkeypatch,
     def make(deck):
         raise RuntimeError("ffmpeg")
     await _video_order(client, monkeypatch, tmp_path, make)
-    assert len(tg.sent("sendDocument")) == 1 and not tg.sent("sendVideo")      # the deck came; the video did not
+    assert len(tg.sent("sendDocument")) == 2 and not tg.sent("sendVideo")      # the deck and its PDF came; the video did not
     assert await billing.balance(U) == 12000 and "2\xa0000" in tg.texts()[-1]   # its 2 000 so'm back, once
     assert await db.pool().fetchval("SELECT state FROM jobs") == "done" and not await billing.reconcile()
+
+
+async def test_a_failed_pdf_still_leaves_the_deck_delivered_and_paid_once(client, tg, monkeypatch, tmp_path):
+    await add_user(U, balance=10000)
+    content = {"meta": {"topic": "Mavzu"}, "slides": [{"type": "cover", "title": "Mavzu"}]}
+    async def fake_build(req, deck_id, user_id):
+        p = tmp_path / "slideai-x.pptx"; p.write_bytes(b"pptx"); return p, content
+    def no_office(deck):
+        raise OSError("no soffice")
+    monkeypatch.setattr(jobs, "build", fake_build)
+    monkeypatch.setattr(jobs, "deck_pdf", no_office)
+    body = {"user_id": U, "template_id": 3, "slide_count": 8, "topic": "Mavzu"}
+    assert (await client.post("/api/generate", headers=h(), json=body)).status_code == 202
+    await jobs.run_pending()
+    assert len(tg.sent("sendDocument")) == 1 and await billing.balance(U) == 5000
+    assert await db.pool().fetchval("SELECT state FROM jobs") == "done"

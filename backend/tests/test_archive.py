@@ -30,7 +30,7 @@ async def test_nothing_goes_anywhere_without_a_channel(tg, made):
     await db.pool().execute("INSERT INTO users (id, first_name) VALUES ($1, 'Ali')", U)
     await jobs.order("generate", U, {"topic": "Mavzu", "template_id": 3, "slide_count": 9}, 0)
     await jobs.run_pending()
-    assert len(tg.sent("sendDocument")) == 1  # only to the user
+    assert len(tg.sent("sendDocument")) == 2  # only to the user: the deck and its PDF
 
 
 async def test_a_new_deck_is_copied_with_who_made_it(tg, made):
@@ -40,7 +40,7 @@ async def test_a_new_deck_is_copied_with_who_made_it(tg, made):
     await jobs.order("generate", U, {"topic": "Soliq & byudjet", "template_id": 3, "slide_count": 9, "via": "web"})
     await jobs.run_pending()
     to_user, copy = docs_to(tg, U), docs_to(tg, ARCHIVE)
-    assert len(to_user) == 1 and len(copy) == 1
+    assert len(to_user) == 2 and len(copy) == 1  # the PDF is not archived
     cap = copy[0]["caption"]
     assert "📊 <b>Taqdimot</b>" in cap and "Ali &lt;Vali&gt; (@ali)" in cap and f"<code>{U}</code>" in cap
     assert "«Soliq &amp; byudjet»" in cap and "9 slayd · shablon #3" in cap and "5 000 so'm · sayt" in cap

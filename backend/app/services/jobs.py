@@ -17,7 +17,7 @@ from pathlib import Path
 from app.core import db
 from app.core.config import ENGINE_DIR, settings
 from app.core.telegram import send_document, send_message, send_video
-from app.services import app_settings, archive, billing, decks, papers, video
+from app.services import app_settings, archive, billing, decks, paper_docx, papers, video
 from app.services.ai import models, pipeline
 from app.services.ai.render import render
 from app.services.users import lang_of
@@ -184,6 +184,29 @@ async def deliver(chat_id: int, path: Path, topic: str, note: str, ext: str = ".
         _drop_tmp(final.parent)
 
 
+def _copy(path: Path) -> Path:
+    """A copy of the deck in a temp folder of its own (deliver() renames the deck and removes its folder)."""
+    work = Path(tempfile.mkdtemp(prefix="slideai-"))
+    shutil.copy(path, work / "deck.pptx")
+    return work / "deck.pptx"
+
+
+def deck_pdf(deck: Path) -> Path:
+    """The deck as a PDF (LibreOffice draws Calibri / Cambria with their metric twins, so it is the deck as designed)."""
+    return paper_docx.to_pdf(deck)
+
+
+async def send_pdf_of(user_id: int, deck: Path, topic: str, lang: str):
+    """After the deck, free: the same as a PDF. Phones (iPhone's preview above all) have no Calibri or Cambria and move
+    the text and shapes about; a PDF looks the same everywhere. The deck is delivered already, so a failure is only logged."""
+    try:
+        await deliver(user_id, await asyncio.to_thread(deck_pdf, deck), topic, t(lang, "pdf_note"), ".pdf")
+    except Exception as e:
+        log.warning("PDF yaratilmadi · foydalanuvchi %s · %s", user_id, f"{type(e).__name__}: {e}"[:200])
+    finally:
+        _drop_tmp(deck.parent)
+
+
 def _for_video(path: Path) -> Path:
     """A copy of the animated deck and its timeline for the video (deliver() renames the deck and removes its folder)."""
     work = Path(tempfile.mkdtemp(prefix="slideai-"))
@@ -228,10 +251,12 @@ async def run(job: dict):
             await decks.save(job["user_id"], content, req, deck_id)
             lang = await lang_of(job["user_id"])
             film = _for_video(path) if req.get("video") and req.get("animated") else None
+            pdf = _copy(path)
             await deliver(job["user_id"], path, req["topic"], deck_note(lang, t(lang, "slides", n=len(content["slides"])), bool(req.get("animated"))),
                           copy={"kind": "generate", "facts": [f"{len(content['slides'])} slayd", f"shablon #{req['template_id']}",
                                                               "✨ animatsiyali" if req.get("animated") else "", "🎬 video" if film else ""],
                                 "price": job["price"], "via": req.get("via", "bot")})
+            await send_pdf_of(job["user_id"], pdf, req["topic"], lang)
             if film:
                 await send_video_of(job, film, req["topic"], lang)
         elif job["kind"] == "restyle":
@@ -243,8 +268,10 @@ async def run(job: dict):
                                                                 deck["request"].get("density", "balanced"), bool(p.get("animated"))), JOB_TIMEOUT)
             await decks.save(job["user_id"], content, {**deck["request"], "template_id": p["template_id"], "animated": bool(p.get("animated"))}, p["deck_id"])
             lang = await lang_of(job["user_id"])
+            pdf = _copy(path)
             await deliver(job["user_id"], path, content["meta"]["topic"], deck_note(lang, t(lang, "new_template"), bool(p.get("animated"))),
                           copy={"kind": "restyle", "facts": [f"shablon #{p['template_id']}"], "price": job["price"], "via": p.get("via", "bot")})
+            await send_pdf_of(job["user_id"], pdf, content["meta"]["topic"], lang)
         elif job["kind"] == "paper":
             req = job["payload"]
             _, path, pages = await asyncio.wait_for(papers.make(job["user_id"], req), JOB_TIMEOUT)
