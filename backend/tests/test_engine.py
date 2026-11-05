@@ -11,7 +11,7 @@ from app.services.ai.catalog import WAYS
 from app.services.ai.render import render, render_sync
 
 pytestmark = pytest.mark.slow
-DRAWN = (1, 2, 3, 4, 5, 6, 7, 16, 68, 72, 161)  # templates with their own further pages; the rest follow
+DRAWN = (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 68, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 161)  # templates with their own further pages; the rest follow
 SAMPLE = json.loads((ENGINE_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))
 
 
