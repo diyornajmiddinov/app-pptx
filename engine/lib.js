@@ -369,11 +369,15 @@ function stamp(list, content, place) {
     s.addText(out, { isTextBox: true, margin: 0, valign: 'middle', fontSize: fs, fontFace: font, ...opt });
   });
 }
-/** Pages of a deck must not look alike: the nth slide of a type takes the nth way this template draws that type
- *  (R[type] first, then V[type]). A template draws each of them itself, in its own design. */
+/** Pages of a deck must not look alike: the nth slide of a type takes the next way this template draws that type
+ *  (R[type], then V[type]). A template draws each of them itself, in its own design. first-ways.json says, for a
+ *  template, which way of a type comes first: the ones that look least alike, since a short deck shows only those. */
+const FIRST_WAYS = JSON.parse(fs_.readFileSync(path.join(__dirname, 'first-ways.json'), 'utf8'));
+let firstWay = {};
+function template(id) { firstWay = FIRST_WAYS[id] || {}; }
 function pages(R, V = {}) {
   const seen = {};
-  return (d) => { const ways = [R[d.type], ...(V[d.type] || [])], k = (seen[d.type] = (seen[d.type] ?? -1) + 1); return ways[k % ways.length](d); };
+  return (d) => { const ways = [R[d.type], ...(V[d.type] || [])], k = (seen[d.type] = (seen[d.type] ?? -1) + 1) + (firstWay[d.type] || 0); return ways[k % ways.length](d); };
 }
 function heroPhotos(R, list, spots) {
   for (const k of ['cover', 'closing']) {
@@ -386,6 +390,7 @@ module.exports.track = track;
 module.exports.stamp = stamp;
 module.exports.heroPhotos = heroPhotos;
 module.exports.pages = pages;
+module.exports.template = template;
 
 // ======================================================================
 // Fixed labels printed by templates, in the presentation language (content.language)

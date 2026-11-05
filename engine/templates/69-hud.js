@@ -115,7 +115,7 @@ async function build(content, out) {
       t.img(s, radar, 3.0, 1.2, 4.0, 4.0);
       brackets(s, 1.0, 1.75, 8.0, 2.0, C.amber);
       t.text(s, L.runs(d.text.toUpperCase()), { x: 1.3, y: 1.8, w: 7.4, h: 1.9, bold: true, fontSize: L.fit(d.text.toUpperCase(), 7.2, 1.8, 30, 14, F.head, true), color: C.text, align: 'center', valign: 'middle' });
-      if (d.caption) t.text(s, d.caption, { x: 1.0, y: 3.95, w: 8.0, h: 1.1, fontSize: 12, color: C.muted, align: 'center' });
+      if (d.caption) { t.rect(s, 1.0, 3.9, 8.0, 1.2, C.bg, { name: 'Caption ground' }); t.text(s, d.caption, { x: 1.1, y: 3.95, w: 7.8, h: 1.1, fontSize: 12, color: C.text, align: 'center', valign: 'middle' }); }
     },
     async timeline(d) {
       const s = page(d), n = d.items.length, cw = 8.9 / n;
@@ -144,7 +144,263 @@ async function build(content, out) {
       });
     },
   };
-  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await R[d.type](d); }
+  // ---- further ways to draw a type, all on the cockpit glass: a deck's pages must not look alike (L.pages)
+  const INK = C.bg, PALE = 'DDF3F8', DEEP = '0B4A5C', DUO = ['04202C', '7FEFFF'];
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontFace: o.font || F.body, fontSize: L.fit(v, w, h, o.max || 13, 10, o.font || F.body), color: o.color || C.muted, align: o.align, valign: o.valign || 'top' });
+  const head = (s, v, x, y, w, h, o = {}) => { const u = String(v).toUpperCase(); t.text(s, u, { x, y, w, h, bold: true, fontSize: L.fit(u, w, h, o.max || 14, 10, F.head, true), color: o.color || C.text, align: o.align, valign: o.valign || 'middle' }); };
+  const mono = (s, v, x, y, w, h, o = {}) => t.text(s, String(v), { x, y, w, h, fontFace: F.mono, bold: true, fontSize: L.fit(String(v), w, h, o.max || 22, o.min || 10, F.mono, true), color: o.color || C.cyan, align: o.align, valign: o.valign || 'middle' });
+  // daylight mode: the glass turned pale, dark instruments on it
+  const dayPage = (d) => {
+    const s = pres.addSlide(); s.background = { color: PALE }; idx++;
+    t.text(s, `// ${L.pad2(idx)}`, { x: 0.5, y: 0.3, w: 1.0, h: 0.3, fontFace: F.mono, fontSize: 11, bold: true, color: '9A5B00' });
+    const u = d.title.toUpperCase();
+    t.text(s, u, { x: 0.5, y: 0.58, w: 8.2, h: 0.6, bold: true, color: INK, valign: 'middle', charSpacing: 1, fontSize: L.fit(u, 7.6, 0.6, 24, 13, F.head, true) });
+    for (let k = 0; k < 6; k++) t.rect(s, 0.5 + k * 0.32, 1.22, 0.26, 0.05, k < 4 ? DEEP : '8DB6C2', { name: 'Segment' });
+    t.oval(s, 9.05, 0.38, 0.32, 0.32, null, { line: { color: DEEP, width: 1.25 } }); t.oval(s, 9.15, 0.48, 0.12, 0.12, '9A5B00');
+    t.line(s, 0.5, 5.2, 9.0, 0, DEEP, 0.75);
+    t.text(s, `${M.topic || ''}  //  ${meta}`.toUpperCase(), { x: 0.5, y: 5.25, w: 9.0, h: 0.22, fontFace: F.mono, fontSize: 7.5, color: DEEP });
+    return s;
+  };
+  const vRuler = (s, x, y, h, n = 30, c = C.cyan) => { t.line(s, x, y, 0, h, c, 1.5); for (let k = 0; k <= n; k++) t.line(s, x - (k % 5 ? 0.05 : 0.11), y + (k * h) / n, k % 5 ? 0.05 : 0.11, 0, c, 1); };
+  const hRuler = (s, x, y, w, n = 44, c = C.cyan) => { t.line(s, x, y, w, 0, c, 1.5); for (let k = 0; k <= n; k++) t.line(s, x + (k * w) / n, y - (k % 4 ? 0.05 : 0.11), 0, k % 4 ? 0.05 : 0.11, c, 1); };
+  const P = (v) => Math.round(v * 100);
+  const wires = async (s, list, c = C.dim, wd = 1.5) => t.img(s, await L.svg(`<svg xmlns="http://www.w3.org/2000/svg" width="1000" height="563">${list.map((pts) => `<path d="M${pts.map(([a, b]) => `${P(a)},${P(b)}`).join(' L')}" fill="none" stroke="#${c}" stroke-width="${wd * 1.4}"/>`).join('')}</svg>`, 1000, 563), 0, 0, W, H);
+  const V = {
+    image: [
+      async (d) => { // the forward view, wide, the readout under it
+        const s = page(d);
+        await scope(s, d.image, 0.65, 1.46, 8.7, 1.72);
+        t.text(s, d.text, { x: 0.65, y: 3.38, w: 8.7, h: 1.74, fontSize: L.fit(d.text, 8.7, 1.74, 15, 10, F.body, false, 1.1), color: C.text, lineSpacingMultiple: 1.1, valign: 'middle' });
+      },
+      async (d) => { // the view fills the canopy, an instrument panel hangs over it
+        const s = pres.addSlide(); s.background = { data: bg }; idx++;
+        t.img(s, await L.photo(L.src(d.image), W, H, { duo: DUO }), 0, 0, W, H, { alt: '' });
+        t.rect(s, 4.95, 0.3, 4.75, 4.75, C.bg, { t: 8, name: 'Panel' });
+        brackets(s, 4.95, 0.3, 4.75, 4.75, C.cyan, 0.3, false);
+        t.text(s, `// ${L.pad2(idx)}`, { x: 5.15, y: 0.42, w: 1.0, h: 0.28, fontFace: F.mono, fontSize: 11, bold: true, color: C.amber });
+        head(s, d.title, 5.15, 0.7, 4.35, 0.62, { max: 16 });
+        t.text(s, d.text, { x: 5.15, y: 1.38, w: 4.35, h: 3.56, fontSize: L.fit(d.text, 4.35, 3.56, 14, 10, F.body, false, 1.15), color: C.text, lineSpacingMultiple: 1.15, valign: 'middle' });
+        t.rect(s, 0, 5.16, W, 0.36, C.bg, { name: 'Footer' }); footer(s);
+      },
+      async (d) => { // the radar scope: the picture is what the sweep has found
+        const s = page(d), dd = 3.7, x = 0.55, y = 1.4, in0 = dd * 0.14, id = dd - 2 * in0;
+        t.img(s, radar, x, y, dd, dd);
+        t.img(s, await L.photo(L.src(d.image), id, id, { mask: 'circle', duo: DUO }), x + in0, y + in0, id, id, { alt: '' });
+        t.line(s, x + dd + 0.02, y + dd / 2, 0.36, 0, C.amber, 1.5);
+        t.text(s, d.text, { x: 4.75, y: 1.4, w: 4.75, h: 3.7, fontSize: L.fit(d.text, 4.75, 3.7, 15, 10, F.body, false, 1.2), color: C.text, lineSpacingMultiple: 1.2, valign: 'middle' });
+      },
+      async (d) => { // target lock: a six-sided crop, a ruler running beside the words
+        const s = page(d), w = 4.1, h = 3.55, x = 5.4, y = 1.48, Q = [[0.25, 0], [0.75, 0], [1, 0.5], [0.75, 1], [0.25, 1], [0, 0.5]];
+        vRuler(s, 0.72, 1.46, 3.62, 30, C.dim);
+        t.img(s, await L.photo(L.src(d.image), w, h, { mask: { poly: Q }, duo: DUO }), x, y, w, h, { alt: '' });
+        await wires(s, [Q.concat([Q[0]]).map(([a, b]) => [x + a * w, y + b * h])], C.amber, 2);
+        t.line(s, x + w / 2 - 0.3, y + h / 2, 0.6, 0, C.amber, 1.25); t.line(s, x + w / 2, y + h / 2 - 0.3, 0, 0.6, C.amber, 1.25);
+        t.text(s, d.text, { x: 0.95, y: 1.42, w: 4.3, h: 3.7, fontSize: L.fit(d.text, 4.3, 3.7, 15, 10, F.body, false, 1.2), color: C.text, lineSpacingMultiple: 1.2, valign: 'middle' });
+      },
+    ],
+    cards: [
+      async (d) => { // the target list: no frames, only lines and a ruler down the side
+        const s = page(d), n = d.items.length, y0 = 1.42, h = 3.7 / n;
+        vRuler(s, 0.65, y0, 3.7);
+        for (const [i, it] of d.items.entries()) {
+          const y = y0 + i * h, c = i === 0 ? C.amber : C.cyan;
+          if (i) t.line(s, 0.85, y, 8.65, 0, C.dim, 0.75, { dash: 'dash' });
+          mono(s, `[${L.pad2(i + 1)}]`, 0.85, y, 0.72, h, { color: C.muted, max: 12 });
+          t.img(s, await L.icon(it.icon, c, 2), 1.6, y + h / 2 - 0.17, 0.34, 0.34);
+          head(s, it.h, 2.08, y + 0.05, 2.4, h - 0.1, { color: c });
+          body(s, it.t, 4.6, y + 0.05, 4.9, h - 0.1, { color: C.text, valign: 'middle' });
+        }
+      },
+      async (d) => { // the radar in the middle, contacts bracketed round it
+        const s = page(d), n = d.items.length, w = 3.4, h = 1.74, dd = 1.7, cx = 5, cy = 3.27;
+        const pos = n === 4 ? [[0.55, 1.42], [0.55, 3.38], [6.05, 1.42], [6.05, 3.38]] : [[0.55, 1.42], [0.55, 3.38], [6.05, 2.4]];
+        await wires(s, pos.map(([x, y]) => [[x < 5 ? x + w : x, y + h / 2], [x < 5 ? cx - 0.5 : cx + 0.5, y + h / 2], [cx, cy]]));
+        t.oval(s, cx - dd / 2, cy - dd / 2, dd, dd, C.bg);
+        t.img(s, radar, cx - dd / 2, cy - dd / 2, dd, dd);
+        t.oval(s, cx - 0.08, cy - 0.08, 0.16, 0.16, C.amber);
+        for (const [i, it] of d.items.entries()) {
+          const [x, y] = pos[i], c = i === 0 ? C.amber : C.cyan;
+          brackets(s, x, y, w, h, c, 0.18);
+          t.img(s, await L.icon(it.icon, c, 2), x + 0.14, y + 0.1, 0.3, 0.3);
+          head(s, it.h, x + 0.52, y + 0.06, w - 0.66, 0.38, { max: 13 });
+          body(s, it.t, x + 0.14, y + 0.48, w - 0.28, h - 0.54);
+        }
+      },
+      async (d) => { // daylight mode: dark instruments on pale glass, two by two
+        const s = dayPage(d), n = d.items.length, w = 4.4, h = 1.78;
+        for (const [i, it] of d.items.entries()) {
+          const wide = n === 3 && i === 2, ww = wide ? 9 : w, x = 0.5 + (i % 2) * (w + 0.2), y = 1.4 + Math.floor(i / 2) * (h + 0.12);
+          t.rect(s, x, y, ww, h, 'FFFFFF', { name: 'Tile' });
+          brackets(s, x, y, ww, h, DEEP, 0.2, false);
+          t.oval(s, x + 0.16, y + 0.18, 0.6, 0.6, DEEP);
+          t.img(s, await L.icon(it.icon, PALE, 2), x + 0.3, y + 0.32, 0.32, 0.32);
+          head(s, it.h, x + 0.92, y + 0.12, ww - 1.06, 0.42, { color: INK });
+          body(s, it.t, x + 0.92, y + 0.56, ww - 1.06, h - 0.64, { color: INK });
+        }
+      },
+      async (d) => { // the primary target in amber, secondary contacts down the side
+        const s = page(d), [a, ...rest] = d.items, n = rest.length, gap = 0.12, h = (3.72 - gap * (n - 1)) / n;
+        brackets(s, 0.55, 1.4, 4.0, 3.72, C.amber, 0.34);
+        t.oval(s, 0.8, 1.62, 0.9, 0.9, null, { line: { color: C.amber, width: 1.5 } });
+        t.img(s, await L.icon(a.icon, C.amber, 2), 1.02, 1.84, 0.46, 0.46);
+        mono(s, '[01]', 3.2, 1.62, 1.1, 0.5, { color: C.amber, max: 16, align: 'right' });
+        head(s, a.h, 0.8, 2.62, 3.5, 0.56, { max: 17, color: C.amber });
+        body(s, a.t, 0.8, 3.22, 3.5, 1.76, { color: C.text, max: 15 });
+        for (const [i, it] of rest.entries()) {
+          const y = 1.4 + i * (h + gap);
+          brackets(s, 4.8, y, 4.7, h, C.cyan, 0.14);
+          t.img(s, await L.icon(it.icon, C.cyan, 2), 4.94, y + 0.08, 0.3, 0.3);
+          head(s, it.h, 5.34, y + 0.04, 4.05, 0.38, { max: 13 });
+          body(s, it.t, 4.94, y + 0.44, 4.45, h - 0.5);
+        }
+      },
+    ],
+    process: [
+      async (d) => { // the descent: each stage bracketed one level below the last
+        const s = page(d), n = d.steps.length, cw = 8.95 / n, w = cw - 0.14, h = 2.0, dy = (3.74 - h) / (n - 1);
+        for (const [i, st] of d.steps.entries()) {
+          const x = 0.55 + i * cw, y = 1.38 + i * dy, c = i === n - 1 ? C.amber : C.cyan;
+          brackets(s, x, y, w, h, c, 0.16);
+          hex(s, x + 0.08, y + 0.08, 0.46, c, i + 1);
+          head(s, st.h, x + 0.6, y + 0.06, w - 0.68, 0.46, { max: 11 });
+          body(s, st.t, x + 0.1, y + 0.56, w - 0.2, h - 0.62, { color: C.text });
+        }
+      },
+      async (d) => { // the altitude tape up the middle, stages to port and starboard
+        const s = page(d), n = d.steps.length, h = 1.2, w = 4.05, dy = (3.74 - h) / (n - 1), Y = (i) => 1.38 + i * dy;
+        vRuler(s, 5.05, 1.38, 3.74, 36);
+        for (const [i, st] of d.steps.entries()) {
+          const right = i % 2 === 1, x = right ? 5.45 : 0.5, y = Y(i), c = i === n - 1 ? C.amber : C.cyan;
+          brackets(s, x, y, w, h, c, 0.14);
+          hex(s, 4.78, y + 0.02, 0.54, c, i + 1);
+          head(s, st.h, x + 0.14, y + 0.05, w - 0.28, 0.34, { max: 13 });
+          body(s, st.t, x + 0.14, y + 0.42, w - 0.28, h - 0.48, { color: C.text });
+        }
+      },
+      async (d) => { // the pitch ladder: centred rungs narrowing towards the goal
+        const s = page(d), n = d.steps.length, gap = 0.1, h = (3.72 - gap * (n - 1)) / n;
+        for (const [i, st] of d.steps.entries()) {
+          const w = 8.9 - i * 0.55, x = 5 - w / 2, y = 1.4 + i * (h + gap), c = i === n - 1 ? C.amber : C.cyan;
+          t.rect(s, x, y, w, h, '0B2A3A', { t: 35, name: 'Rung' });
+          t.line(s, x, y, 0.5, 0, c, 2); t.line(s, x + w - 0.5, y, 0.5, 0, c, 2); t.line(s, x, y, 0, 0.14, c, 2); t.line(s, x + w, y, 0, 0.14, c, 2);
+          mono(s, L.pad2(i + 1), x + 0.14, y, 0.6, h, { color: c, max: 20 });
+          head(s, st.h, x + 0.8, y + 0.05, 2.2, h - 0.1, { max: 13 });
+          body(s, st.t, x + 3.08, y + 0.05, w - 3.24, h - 0.1, { color: C.text, valign: 'middle' });
+        }
+      },
+    ],
+    stats: [
+      async (d) => { // the primary reading fills the big dial, two small readouts beside it
+        const s = page(d), [a, b, c] = d.stats, dd = 3.7, x = 0.55, y = 1.4;
+        t.img(s, radar, x, y, dd, dd);
+        mono(s, a.value, x + 0.55, y + 0.86, dd - 1.1, 1.1, { color: C.amber, max: 40, min: 16, align: 'center' });
+        body(s, a.label, x + 0.8, y + 2.0, dd - 1.6, 0.9, { color: C.text, align: 'center', max: 12 });
+        [b, c].forEach((v, i) => {
+          const yy = 1.42 + i * 1.08;
+          brackets(s, 4.6, yy, 4.9, 0.98, C.cyan, 0.14);
+          mono(s, v.value, 4.74, yy, 2.0, 0.98, { max: 24, min: 12 });
+          body(s, v.label, 6.8, yy + 0.05, 2.6, 0.88, { color: C.text, valign: 'middle', max: 12 });
+        });
+        if (d.note) body(s, d.note, 4.6, 3.6, 4.9, 1.5, { font: F.mono, valign: 'middle', max: 11 });
+      },
+      async (d) => { // daylight mode: a printed status report, big figures on dark tabs
+        const s = dayPage(d), w = d.note ? 5.85 : 9;
+        d.stats.forEach((v, i) => {
+          const y = 1.4 + i * 1.26;
+          t.rect(s, 0.5, y, 2.7, 1.14, INK, { name: 'Readout' });
+          mono(s, v.value, 0.56, y, 2.58, 1.14, { color: i ? C.cyan : C.amber, max: 30, min: 13, align: 'center' });
+          t.rect(s, 3.2, y, w - 2.7, 1.14, 'FFFFFF', { name: 'Label' });
+          body(s, v.label, 3.34, y + 0.05, w - 2.98, 1.04, { color: INK, valign: 'middle', max: 14 });
+        });
+        if (d.note) { brackets(s, 6.6, 1.4, 2.9, 3.66, DEEP, 0.24, false); body(s, d.note, 6.76, 1.52, 2.58, 3.42, { color: INK, valign: 'middle', max: 13 }); }
+      },
+    ],
+    compare: [
+      async (d) => { // two sectors reading away from one centre line, amber and cyan
+        const s = page(d), tw = 4.0;
+        vRuler(s, 5, 1.4, 3.72, 36, C.dim);
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const c = i ? C.cyan : C.amber, a = i ? 'left' : 'right', x = i ? 5.3 : 0.55, n = side.items.length, rh = 3.0 / n;
+          head(s, side.h, x, 1.4, tw, 0.6, { color: c, max: 17, align: a });
+          t.rect(s, i ? x : x + tw - 1.2, 2.02, 1.2, 0.04, c, { name: 'Mark' });
+          side.items.forEach((it, k) => {
+            const y = 2.12 + k * rh;
+            t.text(s, i ? '▸' : '◂', { x: i ? 5.08 : 4.72, y, w: 0.2, h: rh - 0.04, fontSize: 12, color: c, align: 'center', valign: 'middle', noFit: true });
+            body(s, it, x, y, tw, rh - 0.04, { color: C.text, align: a, valign: 'middle', max: 14 });
+          });
+        }
+      },
+      async (d) => { // two bracketed bands, one above the other, each point a cell of its own
+        const s = page(d), h = 1.76;
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const y = 1.4 + i * (h + 0.2), c = i ? C.cyan : C.amber, n = side.items.length, cw = 6.65 / n;
+          brackets(s, 0.55, y, 8.9, h, c, 0.22);
+          head(s, side.h, 0.72, y + 0.1, 1.95, h - 0.2, { color: c, max: 14 });
+          side.items.forEach((it, k) => {
+            const x = 2.72 + k * cw;
+            t.line(s, x, y + 0.2, 0, h - 0.4, c, 1);
+            body(s, it, x + 0.1, y + 0.08, cw - 0.2, h - 0.16, { color: C.text, valign: 'middle' });
+          });
+        }
+      },
+    ],
+    statement: [
+      async (d) => { // master alert: a full amber bar across the glass, hazard marks at its ends
+        const s = page(d), bh = 2.25, u = d.text.toUpperCase();
+        t.rect(s, 0, 1.42, W, bh, C.amber, { name: 'Alert' });
+        for (const x0 of [0, 9.4]) for (let k = 0; k < 4; k++) t.shape(s, 'PARALLELOGRAM', { x: x0 + 0.02, y: 1.42 + k * (bh / 4) + 0.08, w: 0.56, h: bh / 4 - 0.16, fill: { color: INK }, objectName: 'Hazard' });
+        t.text(s, L.runs(u), { x: 0.8, y: 1.48, w: 8.4, h: bh - 0.12, bold: true, color: INK, align: 'center', valign: 'middle', fontSize: L.fit(u, 8.4, bh - 0.2, 30, 15, F.head, true) });
+        if (d.caption) body(s, d.caption, 0.6, 3.78, 8.8, 1.34, { font: F.mono, color: C.text, max: 12, align: 'center', valign: 'middle' });
+      },
+      async (d) => { // great brackets round the whole view, the thought typed left, a small radar
+        const s = page(d), u = d.text.toUpperCase();
+        brackets(s, 0.5, 1.4, 9, 3.72, C.cyan, 0.5, false);
+        t.img(s, radar, 7.5, 3.25, 1.8, 1.8);
+        t.text(s, L.runs(u), { x: 0.8, y: 1.5, w: 8.4, h: 1.72, bold: true, color: C.text, valign: 'middle', fontSize: L.fit(u, 8.4, 1.66, 28, 14, F.head, true) });
+        if (d.caption) body(s, `> ${d.caption}`, 0.8, 3.3, 6.5, 1.72, { font: F.mono, color: C.amber, max: 12 });
+      },
+    ],
+    timeline: [
+      async (d) => { // a time ruler across the middle, events bracketed above and below it
+        const s = page(d), cy = 3.26, w = 4.35, h = 1.62, xs = [1.1, 3.4, 5.8, 8.1];
+        hRuler(s, 0.5, cy + 0.06, 9);
+        for (const [i, it] of d.items.entries()) {
+          const up = i % 2 === 0, x = i < 2 ? 0.5 : 5.15, y = up ? cy - 0.2 - h : cy + 0.2, c = i === 3 ? C.amber : C.cyan;
+          t.shape(s, 'ISOSCELES_TRIANGLE', { x: xs[i] - 0.1, y: cy + 0.05, w: 0.2, h: 0.14, fill: { color: C.amber }, objectName: 'Marker' });
+          brackets(s, x, y, w, h, c, 0.16);
+          mono(s, it.year, x + 0.14, y + 0.05, 1.8, 0.38, { color: c, max: 16 });
+          head(s, it.h, x + 2.0, y + 0.05, w - 2.14, 0.38, { max: 11, align: 'right' });
+          body(s, it.t, x + 0.14, y + 0.47, w - 0.28, h - 0.53, { color: C.text });
+        }
+      },
+      async (d) => { // the flight path: a climbing line, each waypoint with its log under it
+        const s = page(d), cw = 2.24, X = (i) => 0.55 + i * cw, Y = (i) => 2.72 - i * 0.44, w = cw - 0.14;
+        await wires(s, [d.items.map((_, i) => [X(i) + 0.1, Y(i) + 0.1])], C.amber, 2);
+        for (const [i, it] of d.items.entries()) {
+          const x = X(i), y = Y(i);
+          t.oval(s, x, y, 0.2, 0.2, C.bg, { line: { color: C.amber, width: 2 } });
+          mono(s, it.year, x, y + 0.24, w, 0.32, { max: 15, min: 9 });
+          head(s, it.h, x, y + 0.56, w, 0.34, { max: 11 });
+          body(s, it.t, x, y + 0.92, w, 5.14 - (y + 0.92), { color: C.text, max: 13 });
+        }
+      },
+      async (d) => { // daylight mode: a printed flight plan, dark year tabs over white columns
+        const s = dayPage(d), cw = 9 / 4;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.5 + i * cw, w = cw - 0.08;
+          t.rect(s, x, 1.4, w, 0.6, INK, { name: 'Year tab' });
+          mono(s, it.year, x + 0.06, 1.4, w - 0.12, 0.6, { color: i === 3 ? C.amber : C.cyan, max: 18, align: 'center' });
+          t.rect(s, x, 2.0, w, 3.1, 'FFFFFF', { name: 'Column' });
+          head(s, it.h, x + 0.12, 2.06, w - 0.24, 0.44, { color: INK, max: 12 });
+          body(s, it.t, x + 0.12, 2.54, w - 0.24, 2.5, { color: INK });
+        }
+      },
+    ],
+  };
+  R.timeline = V.timeline.shift(); // the old timeline columns looked like the process columns
+  R.image = V.image.shift(); // the first picture page must not mirror the introduction
+  const draw = L.pages(R, V);
+  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await draw(d); }
   return L.save(pres, out, { name: 'SlideAI HUD', colors: { dk1: C.bg, lt1: C.text, dk2: '0B2A3A', lt2: C.muted, accent1: C.cyan, accent2: C.amber, accent3: C.red, accent4: C.dim, accent5: '6CF0C2', accent6: 'A68BFF', hlink: C.cyan, folHlink: C.muted } });
 }
 /** Uslub pasporti */

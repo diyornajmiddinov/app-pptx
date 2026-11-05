@@ -144,7 +144,249 @@ async function build(content, out) {
       });
     },
   };
-  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await R[d.type](d); }
+  // ---- further ways to draw a type, all on the chessboard: a deck's pages must not look alike (L.pages)
+  const PALE = 'F2EADD', K = (i) => ORDER[i % 6];
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 13, 10, F.body), color: o.color || C.muted, align: o.align, valign: o.valign || 'top' });
+  const head = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontFace: F.head, bold: true, fontSize: L.fit(v, w, h, o.max || 15, 10, F.head, true), color: o.color || C.ink, align: o.align, valign: o.valign || 'middle' });
+  const nightPage = (d) => {
+    const s = pres.addSlide(); s.background = { color: C.black }; idx++;
+    t.img(s, strip, 0, 0, 0.32, H);
+    t.text(s, `${String.fromCharCode(97 + ((idx - 1) % 8))}${((idx - 1) % 8) + 1}`, { x: 8.75, y: 0.38, w: 0.7, h: 0.6, fontFace: F.head, fontSize: 18, bold: true, color: C.light, align: 'right', valign: 'middle' });
+    t.text(s, d.title, { x: 0.7, y: 0.35, w: 7.9, h: 0.7, fontFace: F.head, bold: true, color: C.white, valign: 'middle', fontSize: L.fit(d.title, 7.9, 0.7, 28, 16, F.head, true) });
+    t.text(s, `${M.topic || ''}   ♞   ${meta}`, { x: 0.85, y: 5.25, w: 8.6, h: 0.22, fontSize: 8.5, color: PALE });
+    return s;
+  };
+  const square = async (s, x, y, dd, kind, darkSq, blackPiece) => { t.rect(s, x, y, dd, dd, darkSq ? C.dark : C.light, { name: 'Square' }); const ph = dd * 0.9; await piece(s, kind, x + (dd - ph * 200 / 260) / 2, y + dd * 0.05, ph, blackPiece); };
+  const checks = (s, x, y, w, n, dd = w / n) => { for (let k = 0; k < n; k++) t.rect(s, x + k * dd, y, dd, dd, k % 2 ? C.dark : C.light, { name: 'Square' }); };
+  const numSq = (s, n, x, y, dd, darkSq) => { t.rect(s, x, y, dd, dd, darkSq ? C.black : C.light, { name: 'Square' }); t.text(s, String(n), { x, y, w: dd, h: dd, fontFace: F.head, bold: true, fontSize: Math.round(dd * 34), color: darkSq ? C.white : C.ink, align: 'center', valign: 'middle' }); };
+  const V = {
+    image: [
+      async (d) => { // the picture across the board's far side, a row of squares under it
+        const s = page(d);
+        t.img(s, await L.photo(L.src(d.image), 8.75, 1.78), 0.7, 1.28, 8.75, 1.78, { alt: '' });
+        checks(s, 0.7, 3.06, 8.75, 35);
+        t.text(s, d.text, { x: 0.7, y: 3.42, w: 8.75, h: 1.72, fontSize: L.fit(d.text, 8.75, 1.72, 15, 10, F.body, false, 1.1), color: C.ink, lineSpacingMultiple: 1.1, valign: 'middle' });
+      },
+      async (d) => { // the photo fills the room, the score sheet lies over it, a queen on watch
+        const s = pres.addSlide(); s.background = { color: C.bg }; idx++;
+        t.img(s, await L.photo(L.src(d.image), W, H), 0, 0, W, H, { alt: '' });
+        t.img(s, strip, 0, 0, 0.32, H);
+        panel(s, 5.0, 0.3, 4.65, 4.75);
+        await piece(s, 'queen', 5.15, 0.4, 0.82, true);
+        t.text(s, d.title, { x: 5.85, y: 0.4, w: 3.65, h: 0.82, fontFace: F.head, bold: true, color: C.ink, valign: 'middle', fontSize: L.fit(d.title, 3.65, 0.8, 19, 12, F.head, true) });
+        t.text(s, d.text, { x: 5.2, y: 1.3, w: 4.25, h: 3.65, fontSize: L.fit(d.text, 4.25, 3.65, 14, 10, F.body, false, 1.15), color: C.ink, lineSpacingMultiple: 1.15, valign: 'middle' });
+        t.rect(s, 0.32, 5.18, W - 0.32, 0.34, C.bg, { name: 'Footer' }); footer(s);
+      },
+      async (d) => { // the black side: a round picture, a white rook at its shoulder
+        const s = nightPage(d), dia = 3.3, x = 5.9, y = 1.5;
+        t.oval(s, x - 0.1, y - 0.1, dia + 0.2, dia + 0.2, C.dark);
+        t.img(s, await L.photo(L.src(d.image), dia, dia, { mask: 'circle' }), x, y, dia, dia, { alt: '' });
+        await piece(s, 'rook', 5.25, 3.82, 1.3);
+        t.text(s, d.text, { x: 0.7, y: 1.3, w: 4.4, h: 3.8, fontSize: L.fit(d.text, 4.4, 3.8, 14, 10, F.body, false, 1.2), color: C.white, lineSpacingMultiple: 1.2, valign: 'middle' });
+      },
+      async (d) => { // the picture sits in the middle of a whole board, like a position to study
+        const s = page(d), dd = 3.78, x = 5.67, y = 1.33, sq = dd / 8;
+        t.img(s, board8, x, y, dd, dd);
+        t.img(s, await L.photo(L.src(d.image), sq * 6, sq * 6), x + sq, y + sq, sq * 6, sq * 6, { alt: '' });
+        t.text(s, d.text, { x: 0.7, y: 1.3, w: 4.65, h: 3.82, fontSize: L.fit(d.text, 4.65, 3.82, 15, 10, F.body, false, 1.2), color: C.ink, lineSpacingMultiple: 1.2, valign: 'middle' });
+      },
+    ],
+    cards: [
+      async (d) => { // ranks of the board: each row opens with a square and its piece
+        const s = page(d), n = d.items.length, gap = 0.08, h = (3.8 - gap * (n - 1)) / n, sq = Math.min(h, 0.86);
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.32 + i * (h + gap), dk = i % 2 === 1;
+          t.rect(s, 0.7, y, 8.75, h, dk ? C.light : C.white, { name: 'Rank' });
+          await square(s, 0.7, y + (h - sq) / 2, sq, K(i + 1), !dk, true);
+          t.img(s, await L.icon(it.icon, C.ink, 2), 1.68, y + h / 2 - 0.16, 0.32, 0.32);
+          head(s, it.h, 2.1, y + 0.04, 2.3, h - 0.08, { max: 14 });
+          body(s, it.t, 4.5, y + 0.04, 4.85, h - 0.08, { color: C.ink, valign: 'middle' });
+        }
+      },
+      async (d) => { // the king in the centre, his men on the squares round him
+        const s = page(d), n = d.items.length, w = 3.4, h = 1.82, cx = 5.07, cy = 3.22;
+        const pos = n === 4 ? [[0.7, 1.32], [0.7, 3.3], [6.05, 1.32], [6.05, 3.3]] : [[0.7, 1.32], [0.7, 3.3], [6.05, 2.31]];
+        await square(s, cx - 0.7, cy - 0.7, 1.4, 'king', false, true);
+        for (const [i, it] of d.items.entries()) {
+          const [x, y] = pos[i];
+          panel(s, x, y, w, h);
+          await piece(s, K(i), x + 0.1, y + 0.06, 0.5, true);
+          head(s, it.h, x + 0.56, y + 0.08, w - 0.68, 0.46, { max: 14 });
+          body(s, it.t, x + 0.14, y + 0.58, w - 0.28, h - 0.66, { color: C.ink });
+        }
+      },
+      async (d) => { // the board itself: big black and pale squares, each holding an idea
+        const s = page(d), n = d.items.length, w = 4.37, h = 1.9;
+        for (const [i, it] of d.items.entries()) {
+          const wide = n === 3 && i === 2, ww = wide ? 8.75 : w, x = 0.7 + (i % 2) * w, y = 1.3 + Math.floor(i / 2) * h, dk = (i === 1 || i === 2);
+          t.rect(s, x, y, ww, h, dk ? C.black : C.light, { name: 'Square' });
+          t.img(s, await L.icon(it.icon, dk ? C.light : C.ink, 2), x + 0.2, y + 0.18, 0.46, 0.46);
+          head(s, it.h, x + 0.82, y + 0.14, ww - 1.0, 0.5, { color: dk ? C.white : C.ink, max: 15 });
+          body(s, it.t, x + 0.82, y + 0.68, ww - 1.0, h - 0.78, { color: dk ? PALE : C.ink });
+        }
+      },
+      async (d) => { // the queen takes the big square, the others stand in her line
+        const s = page(d), [a, ...rest] = d.items, n = rest.length, gap = 0.12, h = (3.78 - gap * (n - 1)) / n;
+        t.rect(s, 0.7, 1.32, 4.0, 3.78, C.black, { name: 'Queen square' });
+        await piece(s, 'queen', 3.2, 1.42, 1.5);
+        t.img(s, await L.icon(a.icon, C.light, 2), 0.92, 1.52, 0.6, 0.6);
+        head(s, a.h, 0.92, 2.2, 2.25, 0.72, { color: C.white, max: 17 });
+        body(s, a.t, 0.92, 3.0, 3.55, 1.98, { color: PALE, max: 15 });
+        for (const [i, it] of rest.entries()) {
+          const y = 1.32 + i * (h + gap);
+          panel(s, 4.95, y, 4.5, h);
+          await piece(s, K(i + 1), 5.02, y + 0.06, Math.min(0.62, h - 0.12), true);
+          head(s, it.h, 5.6, y + 0.04, 3.75, 0.38, { max: 13 });
+          body(s, it.t, 5.6, y + 0.43, 3.75, h - 0.49, { color: C.ink });
+        }
+      },
+    ],
+    process: [
+      async (d) => { // the pawn climbs the board rank by rank, and promotes at the top
+        const s = page(d), n = d.steps.length, cw = 8.75 / n, sq = 0.78, kinds = n === 3 ? ['pawn', 'rook', 'queen'] : ['pawn', 'knight', 'rook', 'queen'];
+        for (const [i, st] of d.steps.entries()) {
+          const x = 0.7 + i * cw, w = cw - 0.16, y = 2.76 - i * (1.42 / (n - 1));
+          await square(s, x, y, sq, kinds[i], i % 2 === 1, true);
+          t.text(s, String(i + 1), { x: x + sq + 0.08, y, w: 0.7, h: sq, fontFace: F.head, bold: true, fontSize: 30, color: C.accent, valign: 'middle' });
+          head(s, st.h, x, y + sq + 0.03, w, 0.4, { max: 13 });
+          body(s, st.t, x, y + sq + 0.44, w, 5.14 - (y + sq + 0.44), { color: C.ink, max: 13 });
+        }
+      },
+      async (d) => { // one file of squares down the middle, moves played out to either side
+        const s = page(d), n = d.steps.length, h = 1.2, sq = 0.5, w = 3.95, dy = (3.8 - h) / (n - 1), Y = (i) => 1.32 + i * dy, cx = 5.07;
+        const rows = Math.floor(3.8 / sq); for (let k = 0; k < rows; k++) t.rect(s, cx - sq / 2, 1.32 + k * (3.8 / rows), sq, 3.8 / rows, k % 2 ? C.dark : C.light, { name: 'File' });
+        for (const [i, st] of d.steps.entries()) {
+          const right = i % 2 === 1, x = right ? cx + sq / 2 + 0.1 : cx - sq / 2 - 0.1 - w, y = Y(i);
+          panel(s, x, y, w, h, right);
+          numSq(s, i + 1, cx - sq / 2, y + 0.02, sq, true);
+          head(s, st.h, x + 0.14, y + 0.05, w - 0.28, 0.36, { color: right ? C.light : C.ink, max: 14 });
+          body(s, st.t, x + 0.14, y + 0.43, w - 0.28, h - 0.49, { color: right ? PALE : C.ink });
+        }
+      },
+      async (d) => { // the black side: columns out of step, the piece at the head or the foot
+        const s = nightPage(d), n = d.steps.length, cw = 8.75 / n, sq = 0.82, kinds = ['pawn', 'knight', 'rook', 'queen'];
+        for (const [i, st] of d.steps.entries()) {
+          const x = 0.7 + i * cw, w = cw - 0.2, foot = i % 2 === 1, tTop = foot ? 1.32 : 1.32 + sq + 0.06;
+          await square(s, x, foot ? 5.12 - sq : 1.32, sq, kinds[i], foot, false);
+          t.text(s, String(i + 1), { x: x + sq + 0.1, y: foot ? 5.12 - sq : 1.32, w: 0.6, h: sq, fontFace: F.head, bold: true, fontSize: 28, color: C.light, valign: 'middle' });
+          head(s, st.h, x, tTop, w, 0.44, { color: C.white, max: 14 });
+          body(s, st.t, x, tTop + 0.46, w, 3.8 - sq - 0.06 - 0.46, { color: PALE, max: 13 });
+        }
+      },
+    ],
+    stats: [
+      async (d) => { // the decisive figure on a great dark square, the king beside it
+        const s = page(d), [a, b, c] = d.stats;
+        t.rect(s, 0.7, 1.32, 4.9, 3.78, C.black, { name: 'Square' });
+        await piece(s, 'king', 0.82, 1.45, 1.75);
+        t.text(s, a.value, { x: 2.05, y: 1.45, w: 3.45, h: 1.75, fontFace: F.head, bold: true, color: C.white, align: 'center', valign: 'middle', fontSize: L.fit(a.value, 3.35, 1.6, 54, 22, F.head, true) });
+        body(s, a.label, 0.95, 3.35, 4.4, 1.6, { color: PALE, align: 'center', valign: 'middle', max: 16 });
+        for (const [i, x] of [b, c].entries()) {
+          const y = 1.32 + i * 1.08;
+          await square(s, 5.8, y, 0.98, i ? 'knight' : 'bishop', i === 1, true);
+          head(s, x.value, 6.88, y, 2.57, 0.46, { color: C.accent, max: 22 });
+          body(s, x.label, 6.88, y + 0.46, 2.57, 0.52, { color: C.ink, max: 11 });
+        }
+        if (d.note) body(s, d.note, 5.8, 3.5, 3.65, 1.6, { valign: 'middle', max: 13 });
+      },
+      async (d) => { // the black side: a three-faced chess clock
+        const s = nightPage(d), dia = 1.85, cw = 8.75 / 3;
+        t.rect(s, 0.7, 1.5, 8.75, 2.34, '3A3631', { r: 0.1, name: 'Clock body' });
+        d.stats.forEach((x, i) => {
+          const px = 0.7 + i * cw + (cw - dia) / 2, on = i === 0;
+          t.rect(s, px + dia / 2 - 0.3, 1.32, 0.6, 0.18, on ? C.accent : C.dark, { name: 'Clock button' });
+          t.oval(s, px, 1.74, dia, dia, C.white, { line: { color: on ? C.accent : C.dark, width: 4 } });
+          t.text(s, x.value, { x: px + 0.1, y: 1.74, w: dia - 0.2, h: dia, fontFace: F.head, bold: true, color: on ? C.accent : C.ink, align: 'center', valign: 'middle', fontSize: L.fit(x.value, dia - 0.3, 0.8, 30, 13, F.head, true) });
+          body(s, x.label, 0.7 + i * cw + 0.1, 3.88, cw - 0.2, 0.52, { color: C.white, align: 'center', max: 12 });
+        });
+        if (d.note) body(s, d.note, 0.7, 4.42, 8.75, 0.74, { color: PALE, valign: 'middle', align: 'center', max: 11 });
+      },
+    ],
+    compare: [
+      async (d) => { // white against black: the board split in two, the kings face each other
+        const s = page(d), y0 = 1.3, h = 3.82, cx = 5.07, tw = 3.35;
+        t.rect(s, 0.7, y0, cx - 0.7, h, C.light, { name: 'White side' });
+        t.rect(s, cx, y0, 9.45 - cx, h, C.black, { name: 'Black side' });
+        await piece(s, 'king', cx - 0.72, y0 + 0.08, 0.86, true);
+        await piece(s, 'king', cx + 0.06, y0 + 0.08, 0.86);
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const x = i ? cx + 0.72 : cx - 0.72 - tw, a = i ? 'left' : 'right', col = i ? C.white : C.ink, n = side.items.length, rh = 2.78 / n;
+          head(s, side.h, x, y0 + 0.14, tw, 0.72, { color: i ? C.light : C.ink, align: a, max: 17 });
+          side.items.forEach((it, k) => body(s, it, i ? cx + 0.2 : 0.88, y0 + 0.96 + k * rh, 3.98, rh - 0.05, { color: col, align: a, valign: 'middle', max: 14 }));
+        }
+      },
+      async (d) => { // white's line above, black's below, each move in its own square
+        const s = page(d), h = 1.84;
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const y = 1.32 + i * (h + 0.12), dk = i === 1, n = side.items.length, cw = 6.45 / n;
+          t.rect(s, 0.7, y, 8.75, h, dk ? C.black : C.white, { line: { color: C.dark, width: 1.5 }, name: 'Band' });
+          await piece(s, 'rook', 0.8, y + 0.1, 0.78, !dk);
+          head(s, side.h, 0.82, y + 0.9, 2.05, h - 0.96, { color: dk ? C.light : C.ink, max: 14, valign: 'top' });
+          side.items.forEach((it, k) => {
+            const x = 2.95 + k * cw;
+            t.rect(s, x, y + 0.08, cw - 0.06, h - 0.16, k % 2 ? (dk ? '3A3631' : 'F7F2EA') : (dk ? '2E2B27' : C.light), { name: 'Square' });
+            body(s, it, x + 0.08, y + 0.12, cw - 0.22, h - 0.24, { color: dk ? PALE : C.ink, valign: 'middle' });
+          });
+        }
+      },
+    ],
+    statement: [
+      async (d) => { // the black side: the words alone, a knight looking at them
+        const s = nightPage(d), bottom = d.caption ? 3.75 : 5.1;
+        t.img(s, board8, 7.45, 3.15, 2.0, 2.0);
+        await piece(s, 'knight', 7.92, 3.32, 1.6);
+        t.text(s, L.runs(d.text), { x: 0.7, y: 1.25, w: d.caption ? 8.75 : 6.5, h: bottom - 1.3, fontFace: F.head, bold: true, color: C.white, valign: 'middle', fontSize: L.fit(d.text, d.caption ? 6.5 : 6.5, bottom - 1.4, 34, 16, F.head, true) });
+        if (d.caption) body(s, d.caption, 0.7, 3.85, 6.5, 1.28, { color: PALE, max: 13 });
+      },
+      async (d) => { // checkers along both edges, the thought between them, centred
+        const s = page(d), dd = 8.75 / 25;
+        checks(s, 0.7, 1.26, 8.75, 25);
+        t.text(s, L.runs(d.text), { x: 1.0, y: 1.68, w: 8.15, h: d.caption ? 1.72 : 2.95, fontFace: F.head, bold: true, color: C.accent, align: 'center', valign: 'middle', fontSize: L.fit(d.text, 8.15, d.caption ? 1.65 : 2.85, 32, 16, F.head, true) });
+        if (d.caption) body(s, d.caption, 1.0, 3.42, 8.15, 1.3, { color: C.ink, align: 'center', valign: 'middle', max: 13 });
+        checks(s, 0.7, 5.15 - dd, 8.75, 25);
+      },
+    ],
+    timeline: [
+      async (d) => { // the score sheet: the years as move numbers, lines ruled under each
+        const s = page(d), y0 = 1.32, rh = 3.8 / 4;
+        panel(s, 0.7, y0, 8.75, 3.8);
+        t.rect(s, 0.7, y0, 1.7, 3.8, C.black, { name: 'Moves' });
+        for (const [i, it] of d.items.entries()) {
+          const y = y0 + i * rh;
+          if (i) { t.line(s, 2.4, y, 7.05, 0, C.dark, 1); t.line(s, 0.7, y, 1.7, 0, C.muted, 1); }
+          t.text(s, it.year, { x: 0.76, y, w: 1.58, h: rh, fontFace: F.head, bold: true, color: C.white, align: 'center', valign: 'middle', fontSize: L.fit(it.year, 1.5, 0.6, 18, 11, F.head, true) });
+          head(s, it.h, 2.55, y + 0.05, 6.8, 0.32, { max: 13 });
+          body(s, it.t, 2.55, y + 0.37, 6.8, rh - 0.43, { color: C.ink });
+        }
+      },
+      async (d) => { // a strip of squares across the board, events above and below it
+        const s = page(d), dd = 8.75 / 25, cy = 3.22, w = 4.3, h = 1.62;
+        checks(s, 0.7, cy - dd / 2, 8.75, 25);
+        for (const [i, it] of d.items.entries()) {
+          const up = i % 2 === 0, x = i < 2 ? 0.7 : 5.15, y = up ? cy - dd / 2 - h - 0.04 : cy + dd / 2 + 0.04, dk = i % 2 === 1;
+          panel(s, x, y, w, h, dk);
+          await piece(s, K(i + 1), x + w - 0.56, y + 0.05, 0.56, !dk);
+          t.text(s, it.year, { x: x + 0.14, y: y + 0.05, w: 1.8, h: 0.36, fontFace: F.head, bold: true, color: dk ? C.light : C.accent, valign: 'middle', fontSize: L.fit(it.year, 1.76, 0.34, 18, 10, F.head, true) });
+          head(s, it.h, x + 1.96, y + 0.05, w - 2.6, 0.36, { color: dk ? C.white : C.ink, max: 12 });
+          body(s, it.t, x + 0.14, y + 0.62, w - 0.28, h - 0.68, { color: dk ? PALE : C.ink });
+        }
+      },
+      async (d) => { // the black side: an attack coming down the board, square by square
+        const s = nightPage(d), cw = 8.75 / 4, sq = 0.62, w = cw - 0.16;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.7 + i * cw, y = 1.3 + i * 0.42;
+          t.rect(s, x, y, w, sq, i % 2 ? C.dark : C.light, { name: 'Year' });
+          t.text(s, it.year, { x: x + 0.05, y, w: w - 0.1, h: sq, fontFace: F.head, bold: true, color: C.ink, align: 'center', valign: 'middle', fontSize: L.fit(it.year, w - 0.2, 0.55, 20, 11, F.head, true) });
+          head(s, it.h, x, y + sq + 0.04, w, 0.34, { color: C.white, max: 13 });
+          body(s, it.t, x, y + sq + 0.4, w, 5.14 - (y + sq + 0.4), { color: PALE, max: 13 });
+        }
+      },
+    ],
+  };
+  R.timeline = V.timeline.shift(); // the old timeline columns looked like the process columns
+  R.image = V.image.shift(); // the first picture page must not mirror the introduction
+  const draw = L.pages(R, V);
+  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await draw(d); }
   return L.save(pres, out, { name: 'SlideAI Shaxmat', colors: { dk1: C.ink, lt1: C.white, dk2: C.black, lt2: C.bg, accent1: C.dark, accent2: C.light, accent3: C.accent, accent4: C.muted, accent5: '8C6239', accent6: 'D9C2A0', hlink: C.accent, folHlink: C.muted } });
 }
 /** Uslub pasporti */
