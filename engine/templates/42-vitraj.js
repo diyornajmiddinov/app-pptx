@@ -31,7 +31,7 @@ async function build(content, out) {
   const roundel = (s, x, y, d, k, txt, fs) => {
     t.oval(s, x, y, d, d, C.glass[k % 6], { line: { color: C.lead, width: 3.5 } });
     t.oval(s, x + d * 0.18, y + d * 0.12, d * 0.3, d * 0.18, 'FFFFFF', { t: 65 }); // highlight on the glass
-    if (txt !== undefined) t.text(s, String(txt), { x, y, w: d, h: d, fontFace: F.head, fontSize: fs || Math.round(d * 26), bold: true, color: 'FFFFFF', align: 'center', valign: 'middle' });
+    if (txt !== undefined) t.text(s, String(txt), { x, y, w: d, h: d, fontFace: F.head, fontSize: fs || Math.round(d * 26), bold: true, color: k % 6 === 3 ? C.ink : 'FFFFFF', align: 'center', valign: 'middle' });
   };
   const leaded = async (s, src, x, y, w, h) => { t.rect(s, x - 0.06, y - 0.06, w + 0.12, h + 0.12, C.lead, { name: 'Lead frame' }); t.img(s, await L.photo(L.src(src), w, h), x, y, w, h, { alt: '' }); };
   const footer = (s) => t.text(s, `${M.topic || ''}   |   ${meta}`, { x: 0.75, y: 5.25, w: 8.7, h: 0.25, fontSize: 8.5, color: C.muted, align: 'right' });
@@ -80,7 +80,7 @@ async function build(content, out) {
         t.img(s, await strip(w, i), x, 1.45, w, 0.3);
         t.rect(s, x, 1.45, w, 0.3, null, { line: { color: C.lead, width: 4.5 }, name: 'Lead' });
         roundel(s, x + 0.2, 1.92, 0.5, i);
-        t.img(s, await L.icon(it.icon, 'FFFFFF', 2.5), x + 0.33, 2.05, 0.24, 0.24);
+        t.img(s, await L.icon(it.icon, i % 6 === 3 ? C.ink : 'FFFFFF', 2.5), x + 0.33, 2.05, 0.24, 0.24);
         t.text(s, it.h, { x: x + 0.2, y: 2.5, w: w - 0.4, h: 0.45, fontFace: F.head, fontSize: L.fit(it.h, w - 0.4, 0.45, 17, 12, F.head, true), bold: true, color: C.ink });
         t.text(s, it.t, { x: x + 0.2, y: 2.95, w: w - 0.4, h: h - 1.6, fontSize: 14, color: C.muted });
       }
@@ -155,7 +155,253 @@ async function build(content, out) {
       });
     },
   };
-  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await R[d.type](d); }
+  // ---- further ways to draw a type, in glass and lead: a deck's pages must not look alike (L.pages)
+  const X0 = 0.85, X1 = 9.45, FW = X1 - X0, Y1 = 5.12, G = C.glass, WHITE = 'FFFFFF', DEEP = [G[0], G[1], G[2], G[4]], CLEAR = 'FFFDF6';
+  const head = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontFace: F.head, bold: true, fontSize: L.fit(v, w, h, o.max || 15, 10.5, F.head, true), color: o.color || C.ink, align: o.align, valign: o.valign || 'middle' });
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 14, 10, F.body), color: o.color || C.ink, align: o.align, valign: o.valign || 'top' });
+  const glass = (w, h, k) => svgG(`g${w}${h}${k}`, () => glassSvg(Math.round(w * 100), Math.round(h * 100), 44, 5 + k, [G[k % 6], G[(k + 1) % 6], G[(k + 2) % 6]]), w * 100, h * 100);
+  const memo2 = {}; const svgG = async (key, fn, w, h) => (memo2[key] ??= await L.svg(fn(), w, h));
+  const ARCH = 'M0,1 L0,0.3 A0.5,0.3 0 0 1 1,0.3 L1,1 Z', FAN = 'M0,1 A0.5,1 0 0 1 1,1 Z';
+  const archLine = (w, h, fill = 'none') => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="M4,${h - 4} L4,${h * 0.3} A${w / 2 - 4},${h * 0.3 - 4} 0 0 1 ${w - 4},${h * 0.3} L${w - 4},${h - 4} Z" fill="${fill}" stroke="#${C.lead}" stroke-width="8"/></svg>`;
+  const fanLine = (w, h) => `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"><path d="M4,${h - 3} A${w / 2 - 4},${h - 6} 0 0 1 ${w - 4},${h - 3} Z" fill="none" stroke="#${C.lead}" stroke-width="8"/>${[0.25, 0.5, 0.75].map((f) => `<line x1="${w / 2}" y1="${h}" x2="${w * f}" y2="${f === 0.5 ? 0 : h * 0.16}" stroke="#${C.lead}" stroke-width="5"/>`).join('')}</svg>`;
+  const ringGlass = (D, k) => { let g = ''; const n = 24, R0 = D / 2 - 5, R1 = D * 0.36; for (let i = 0; i < n; i++) { const a = (i * 2 * Math.PI) / n, b = ((i + 1) * 2 * Math.PI) / n, p = (r, q) => `${(D / 2 + r * Math.cos(q)).toFixed(1)},${(D / 2 + r * Math.sin(q)).toFixed(1)}`; g += `<polygon points="${p(R1, a)} ${p(R0, a)} ${p(R0, b)} ${p(R1, b)}" fill="#${G[(i + k) % 6]}" stroke="#${C.lead}" stroke-width="5"/>`; } return `<svg xmlns="http://www.w3.org/2000/svg" width="${D}" height="${D}">${g}</svg>`; };
+  const leadStrip = (s) => { t.rect(s, 0, 5.12, W, 0.505, C.lead, { name: 'Lead strip' }); t.text(s, `${M.topic || ''}   |   ${meta}`, { x: 0.6, y: 5.12, w: 8.8, h: 0.505, fontSize: 9, color: 'E8DFC8', valign: 'middle' }); };
+  const V = {
+    image: [
+      async (d) => { // a fanlight over a door: the picture in a half round, the words on the pane under it
+        const s = page(d), w = 7.0, h = 2.0, x = 1.65, y = 1.08;
+        t.img(s, await L.photo(L.src(d.image), w, h, { mask: { path: FAN } }), x, y, w, h, { alt: d.title });
+        t.img(s, await L.svg(fanLine(700, 200), 700, 200), x, y, w, h);
+        pane(s, X0, 3.14, FW, 1.98, CLEAR);
+        para(s, d.text, X0 + 0.22, 3.2, FW - 0.44, 1.86);
+      },
+      async (d) => { // three lancets, one picture across their arches, the words at their side
+        const s = page(d), w = 1.56, h = 3.8, g = 0.12, x0 = 4.65, y = 1.26;
+        for (const [i, pos] of ['left', 'centre', 'right'].entries()) {
+          const x = x0 + i * (w + g);
+          t.img(s, await L.photo(L.src(d.image), w, h, { mask: { path: ARCH }, position: pos }), x, y, w, h, { alt: i ? '' : d.title });
+          t.img(s, await svgG('lanc', () => archLine(156, 380), 156, 380), x, y, w, h);
+        }
+        para(s, d.text, X0, 1.28, 3.55, 3.76);
+      },
+      async (d) => { // the rose window: a wheel of glass, the picture at its hub
+        const s = page(d), D = 3.84, x = 0.72, y = 1.22, hub = D * 0.72 + 0.04;
+        t.img(s, await svgG('rose', () => ringGlass(384, 0), 384, 384), x, y, D, D);
+        t.oval(s, x + D / 2 - hub / 2 - 0.02, y + D / 2 - hub / 2 - 0.02, hub + 0.04, hub + 0.04, C.lead);
+        t.img(s, await L.photo(L.src(d.image), hub - 0.06, hub - 0.06, { mask: 'circle' }), x + D / 2 - hub / 2 + 0.03, y + D / 2 - hub / 2 + 0.03, hub - 0.06, hub - 0.06, { alt: d.title });
+        pane(s, 4.78, 1.3, 4.67, 3.7, CLEAR);
+        para(s, d.text, 5.0, 1.38, 4.23, 3.54);
+      },
+      async (d) => { // the whole page is the window: clear panes set into the coloured glass
+        const s = pres.addSlide(); s.background = { data: full }; idx++;
+        pane(s, 0.45, 0.42, 4.75, 4.42);
+        roundel(s, 0.68, 0.6, 0.56, idx, idx, 14);
+        head(s, d.title, 1.36, 0.58, 3.65, 0.62, { max: 18 });
+        para(s, d.text, 0.72, 1.3, 4.22, 3.4);
+        pane(s, 5.42, 0.42, 4.14, 4.42, C.lead);
+        t.img(s, await L.photo(L.src(d.image), 3.96, 4.24), 5.51, 0.51, 3.96, 4.24, { alt: d.title });
+        leadStrip(s);
+      },
+    ],
+    cards: [
+      async (d) => { // long panes: a block of one colour of glass at the head of each, icon in it
+        const s = page(d), n = d.items.length, g = 0.1, h = (3.8 - g * (n - 1)) / n;
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.3 + i * (h + g);
+          pane(s, X0, y, FW, h, CLEAR);
+          t.rect(s, X0, y, 1.1, h, DEEP[i], { line: { color: C.lead, width: 4.5 }, name: 'Glass' });
+          t.img(s, await L.icon(it.icon, WHITE, 2.5), X0 + 0.37, y + h / 2 - 0.18, 0.36, 0.36);
+          head(s, it.h, X0 + 1.26, y + 0.06, FW - 1.42, 0.32);
+          body(s, it.t, X0 + 1.26, y + 0.38, FW - 1.42, h - 0.44, { max: 13.5 });
+        }
+      },
+      async (d) => { // gothic arches side by side, set at two heights, the words on clear glass
+        const s = page(d), n = d.items.length, g = 0.14, w = (FW - g * (n - 1)) / n, h = 3.52;
+        for (const [i, it] of d.items.entries()) {
+          const x = X0 + i * (w + g), y = 1.22 + (i % 2 ? 0.34 : 0);
+          t.img(s, await svgG(`ar${n}`, () => archLine(Math.round(w * 100), Math.round(h * 100), `#${CLEAR}`), w * 100, h * 100), x, y, w, h);
+          const r = 0.62;
+          roundel(s, x + w / 2 - r / 2, y + 0.28, r, DEEP[i] === G[4] ? 4 : [0, 1, 2][i]);
+          t.img(s, await L.icon(it.icon, WHITE, 2.5), x + w / 2 - 0.15, y + 0.44, 0.3, 0.3);
+          head(s, it.h, x + 0.14, y + 1.0, w - 0.28, 0.5, { align: 'center', max: 14 });
+          body(s, it.t, x + 0.14, y + 1.52, w - 0.28, h - 1.64, { align: 'center', max: 13.5 });
+        }
+      },
+      async (d) => { // the wheel: a roundel at the hub, heavy leads out to a pane for each idea
+        const s = page(d), n = d.items.length, cx = 5.15, cy = 3.2, w = 3.3, left = 2, right = n - left, hL = 1.9, hR = 3.8 / right, D = 1.06;
+        const spot = (i) => (i < left ? [X0, 1.3 + i * hL, hL - 0.14] : [X1 - w, 1.3 + (i - left) * hR, hR - 0.14]);
+        d.items.forEach((_, i) => { const [x, y, h] = spot(i), tall = h > 2, my = tall ? cy : y + h / 2, ex = i < left ? x + w : x, up = my < cy; t.line(s, Math.min(ex, cx), Math.min(my, cy), Math.abs(cx - ex), Math.abs(my - cy), C.lead, 4, { flipV: (ex < cx) !== up }); });
+        roundel(s, cx - D / 2, cy - D / 2, D, 0, '✦', 24);
+        for (const [i, it] of d.items.entries()) {
+          const [x, y, h] = spot(i), tall = h > 2, hh = tall ? 1.76 : h, top = tall ? cy - hh / 2 : y;
+          pane(s, x, top, w, hh, CLEAR);
+          t.img(s, await L.icon(it.icon, DEEP[i], 2.25), x + 0.14, top + 0.12, 0.28, 0.28);
+          head(s, it.h, x + 0.5, top + 0.08, w - 0.62, 0.36, { max: 13 });
+          body(s, it.t, x + 0.14, top + 0.46, w - 0.28, hh - 0.54, { max: 13 });
+        }
+      },
+      async (d) => { // one great pane of blue glass, the smaller clear panes beside it
+        const s = page(d), [a, ...rest] = d.items, g = 0.1, h = (3.8 - g * (rest.length - 1)) / rest.length;
+        t.rect(s, X0, 1.3, 4.2, 3.8, G[1], { line: { color: C.lead, width: 4.5 }, name: 'Blue glass' });
+        t.oval(s, X0 + 0.24, 1.54, 0.86, 0.86, CLEAR, { line: { color: C.lead, width: 3.5 } });
+        t.img(s, await L.icon(a.icon, G[1], 2.5), X0 + 0.48, 1.78, 0.38, 0.38);
+        head(s, a.h, X0 + 1.26, 1.54, 2.78, 0.86, { color: WHITE, max: 19 });
+        body(s, a.t, X0 + 0.26, 2.56, 3.68, 2.4, { color: WHITE, max: 16 });
+        for (const [i, it] of rest.entries()) {
+          const y = 1.3 + i * (h + g);
+          pane(s, 5.2, y, 4.25, h, CLEAR);
+          t.img(s, await L.icon(it.icon, DEEP[(i + 2) % 4], 2.25), 5.34, y + 0.12, 0.28, 0.28);
+          head(s, it.h, 5.7, y + 0.08, 3.62, 0.36, { max: 14 });
+          body(s, it.t, 5.34, y + 0.46, 3.98, h - 0.54, { max: 13 });
+        }
+      },
+    ],
+    process: [
+      async (d) => { // a lead bar down the middle: a glass roundel at each joint, steps left and right
+        const s = page(d), n = d.steps.length, y0 = 1.26, h = 3.84 / n, cx = 5.15, B = 0.52;
+        t.rect(s, cx - 0.04, y0 + h / 2, 0.08, h * (n - 1), C.lead, { name: 'Lead' });
+        d.steps.forEach((st, i) => {
+          const y = y0 + i * h, left = i % 2 === 0, x = left ? X0 : 5.55, w = 3.9, al = left ? 'right' : 'left';
+          roundel(s, cx - B / 2, y + h / 2 - B / 2, B, i, i + 1, 14);
+          head(s, st.h, x, y + 0.03, w, 0.3, { align: al });
+          body(s, st.t, x, y + 0.33, w, h - 0.37, { align: al, max: 13 });
+        });
+      },
+      async (d) => { // clear panes stepping down, a roundel leaded onto the corner of each
+        const s = page(d), n = d.steps.length, g = 0.1, h = (3.82 - g * (n - 1)) / n, w = n === 3 ? 7.0 : 6.7, dx = (FW - w) / (n - 1);
+        d.steps.forEach((st, i) => {
+          const x = X0 + i * dx, y = 1.28 + i * (h + g), B = Math.min(0.66, h - 0.16);
+          pane(s, x, y, w, h, CLEAR);
+          roundel(s, x + 0.12, y + (h - B) / 2, B, i, i + 1, 16);
+          head(s, st.h, x + B + 0.26, y + 0.05, w - B - 0.4, 0.3, { max: 14 });
+          body(s, st.t, x + B + 0.26, y + 0.35, w - B - 0.4, h - 0.41, { max: 13 });
+        });
+      },
+      async (d) => { // tall lights of deep colour, side by side, rising to the right
+        const s = page(d), n = d.steps.length, g = 0.08, w = (FW - g * (n - 1)) / n, drop = n === 3 ? 0.4 : 0.28;
+        d.steps.forEach((st, i) => {
+          const x = X0 + i * (w + g), y = 1.28 + (n - 1 - i) * drop, h = Y1 - y;
+          t.rect(s, x, y, w, h, DEEP[i], { line: { color: C.lead, width: 4.5 }, name: 'Glass light' });
+          t.text(s, String(i + 1), { x: x + 0.14, y: y + 0.06, w: 0.6, h: 0.6, fontFace: F.head, bold: true, fontSize: 30, color: WHITE, valign: 'middle' });
+          head(s, st.h, x + 0.14, y + 0.66, w - 0.28, 0.5, { color: WHITE, max: 14, valign: 'top' });
+          body(s, st.t, x + 0.14, y + 1.18, w - 0.28, h - 1.26, { color: WHITE, max: 13 });
+        });
+      },
+    ],
+    stats: [
+      async (d) => { // one great roundel; two smaller to its right
+        const s = page(d), [a, ...rest] = d.stats, D = 2.5, D2 = 1.14;
+        roundel(s, X0, 1.28, D, 1);
+        t.text(s, a.value, { x: X0 + 0.25, y: 1.28, w: D - 0.5, h: D, fontFace: F.head, bold: true, fontSize: L.fit(a.value, D - 0.5, 1.0, 44, 22, F.head, true), color: WHITE, align: 'center', valign: 'middle' });
+        body(s, a.label, X0 + D + 0.16, 1.5, 1.72, 2.05, { max: 14, valign: 'middle' });
+        rest.forEach((q, i) => {
+          const y = 1.28 + i * 1.28;
+          roundel(s, 5.45, y, D2, i ? 2 : 0);
+          t.text(s, q.value, { x: 5.55, y, w: D2 - 0.2, h: D2, fontFace: F.head, bold: true, fontSize: L.fit(q.value, D2 - 0.22, 0.6, 22, 12, F.head, true), color: WHITE, align: 'center', valign: 'middle' });
+          body(s, q.label, 6.72, y + 0.02, 2.73, D2 - 0.04, { max: 14, valign: 'middle' });
+        });
+        if (d.note) { pane(s, X0, 3.98, FW, 1.14, CLEAR); body(s, d.note, X0 + 0.18, 4.04, FW - 0.36, 1.02, { max: 13.5, valign: 'middle' }); }
+      },
+      async (d) => { // three long leaded bars: colour holds the figure, clear glass the words
+        const s = page(d), h = 0.84, g = 0.08;
+        d.stats.forEach((q, i) => {
+          const y = 1.28 + i * (h + g);
+          pane(s, X0, y, FW, h, CLEAR);
+          t.rect(s, X0, y, 2.9, h, [G[1], G[0], G[2]][i], { line: { color: C.lead, width: 4.5 }, name: 'Glass' });
+          t.text(s, q.value, { x: X0 + 0.1, y, w: 2.7, h, fontFace: F.head, bold: true, fontSize: L.fit(q.value, 2.7, h - 0.14, 30, 16, F.head, true), color: WHITE, align: 'center', valign: 'middle' });
+          body(s, q.label, X0 + 3.08, y + 0.05, FW - 3.24, h - 0.1, { max: 15, valign: 'middle' });
+        });
+        if (d.note) body(s, d.note, X0, 4.1, FW, 1.0, { max: 13.5, valign: 'middle' });
+      },
+    ],
+    compare: [
+      async (d) => { // two clear panes mirrored about a tall strip of coloured glass
+        const s = page(d), w = 3.5, y0 = 1.9, avail = 3.1, fit = L.rowsFit([d.left.items, d.right.items], 15, w, F.body, 0.12, avail), extra = (avail - fit.rows.reduce((a, b) => a + b, 0)) / fit.rows.length;
+        pane(s, X0, 1.26, 3.82, 3.86, CLEAR); pane(s, X1 - 3.82, 1.26, 3.82, 3.86, CLEAR);
+        t.img(s, await glass(0.96, 3.86, 2), 4.67, 1.26, 0.96, 3.86);
+        [d.left, d.right].forEach((side, i) => {
+          const x = i ? 5.8 : 1.0, al = i ? 'left' : 'right';
+          head(s, side.h, x, 1.34, w, 0.5, { color: G[i ? 1 : 0], align: al, max: 17 });
+          let y = y0;
+          fit.rows.forEach((rh0, k) => { const rh = rh0 + extra; if (side.items[k]) t.text(s, side.items[k], { x, y, w, h: rh, fontSize: fit.fs, color: C.ink, align: al, valign: 'middle' }); y += rh; });
+        });
+      },
+      async (d) => { // two transoms one over the other: a colour block names each, clear glass carries the items
+        const s = page(d), bh = 1.84, g = 0.12;
+        [d.left, d.right].forEach((side, i) => {
+          const y = 1.28 + i * (bh + g), n = side.items.length, x0 = 3.15, cw = (X1 - 0.1 - x0) / n;
+          pane(s, X0, y, FW, bh, CLEAR);
+          t.rect(s, X0, y, 2.14, bh, G[i ? 1 : 0], { line: { color: C.lead, width: 4.5 }, name: 'Glass' });
+          head(s, side.h, X0 + 0.14, y + 0.1, 1.86, bh - 0.2, { color: WHITE, max: 16 });
+          side.items.forEach((it, k) => {
+            if (k) t.line(s, x0 + k * cw - 0.08, y, 0, bh, C.lead, 2);
+            body(s, it, x0 + k * cw, y + 0.1, cw - 0.18, bh - 0.2, { valign: 'middle', max: 13.5 });
+          });
+        });
+      },
+    ],
+    statement: [
+      async (d) => { // the great rose: the sentence at the hub of a wheel, the note on a low pane at its side
+        const s = page(d), D = 3.9, x = 5.55, y = 1.2, hub = D * 0.72 + 0.02;
+        t.img(s, await svgG('roseS', () => ringGlass(390, 2), 390, 390), x, y, D, D);
+        t.oval(s, x + D / 2 - hub / 2, y + D / 2 - hub / 2, hub, hub, C.pane, { line: { color: C.lead, width: 3.5 } });
+        const tw = hub * 0.8, th = hub * 0.72;
+        t.text(s, L.runs(d.text), { x: x + D / 2 - tw / 2, y: y + D / 2 - th / 2, w: tw, h: th, fontFace: F.head, bold: true, fontSize: L.fit(d.text, tw, th, 22, 11, F.head, true), color: C.ink, align: 'center', valign: 'middle' });
+        if (d.caption) { pane(s, X0, 2.0, 4.5, 2.5, CLEAR); body(s, d.caption, X0 + 0.2, 2.08, 4.1, 2.34, { max: 15, valign: 'middle' }); }
+      },
+      async (d) => { // night in the nave: dark lead page, glass burning in a band above and below the words
+        const s = pres.addSlide(); s.background = { color: C.lead }; idx++;
+        roundel(s, 0.6, 0.3, 0.56, idx, idx, 14);
+        if (d.title) head(s, d.title, 1.34, 0.3, 8.1, 0.56, { color: 'F6EFDD', max: 24 });
+        t.img(s, await glass(10, 0.3, 1), 0, 0.96, W, 0.3);
+        t.text(s, L.runs(d.text), { x: 0.6, y: 1.36, w: 8.8, h: 2.08, fontFace: F.head, bold: true, fontSize: L.fit(d.text, 8.8, 2.02, 34, 18, F.head, true), color: 'F6EFDD', valign: 'middle' });
+        t.img(s, await glass(10, 0.3, 4), 0, 3.5, W, 0.3);
+        if (d.caption) t.text(s, d.caption, { x: 0.6, y: 3.86, w: 8.8, h: 1.2, fontSize: L.fit(d.caption, 8.8, 1.18, 15, 10, F.body), color: 'F6EFDD', valign: 'middle' });
+        t.text(s, `${M.topic || ''}   |   ${meta}`, { x: 0.75, y: 5.25, w: 8.7, h: 0.25, fontSize: 8.5, color: 'E8DFC8', align: 'right' });
+      },
+    ],
+    timeline: [
+      async (d) => { // a lead bar across the page, a diamond of glass for each date, panes up and down
+        const s = page(d), ly = 3.2, w = 4.0, xs = [X0, 1.2, 5.25, 5.45], px = [1.5, 3.7, 6.0, 8.2], D = 0.4;
+        t.rect(s, X0, ly - 0.04, FW, 0.08, C.lead, { name: 'Lead' });
+        d.items.forEach((it, i) => {
+          const up = i % 2 === 0, x = xs[i], h = 1.58, y = up ? 1.28 : 3.5, col = G[[1, 0, 2, 4][i]];
+          pane(s, x, y, w, h, CLEAR);
+          t.shape(s, 'DIAMOND', { x: px[i] - D / 2, y: ly - D / 2, w: D, h: D, fill: { color: col }, line: { color: C.lead, width: 3 }, objectName: 'Glass' });
+          t.text(s, it.year, { x: x + 0.14, y: y + 0.07, w: 1.45, h: 0.34, fontFace: F.head, bold: true, fontSize: L.fit(it.year, 1.45, 0.32, 15, 10.5, F.head, true), color: col, valign: 'middle' });
+          head(s, it.h, x + 1.62, y + 0.07, w - 1.76, 0.34, { max: 13, align: 'right' });
+          body(s, it.t, x + 0.14, y + 0.44, w - 0.28, h - 0.5, { max: 13 });
+        });
+      },
+      async (d) => { // four panes two by two, leaded with a cross, a date on a block of glass at each corner
+        const s = page(d), w = 4.2, h = 1.84, g = 0.2, gy = 0.12;
+        d.items.forEach((it, i) => {
+          const x = X0 + (i % 2) * (w + g), y = 1.28 + (i >> 1) * (h + gy), col = DEEP[i];
+          pane(s, x, y, w, h, CLEAR);
+          t.rect(s, x, y, 1.5, 0.5, col, { line: { color: C.lead, width: 4 }, name: 'Glass' });
+          t.text(s, it.year, { x: x + 0.04, y, w: 1.42, h: 0.5, fontFace: F.head, bold: true, fontSize: L.fit(it.year, 1.34, 0.44, 15, 10.5, F.head, true), color: WHITE, align: 'center', valign: 'middle' });
+          head(s, it.h, x + 1.6, y + 0.06, w - 1.74, 0.42, { max: 14 });
+          body(s, it.t, x + 0.16, y + 0.58, w - 0.32, h - 0.66, { max: 13.5 });
+        });
+      },
+      async (d) => { // one wide window of four lights: a band of glass with the dates, mullions down
+        const s = page(d), cw = FW / 4, y = 1.3, h = 3.82, bh = 0.72;
+        pane(s, X0, y, FW, h, CLEAR);
+        d.items.forEach((it, i) => {
+          const x = X0 + i * cw, col = DEEP[i];
+          t.rect(s, x, y, cw, bh, col, { line: { color: C.lead, width: 4.5 }, name: 'Glass' });
+          if (i) t.line(s, x, y, 0, h, C.lead, 4.5);
+          t.text(s, it.year, { x: x + 0.06, y, w: cw - 0.12, h: bh, fontFace: F.head, bold: true, fontSize: L.fit(it.year, cw - 0.18, bh - 0.16, 22, 11, F.head, true), color: WHITE, align: 'center', valign: 'middle' });
+          head(s, it.h, x + 0.14, y + bh + 0.08, cw - 0.28, 0.5, { max: 14, align: 'center', valign: 'top' });
+          body(s, it.t, x + 0.14, y + bh + 0.6, cw - 0.28, h - bh - 0.68, { max: 13.5, align: 'center' });
+        });
+      },
+    ],
+  };
+  R.image = V.image.shift();
+  R.timeline = V.timeline.shift(); // the old timeline read as the process page: a lead line, a mark, columns
+  const draw = L.pages(R, V);
+  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await draw(d); }
   return L.save(pres, out, { name: 'SlideAI Vitraj', colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.lead, lt2: C.pane, accent1: C.glass[0], accent2: C.glass[1], accent3: C.glass[2], accent4: C.glass[3], accent5: C.glass[4], accent6: C.glass[5], hlink: C.glass[1], folHlink: C.muted } });
 }
 /** Uslub pasporti */

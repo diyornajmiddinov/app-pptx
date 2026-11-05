@@ -171,7 +171,249 @@ async function build(content, out) {
       });
     },
   };
-  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await R[d.type](d); }
+  // ---- further ways to draw a type, all on the way to the gate: a deck's pages must not look alike (L.pages)
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 14, 10, F.body), color: o.color || C.navy, align: o.align, valign: o.valign || 'top' });
+  const head = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, bold: true, fontSize: L.fit(v, w, h, o.max || 16, 11, F.head, true), color: o.color || C.navy, align: o.align, valign: o.valign || 'middle' });
+  const terminal = (d) => { // the dark departures hall
+    const s = pres.addSlide(); s.background = { color: C.board }; idx++;
+    t.rect(s, 0, 0, W, 0.12, C.amber, { name: 'Top band' }); t.rect(s, 0, 0.12, W, 0.04, C.orange, { name: 'Top band' });
+    t.text(s, d.title, { x: 0.6, y: 0.4, w: 7.3, h: 0.65, bold: true, color: 'FFFFFF', valign: 'middle', fontSize: L.fit(d.title, 7.3, 0.65, 28, 16, F.head, true) });
+    field(s, TR.slide_l, L.pad2(idx), 8.35, 0.38, 1.1, 20, C.amber);
+    t.text(s, `${M.topic || ''}   ✈   ${meta}`, { x: 0.6, y: 5.25, w: 8.8, h: 0.22, fontSize: 8.5, color: 'AEB8C4' });
+    return s;
+  };
+  const GRAY = '52606F';
+  const V = {
+    image: [
+      async (d) => { // the view through a cabin window
+        const s = page(d), x = 6.15, y = 1.3, w = 3.0, h = 3.8;
+        t.rect(s, x, y, w, h, 'FFFFFF', { r: 0.8, shadow: 0.25, blur: 12, offset: 3, line: { color: C.line, width: 1.5 }, name: 'Window' });
+        t.img(s, await L.photo(L.src(d.image), w - 0.5, h - 0.5, { mask: { r: 0.62 } }), x + 0.25, y + 0.25, w - 0.5, h - 0.5, { alt: '' });
+        t.text(s, d.text, { x: 0.6, y: 1.35, w: 5.15, h: 3.7, fontSize: L.fit(d.text, 5.15, 3.7, 15, 10, F.body, false, 1.25), color: C.navy, lineSpacingMultiple: 1.25, valign: 'middle' });
+      },
+      async (d) => { // the big screen in the departures hall, the words beside it
+        const s = terminal(d);
+        t.rect(s, 0.55, 1.3, 5.1, 3.78, C.boardRow, { r: 0.08, line: { color: C.amber, width: 1.5 }, name: 'Screen' });
+        t.img(s, await L.photo(L.src(d.image), 4.9, 3.58, { mask: { r: 0.05 } }), 0.65, 1.4, 4.9, 3.58, { alt: '' });
+        t.text(s, d.text, { x: 5.95, y: 1.3, w: 3.45, h: 3.78, fontSize: L.fit(d.text, 3.45, 3.78, 15, 10, F.body, false, 1.2), color: C.text, lineSpacingMultiple: 1.2, valign: 'middle' });
+      },
+      async (d) => { // the destination fills the page, the pass lies over it
+        const s = pres.addSlide(); idx++;
+        t.img(s, await L.photo(L.src(d.image), W, H), 0, 0, W, H, { alt: '' });
+        ticket(s, 0.45, 2.02, 9.1, 3.02);
+        t.rect(s, 0.45, 2.02, 9.1, 0.72, C.navy, { r: 0.12, name: 'Ticket header' }); t.rect(s, 0.45, 2.4, 9.1, 0.34, C.navy, { name: 'Ticket header' });
+        t.text(s, d.title, { x: 0.7, y: 2.04, w: 7.3, h: 0.68, bold: true, color: 'FFFFFF', valign: 'middle', fontSize: L.fit(d.title, 7.3, 0.62, 20, 13, F.head, true) });
+        t.text(s, L.pad2(idx), { x: 8.2, y: 2.04, w: 1.1, h: 0.68, bold: true, fontSize: 20, color: C.amber, align: 'right', valign: 'middle' });
+        t.line(s, 7.75, 2.86, 0, 2.05, C.line, 1.5, { dash: 'dash' });
+        t.text(s, d.text, { x: 0.7, y: 2.84, w: 6.85, h: 2.1, fontSize: L.fit(d.text, 6.85, 2.1, 14, 10, F.body, false, 1.15), color: C.navy, lineSpacingMultiple: 1.15, valign: 'middle' });
+        await vbar(s, 6, 8.65, 3.88, 1.75, 0.8);
+        t.rect(s, 0, 5.2, W, H - 5.2, C.navy, { name: 'Foot band' });
+        t.text(s, `${M.topic || ''}   ✈   ${meta}`, { x: 0.6, y: 5.25, w: 8.8, h: 0.3, fontSize: 8.5, color: 'FFFFFF', valign: 'middle' });
+      },
+      async (d) => { // a round passport stamp pressed on the pass
+        const s = page(d), dd = 3.3;
+        ticket(s, 0.6, 1.42, 5.75, 3.58);
+        t.text(s, d.text, { x: 0.85, y: 1.56, w: 4.0, h: 3.3, fontSize: L.fit(d.text, 4.0, 3.3, 14, 10, F.body, false, 1.2), color: C.navy, lineSpacingMultiple: 1.2, valign: 'middle' });
+        t.oval(s, 5.1, 1.35, dd + 0.4, dd + 0.4, 'FFFFFF', { line: { color: C.orange, width: 3, dashType: 'dash' } });
+        t.img(s, await L.photo(L.src(d.image), dd, dd, { mask: 'circle' }), 5.3, 1.55, dd, dd, { alt: '' });
+      },
+    ],
+    cards: [
+      async (d) => { // a sheaf of passes, stub to the right with the icon on it
+        const s = page(d), n = d.items.length, h = 3.72 / n;
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.32 + i * h, hh = h - 0.12, col = i % 2 ? C.orange : C.navy;
+          ticket(s, 0.6, y, 8.8, hh, 1.35);
+          head(s, it.h, 0.82, y + 0.05, 2.5, hh - 0.1, { max: 16 });
+          body(s, it.t, 3.4, y + 0.05, 4.5, hh - 0.1, { valign: 'middle', color: GRAY, max: 13 });
+          t.img(s, await L.icon(it.icon, col, 2), 8.2, y + hh / 2 - 0.19, 0.38, 0.38);
+          t.text(s, L.pad2(i + 1), { x: 8.65, y, w: 0.65, h: hh, fontFace: F.mono, bold: true, fontSize: 15, color: col, valign: 'middle' });
+        }
+      },
+      async (d) => { // the hall: illuminated gate signs, two by two
+        const s = terminal(d), n = d.items.length, w = 4.3, h = 1.76;
+        for (const [i, it] of d.items.entries()) {
+          const wide = n === 3 && i === 2, ww = wide ? 8.8 : w, x = 0.6 + (i % 2) * (w + 0.2), y = 1.34 + Math.floor(i / 2) * (h + 0.14);
+          t.rect(s, x, y, ww, h, C.boardRow, { r: 0.07, name: 'Sign' });
+          t.rect(s, x, y, 0.9, h, C.amber, { r: 0.07, name: 'Sign plate' }); t.rect(s, x + 0.5, y, 0.4, h, C.amber, { name: 'Sign plate' });
+          t.img(s, await L.icon(it.icon, C.board, 2.25), x + 0.24, y + 0.2, 0.42, 0.42);
+          t.text(s, String.fromCharCode(65 + i), { x, y: y + 0.72, w: 0.9, h: 0.72, fontFace: F.mono, bold: true, fontSize: 28, color: C.board, align: 'center', valign: 'middle' });
+          t.text(s, it.h.toUpperCase(), { x: x + 1.04, y: y + 0.08, w: ww - 1.16, h: 0.44, fontFace: F.mono, bold: true, color: C.amber, valign: 'middle', fontSize: L.fit(it.h.toUpperCase(), ww - 1.16, 0.42, 14, 9, F.mono, true) });
+          body(s, it.t, x + 1.04, y + 0.56, ww - 1.16, h - 0.64, { color: C.text, max: 13 });
+        }
+      },
+      async (d) => { // luggage tags hanging from the carousel rail, on strings of two lengths
+        const s = page(d), n = d.items.length, gap = 0.2, w = (8.8 - gap * (n - 1)) / n, h = 3.2;
+        t.rect(s, 0, 1.24, W, 0.1, C.navy, { name: 'Rail' });
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.6 + i * (w + gap), y = 1.56 + (i % 2 ? 0.34 : 0), col = i % 2 ? C.orange : C.navy;
+          t.line(s, x + w / 2, 1.3, 0, y - 1.3 + 0.2, C.gray, 1.25);
+          t.rect(s, x, y, w, h, C.ticket, { r: 0.12, shadow: 0.15, blur: 8, offset: 2, line: { color: col, width: 1.5 }, name: 'Tag' });
+          t.oval(s, x + w / 2 - 0.09, y + 0.11, 0.18, 0.18, C.bg, { line: { color: C.gray, width: 1 } });
+          t.img(s, await L.icon(it.icon, col, 2), x + 0.16, y + 0.1, 0.34, 0.34);
+          head(s, it.h, x + 0.16, y + 0.5, w - 0.32, 0.56, { max: 15 });
+          body(s, it.t, x + 0.16, y + 1.08, w - 0.32, h - 1.18, { color: GRAY, max: 13 });
+        }
+      },
+      async (d) => { // the route map: a hub airport, dashed routes to its destinations
+        const s = page(d), n = d.items.length, cx = 5, cy = 3.22, dd = 1.3, w = 3.15;
+        const spots = n === 3 ? [[0.6, 1.36], [0.6, 3.3], [6.25, 2.34]] : [[0.6, 1.36], [6.25, 1.36], [0.6, 3.3], [6.25, 3.3]];
+        for (const [x, y] of spots) { const right = x > 5, ax = right ? x - 0.1 : x + w + 0.1, ay = y + 0.2, up = ay < cy - 0.2;
+          if (Math.abs(ay - cy) < 0.2) t.line(s, cx, cy, ax - cx, 0, C.gray, 1.5, { dash: 'dash' });
+          else t.line(s, Math.min(cx, ax), Math.min(cy, ay), Math.abs(ax - cx), Math.abs(ay - cy), C.gray, 1.5, { dash: 'dash', flipV: right === up }); }
+        t.oval(s, cx - dd / 2, cy - dd / 2, dd, dd, C.navy, { line: { color: 'FFFFFF', width: 3 } });
+        t.text(s, '✈', { x: cx - dd / 2, y: cy - dd / 2, w: dd, h: dd, fontSize: 36, color: C.amber, align: 'center', valign: 'middle' });
+        for (const [i, it] of d.items.entries()) {
+          const [x, y] = spots[i], col = i % 2 ? C.orange : C.navy;
+          t.rect(s, x, y, w, 1.78, C.ticket, { r: 0.1, shadow: 0.15, blur: 8, offset: 2, name: 'Stop' });
+          t.oval(s, x + 0.12, y + 0.1, 0.42, 0.42, col);
+          t.img(s, await L.icon(it.icon, 'FFFFFF', 2), x + 0.22, y + 0.2, 0.22, 0.22);
+          head(s, it.h, x + 0.64, y + 0.08, w - 0.76, 0.46, { max: 14 });
+          body(s, it.t, x + 0.14, y + 0.58, w - 0.28, 1.14, { color: GRAY, max: 13 });
+        }
+      },
+    ],
+    process: [
+      async (d) => { // the climb: each step a pass flying higher, its altitude dropped to the ground
+        const s = page(d), n = d.steps.length, w = 8.8 / n, h = n === 4 ? 1.86 : 1.9, low = 3.26, high = 1.3;
+        for (const [i, st] of d.steps.entries()) {
+          const x = 0.6 + i * w, y = low - i * ((low - high) / (n - 1)), tw = w - 0.14;
+          if (y + h < 5.05) t.line(s, x + tw / 2, y + h, 0, 5.12 - y - h, C.gray, 1.25, { dash: 'dash' });
+          t.rect(s, x, y, tw, h, C.ticket, { r: 0.1, shadow: 0.15, blur: 8, offset: 2, name: 'Pass' });
+          t.oval(s, x + 0.12, y + 0.1, 0.4, 0.4, i === n - 1 ? C.orange : C.navy);
+          t.text(s, String(i + 1), { x: x + 0.12, y: y + 0.1, w: 0.4, h: 0.4, bold: true, fontSize: 13, color: 'FFFFFF', align: 'center', valign: 'middle' });
+          head(s, st.h, x + 0.58, y + 0.06, tw - 0.68, 0.48, { max: 13 });
+          body(s, st.t, x + 0.12, y + 0.56, tw - 0.24, h - 0.64, { color: GRAY, max: 13 });
+        }
+      },
+      async (d) => { // a route down the page, stops on either side of it
+        const s = page(d), n = d.steps.length, gap = n === 4 ? 0.9 : 1.24, h = n === 4 ? 1.1 : 1.2, w = 3.95, cx = 5;
+        t.line(s, cx, 1.3, 0, 3.82, C.navy, 2, { dash: 'dash' });
+        for (const [i, st] of d.steps.entries()) {
+          const right = i % 2 === 1, y = 1.32 + i * gap, x = right ? cx + 0.42 : cx - 0.42 - w, last = i === n - 1;
+          t.rect(s, x, y, w, h, C.ticket, { r: 0.08, shadow: 0.12, blur: 6, offset: 2, name: 'Stop' });
+          t.oval(s, cx - 0.26, y + 0.14, 0.52, 0.52, last ? C.orange : C.navy, { line: { color: C.bg, width: 3 } });
+          t.text(s, String(i + 1), { x: cx - 0.26, y: y + 0.14, w: 0.52, h: 0.52, bold: true, fontSize: 14, color: 'FFFFFF', align: 'center', valign: 'middle' });
+          head(s, st.h, x + 0.15, y + 0.04, w - 0.3, 0.36, { max: 14 });
+          body(s, st.t, x + 0.15, y + 0.42, w - 0.3, h - 0.48, { color: GRAY, max: 13 });
+        }
+      },
+      async (d) => { // the hall: amber direction signs pointing on, the words under them
+        const s = terminal(d), n = d.steps.length, cw = 8.8 / n;
+        for (const [i, st] of d.steps.entries()) {
+          const x = 0.6 + i * cw;
+          t.shape(s, 'PENTAGON', { x, y: 1.38, w: cw - 0.05, h: 1.08, fill: { color: i % 2 ? C.orange : C.amber }, objectName: 'Sign' });
+          t.text(s, L.pad2(i + 1), { x: x + 0.14, y: 1.4, w: 0.7, h: 0.36, fontFace: F.mono, bold: true, fontSize: 14, color: C.board, valign: 'middle' });
+          head(s, st.h, x + 0.14, 1.74, cw - 0.62, 0.66, { color: C.board, max: 14, valign: 'top' });
+          body(s, st.t, x + 0.14, 2.66, cw - 0.3, 2.46, { color: C.text, max: 14 });
+        }
+      },
+    ],
+    stats: [
+      async (d) => { // the one big number has a whole pass to itself, the others small ones
+        const s = page(d), [a, ...rest] = d.stats;
+        ticket(s, 0.6, 1.32, 5.5, 2.9, 1.3);
+        t.text(s, a.value, { x: 0.85, y: 1.48, w: 3.75, h: 1.45, bold: true, color: C.orange, valign: 'middle', fontSize: L.fit(a.value, 3.7, 1.4, 66, 28, F.head, true) });
+        body(s, a.label, 0.85, 3.02, 3.75, 1.05, { color: C.navy, max: 15 });
+        await vbar(s, 8, 5.45, 2.77, 2.25, 0.72);
+        for (const [i, v] of rest.entries()) {
+          const y = 1.32 + i * 1.5;
+          t.rect(s, 6.35, y, 3.05, 1.4, C.ticket, { r: 0.1, shadow: 0.15, blur: 8, offset: 2, name: 'Pass' });
+          t.text(s, v.value, { x: 6.55, y: y + 0.08, w: 2.65, h: 0.66, bold: true, color: C.navy, valign: 'middle', fontSize: L.fit(v.value, 2.6, 0.62, 34, 16, F.head, true) });
+          body(s, v.label, 6.55, y + 0.76, 2.65, 0.56, { color: GRAY, max: 12 });
+        }
+        if (d.note) body(s, d.note, 0.6, 4.36, 8.8, 0.78, { color: GRAY, max: 12, valign: 'middle' });
+      },
+      async (d) => { // a split-flap board: the numbers clatter in, letter by letter
+        const s = terminal(d), h = 0.84;
+        for (const [i, v] of d.stats.entries()) {
+          const y = 1.34 + i * (h + 0.1), chars = [...String(v.value)], fw = Math.min(0.56, 4.2 / chars.length);
+          chars.forEach((c, k) => {
+            const x = 0.6 + k * fw;
+            t.rect(s, x, y, fw - 0.05, h, C.boardRow, { r: 0.03, name: 'Flap' });
+            t.line(s, x, y + h / 2, fw - 0.05, 0, C.board, 1);
+            if (c.trim()) t.text(s, c, { x, y, w: fw - 0.05, h, fontFace: F.mono, bold: true, color: C.amber, align: 'center', valign: 'middle', fontSize: Math.round(fw * 50), noFit: true });
+          });
+          body(s, v.label, 5.05, y, 4.35, h, { color: C.text, max: 15, valign: 'middle' });
+        }
+        if (d.note) body(s, d.note, 0.6, 4.2, 8.8, 0.92, { color: 'AEB8C4', max: 13, valign: 'middle' });
+      },
+    ],
+    compare: [
+      async (d) => { // departure and arrival mirrored on the runway centre line
+        const s = page(d), w = 4.0, cx = 5;
+        t.line(s, cx, 1.95, 0, 3.15, C.navy, 2.5, { dash: 'dash' });
+        t.oval(s, cx - 0.32, 1.32, 0.64, 0.64, C.orange);
+        t.text(s, '✈', { x: cx - 0.32, y: 1.32, w: 0.64, h: 0.64, fontSize: 20, color: C.navy, align: 'center', valign: 'middle' });
+        const { rows, fs } = L.rowsFit([d.left.items, d.right.items], 14, w - 0.1, F.body, 0.16, 2.92);
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const x = i ? cx + 0.42 : cx - 0.42 - w, a = i ? 'left' : 'right';
+          t.text(s, (i ? 'TO' : 'FROM'), { x, y: 1.3, w, h: 0.22, fontSize: 8, bold: true, color: C.gray, charSpacing: 1.5, align: a });
+          head(s, side.h, x, 1.52, w, 0.46, { max: 20, align: a, color: i ? C.orange : C.navy });
+          t.line(s, x, 2.02, w, 0, C.line, 1.25, { dash: 'dash' });
+          let y = 2.14;
+          side.items.forEach((it, j) => { t.text(s, it, { x: x + (i ? 0.1 : 0), y, w: w - 0.1, h: rows[j], fontSize: fs, color: C.navy, align: a }); y += rows[j]; });
+        }
+      },
+      async (d) => { // two long passes, their stubs on the left carrying the names
+        const s = page(d), h = 1.78;
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const y = 1.34 + i * (h + 0.12), col = i ? C.orange : C.navy, rh = (h - 0.2) / Math.ceil(side.items.length / 2);
+          t.rect(s, 0.6, y, 8.8, h, C.ticket, { r: 0.12, shadow: 0.18, blur: 10, offset: 3, name: 'Ticket' });
+          t.rect(s, 0.6, y, 2.4, h, col, { r: 0.12, name: 'Stub' }); t.rect(s, 2.6, y, 0.4, h, col, { name: 'Stub' });
+          t.oval(s, 2.86, y - 0.14, 0.28, 0.28, C.bg); t.oval(s, 2.86, y + h - 0.14, 0.28, 0.28, C.bg);
+          head(s, side.h, 0.8, y + 0.15, 2.0, h - 0.3, { color: i ? C.navy : 'FFFFFF', max: 18 });
+          side.items.forEach((it, j) => body(s, it, 3.25 + (j % 2) * 3.1, y + 0.1 + Math.floor(j / 2) * rh, 2.95, rh - 0.05, { max: 14, valign: 'middle' }));
+        }
+      },
+    ],
+    statement: [
+      async (d) => { // the hall: the announcement runs in amber on the big board
+        const s = terminal(d);
+        board(s, 0.6, 1.32, 8.8, 2.42); t.rect(s, 0.6, 1.32, 8.8, 2.42, C.boardRow, { r: 0.08, line: { color: C.amber, width: 1.5 }, name: 'Board' });
+        t.text(s, L.runs(d.text), { x: 0.9, y: 1.42, w: 8.2, h: 2.22, fontFace: F.mono, bold: true, color: C.amber, valign: 'middle', fontSize: L.fit(d.text, 8.2, 2.15, 28, 14, F.mono, true) });
+        if (d.caption) body(s, d.caption, 0.6, 3.92, 8.8, 1.2, { color: C.text, max: 14 });
+      },
+      async (d) => { // a passport stamp beside the thought
+        const s = page(d), dd = 3.15;
+        t.oval(s, 0.65, 1.55, dd, dd, 'FFFFFF', { line: { color: C.orange, width: 4 } });
+        t.oval(s, 0.83, 1.73, dd - 0.36, dd - 0.36, null, { line: { color: C.orange, width: 1.5, dashType: 'dash' } });
+        t.text(s, '✈', { x: 0.65, y: 1.55, w: dd, h: dd, fontSize: 80, color: C.navy, align: 'center', valign: 'middle' });
+        t.text(s, L.runs(d.text), { x: 4.2, y: 1.32, w: 5.2, h: 2.2, bold: true, color: C.navy, valign: 'middle', fontSize: L.fit(d.text, 5.2, 2.15, 30, 15, F.head, true) });
+        t.line(s, 4.2, 3.6, 5.2, 0, C.gray, 1.25, { dash: 'dash' });
+        if (d.caption) body(s, d.caption, 4.2, 3.72, 5.2, 1.4, { color: GRAY, max: 13 });
+      },
+    ],
+    timeline: [
+      async (d) => { // the flight path: years rise over the line and land under it
+        const s = page(d), axis = 3.22, w = 3.65;
+        t.line(s, 0, axis, W, 0, C.navy, 2.25, { dash: 'dash' });
+        t.text(s, '✈', { x: 9.25, y: axis - 0.25, w: 0.5, h: 0.5, fontSize: 22, color: C.orange, align: 'center', valign: 'middle' });
+        for (const [i, it] of d.items.entries()) {
+          const up = i % 2 === 0, x = up ? 0.6 + (i / 2) * 4.5 : 1.75 + ((i - 1) / 2) * 4.5, col = up ? C.navy : C.orange, top = up ? 1.34 : 3.46;
+          t.oval(s, x + 0.08, axis - 0.1, 0.2, 0.2, col, { line: { color: 'FFFFFF', width: 1.5 } });
+          t.text(s, it.year, { x, y: top, w: 1.6, h: 0.38, fontFace: F.mono, bold: true, color: up ? C.navy : C.orange, valign: 'middle', fontSize: L.fit(it.year, 1.55, 0.36, 18, 10, F.mono, true) });
+          head(s, it.h, x + 1.65, top, w - 1.65, 0.38, { max: 13 });
+          body(s, it.t, x, top + 0.4, w, 1.24, { color: GRAY, max: 13 });
+        }
+      },
+      async (d) => { // one strip of four tear-off coupons, a barcode foot on each
+        const s = page(d), y = 1.36, h = 3.72, cw = 8.8 / 4;
+        t.rect(s, 0.6, y, 8.8, h, C.ticket, { r: 0.12, shadow: 0.18, blur: 10, offset: 3, name: 'Strip' });
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.6 + i * cw, col = i % 2 ? C.orange : C.navy;
+          if (i) { t.oval(s, x - 0.13, y - 0.13, 0.26, 0.26, C.bg); t.oval(s, x - 0.13, y + h - 0.13, 0.26, 0.26, C.bg); t.line(s, x, y + 0.2, 0, h - 0.4, C.line, 1.5, { dash: 'dash' }); }
+          t.text(s, it.year, { x: x + 0.14, y: y + 0.1, w: cw - 0.28, h: 0.5, fontFace: F.mono, bold: true, color: col, valign: 'middle', fontSize: L.fit(it.year, cw - 0.32, 0.46, 22, 11, F.mono, true) });
+          head(s, it.h, x + 0.14, y + 0.62, cw - 0.28, 0.44, { max: 14 });
+          body(s, it.t, x + 0.14, y + 1.08, cw - 0.28, 2.1, { color: GRAY, max: 13 });
+          t.img(s, await bc(i + 10), x + 0.14, y + h - 0.44, cw - 0.28, 0.3);
+        }
+      },
+    ],
+  };
+  R.image = V.image.shift(); // the first picture page must not mirror the introduction
+  const draw = L.pages(R, V);
+  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await draw(d); }
   return L.save(pres, out, { name: 'SlideAI Chipta', colors: { dk1: C.navy, lt1: 'FFFFFF', dk2: C.board, lt2: C.bg, accent1: C.orange, accent2: C.navy, accent3: C.amber, accent4: C.gray, accent5: '3B6EA8', accent6: C.line, hlink: C.orange, folHlink: C.gray } });
 }
 /** Uslub pasporti */
