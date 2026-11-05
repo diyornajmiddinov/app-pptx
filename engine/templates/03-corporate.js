@@ -162,8 +162,210 @@ async function build(content, out) {
     cover: async (s, d) => { await PH(s, d.image, 6.0, 0, 4.0, H); },
     closing: async (s, d) => { await PH(s, d.image, 6.0, 0, 4.0, H); },
   });
-  for (const d of content.slides) await R[d.type](d);
-  L.stamp(SL, content, (type) => (['cover', 'closing', 'quote'].includes(type) ? { x: 0.6, y: 5.25, w: 5.2, h: 0.22, color: C.pale } : null));
+  // ---- further ways to draw a type, as a consultant's other charts: a deck's pages must not look alike (L.pages)
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 14, 10, F.body), color: o.color || C.ink, align: o.align, valign: o.valign || 'top' });
+  const head = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontFace: F.head, bold: true, fontSize: L.fit(v, w, h, o.max || 16, 11, F.head, true), color: o.color || C.navy, align: o.align, valign: o.valign || 'middle' });
+  const para = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 15, 10, F.body, false, 1.2), color: o.color || C.ink, lineSpacingMultiple: 1.2, valign: o.valign || 'top' });
+  const icon = async (s, x, y, d, ic, fill = C.blue) => { t.rect(s, x, y, d, d, fill, { name: 'Icon tile' }); t.img(s, await L.icon(ic, 'FFFFFF', 2), x + d * 0.25, y + d * 0.25, d * 0.5, d * 0.5); };
+  const shade = [C.navy, C.blue, C.teal, '4F8BEF'];
+  const V = {
+    image: [
+      async (d) => { // the picture as a wide exhibit, the reading under it
+        const s = page(d);
+        await PH(s, d.image, 0.6, 1.25, 8.8, 1.95);
+        t.rect(s, 0.6, 3.2, 8.8, 0.06, C.blue, { name: 'Rule' });
+        para(s, d.text, 0.6, 3.38, 8.8, 1.62, { max: 14 });
+      },
+      async (d) => { // a large picture, a navy panel standing in its right side
+        const s = page(d);
+        await PH(s, d.image, 0.6, 1.25, 8.8, 3.75);
+        t.rect(s, 5.3, 1.25, 4.1, 3.75, C.navy, { t: 4, name: 'Panel' });
+        para(s, d.text, 5.5, 1.38, 3.7, 3.5, { max: 14, color: 'FFFFFF', valign: 'middle' });
+      },
+      async (d) => { // the picture fills the page, a navy column carries title and text
+        d._pale = true;
+        const s = pres.addSlide();
+        await PH(s, d.image, 0, 0, W, H);
+        t.rect(s, 0, 0, 4.6, H, C.navy, { name: 'Panel' });
+        head(s, d.title, 0.6, 0.45, 3.6, 1.1, { color: 'FFFFFF', max: 26, valign: 'bottom' });
+        t.rect(s, 0.6, 1.65, 0.6, 0.05, C.teal, { name: 'Rule' });
+        para(s, d.text, 0.6, 1.85, 3.6, 3.25, { color: C.pale, max: 14 });
+      },
+      async (d) => { // a small picture in the corner of an overlapping square composition
+        const s = page(d);
+        t.rect(s, 6.1, 1.3, 3.3, 3.5, C.teal, { t: 10, name: 'Block' });
+        await PH(s, d.image, 5.7, 1.55, 3.3, 3.0);
+        t.rect(s, 5.45, 4.2, 0.55, 0.55, C.navy, { name: 'Square' });
+        para(s, d.text, 0.6, 1.3, 4.75, 3.65, { valign: 'middle' });
+      },
+    ],
+    cards: [
+      async (d) => { // a table of findings: icon, heading, what it means
+        const s = page(d), n = d.items.length, h = 3.58 / n;
+        t.rect(s, 0.6, 1.3, 8.8, 0.06, C.navy, { name: 'Rule' });
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.4 + i * h;
+          if (i % 2 === 0) t.rect(s, 0.6, y, 8.8, h, C.light, { name: 'Row' });
+          t.img(s, await L.icon(it.icon, C.blue, 2), 0.78, y + h / 2 - 0.16, 0.32, 0.32);
+          head(s, it.h, 1.3, y + 0.03, 2.7, h - 0.06, { max: 15 });
+          body(s, it.t, 4.1, y + 0.05, 5.2, h - 0.1, { valign: 'middle', max: 13 });
+        }
+      },
+      async (d) => { // four quadrants round a cross
+        const s = page(d), n = d.items.length, w = 4.3, h = 1.75;
+        t.line(s, 5, 1.35, 0, 3.6, C.line, 1.5); t.line(s, 0.6, 3.15, 8.8, 0, C.line, 1.5);
+        for (const [i, it] of d.items.entries()) {
+          const wide = n === 3 && i === 2, ww = wide ? 8.8 : w, x = 0.6 + (i % 2) * (w + 0.2), y = 1.32 + Math.floor(i / 2) * (h + 0.12);
+          await icon(s, x, y + 0.05, 0.5, it.icon, shade[i]);
+          head(s, it.h, x + 0.65, y + 0.05, ww - 0.75, 0.5, { max: 15 });
+          body(s, it.t, x + 0.65, y + 0.6, ww - 0.75, h - 0.68, { max: 13, color: C.muted });
+        }
+      },
+      async (d) => { // a pyramid of bars, each shorter than the one above
+        const s = page(d), n = d.items.length, h = 3.65 / n;
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.32 + i * h, w = 8.8 - i * 0.55, x = 0.6;
+          t.rect(s, x, y, w, h - 0.08, shade[i], { name: 'Bar' });
+          t.img(s, await L.icon(it.icon, 'FFFFFF', 2), x + 0.18, y + (h - 0.08) / 2 - 0.16, 0.32, 0.32);
+          head(s, it.h, x + 0.65, y, 2.3, h - 0.08, { color: 'FFFFFF', max: 15 });
+          body(s, it.t, x + 3.05, y + 0.04, w - 3.2, h - 0.16, { color: 'FFFFFF', valign: 'middle', max: 13 });
+        }
+      },
+      async (d) => { // the content on one navy field
+        const s = page(d), n = d.items.length, cw = 8.8 / n;
+        t.rect(s, 0.6, 1.3, 8.8, 3.68, C.navy, { name: 'Field' });
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.6 + i * cw;
+          t.img(s, await L.icon(it.icon, C.teal, 2), x + 0.2, 1.5, 0.45, 0.45);
+          head(s, it.h, x + 0.2, 2.05, cw - 0.4, 0.6, { color: 'FFFFFF' });
+          body(s, it.t, x + 0.2, 2.7, cw - 0.4, 2.2, { color: C.pale });
+          if (i) t.line(s, x, 1.5, 0, 3.28, '2C4A6E', 1);
+        }
+      },
+    ],
+    process: [
+      async (d) => { // a Gantt chart: each step starts where the last one ended
+        const s = page(d), n = d.steps.length, h = 3.65 / n, bw = 3.1, shift = (8.8 - bw) / (n - 1);
+        d.steps.forEach((st, i) => {
+          const y = 1.32 + i * h, x = 0.6 + i * shift;
+          t.line(s, 0.6, y + h - 0.04, 8.8, 0, C.line, 0.75);
+          t.rect(s, x, y + 0.05, bw, 0.42, shade[i], { name: 'Bar' });
+          head(s, `${i + 1}. ${st.h}`, x + 0.1, y + 0.05, bw - 0.2, 0.42, { color: 'FFFFFF', max: 13 });
+          const right = i < n / 2, tx = right ? x + bw + 0.15 : 0.6, tw = right ? 9.4 - tx : x - 0.75;
+          body(s, st.t, tx, y + 0.03, tw, h - 0.1, { max: 12, color: C.muted, valign: 'middle', align: right ? 'left' : 'right' });
+        });
+      },
+      async (d) => { // down arrows between stacked boxes on the left, the detail on the right
+        const s = page(d), n = d.steps.length, h = 3.65 / n;
+        d.steps.forEach((st, i) => {
+          const y = 1.32 + i * h;
+          t.rect(s, 0.6, y, 2.9, h - 0.26, i === n - 1 ? C.teal : C.navy, { name: 'Box' });
+          head(s, st.h, 0.72, y, 2.66, h - 0.26, { color: 'FFFFFF', align: 'center', max: 14 });
+          if (i < n - 1) t.shape(s, 'DOWN_ARROW', { x: 1.9, y: y + h - 0.25, w: 0.3, h: 0.24, fill: { color: C.pale }, objectName: 'Arrow' });
+          body(s, st.t, 3.8, y, 5.6, h - 0.1, { valign: 'middle', max: 14 });
+        });
+      },
+      async (d) => { // a cycle of four tiles with a ring at its centre
+        const s = page(d), n = d.steps.length, w = 4.05, h = 1.72;
+        d.steps.forEach((st, i) => {
+          const wide = n === 3 && i === 2, ww = wide ? 8.8 : w, x = wide ? 0.6 : 0.6 + (i < 2 ? i : 3 - i) * (w + 0.7), y = 1.32 + (i < 2 ? 0 : h + 0.2);
+          t.rect(s, x, y, ww, h, C.light, { name: 'Tile' });
+          t.rect(s, x, y, 0.08, h, shade[i], { name: 'Edge' });
+          head(s, `${i + 1}. ${st.h}`, x + 0.22, y + 0.08, ww - 0.34, 0.45, { max: 15 });
+          body(s, st.t, x + 0.22, y + 0.55, ww - 0.34, h - 0.62, { max: 13 });
+        });
+        if (n === 4) { t.oval(s, 4.69, 2.99, 0.62, 0.62, null, { line: { color: C.blue, width: 3 } }); t.text(s, '↻', { x: 4.69, y: 2.99, w: 0.62, h: 0.62, fontSize: 18, color: C.blue, align: 'center', valign: 'middle' }); }
+      },
+    ],
+    stats: [
+      async (d) => { // the headline figure on navy, supporting figures on a light panel
+        const s = page(d), [a, ...rest] = d.stats;
+        t.rect(s, 0.6, 1.3, 4.3, 3.68, C.navy, { name: 'Headline' });
+        t.text(s, a.value, { x: 0.8, y: 1.55, w: 3.9, h: 1.4, bold: true, color: 'FFFFFF', valign: 'middle', fontSize: L.fit(a.value, 3.8, 1.3, 58, 24, F.head, true) });
+        t.rect(s, 0.85, 3.0, 0.6, 0.05, C.teal, { name: 'Rule' });
+        body(s, a.label, 0.85, 3.15, 3.8, 1.6, { color: C.pale, max: 16 });
+        t.rect(s, 4.9, 1.3, 4.5, 3.68, C.light, { name: 'Support' });
+        rest.forEach((v, i) => { const y = 1.42 + i * 1.08; head(s, v.value, 5.15, y, 4.0, 0.55, { max: 28, color: C.blue }); body(s, v.label, 5.15, y + 0.55, 4.0, 0.46, { max: 12, color: C.ink }); });
+        if (d.note) body(s, d.note, 5.15, 3.62, 4.0, 1.28, { max: 10.5, color: C.muted });
+      },
+      async (d) => { // a scorecard: label on the left, figure right-aligned
+        const s = page(d), rh = d.note ? 0.9 : 1.15;
+        d.stats.forEach((v, i) => {
+          const y = 1.32 + i * rh;
+          t.rect(s, 0.6, y, 0.1, rh - 0.1, shade[i], { name: 'Edge' });
+          body(s, v.label, 0.9, y, 5.3, rh - 0.1, { valign: 'middle', max: 16 });
+          head(s, v.value, 6.3, y, 3.1, rh - 0.1, { max: 38, align: 'right', color: shade[i] });
+          t.line(s, 0.6, y + rh - 0.04, 8.8, 0, C.line, 0.75);
+        });
+        if (d.note) body(s, d.note, 0.6, 4.08, 8.8, 0.92, { max: 11, color: C.muted });
+      },
+    ],
+    compare: [
+      async (d) => { // from and to: a large arrow between two columns
+        const s = page(d), w = 3.75;
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const x = i ? 5.65 : 0.6, n = side.items.length, rh = 2.95 / n;
+          t.rect(s, x, 1.3, w, 0.6, i ? C.blue : C.pale, { name: 'Header' });
+          head(s, side.h, x + 0.15, 1.3, w - 0.3, 0.6, { color: i ? 'FFFFFF' : C.navy, max: 17 });
+          side.items.forEach((it, k) => { body(s, it, x + 0.1, 2.02 + k * rh, w - 0.2, rh - 0.08, { max: 14 }); if (k) t.line(s, x, 2.0 + k * rh - 0.02, w, 0, C.line, 0.75); });
+        }
+        t.shape(s, 'RIGHT_ARROW', { x: 4.5, y: 2.6, w: 1.0, h: 0.8, fill: { color: C.teal }, objectName: 'Arrow' });
+      },
+      async (d) => { // two bands, one over the other
+        const s = page(d), h = 1.75;
+        [d.left, d.right].forEach((side, i) => {
+          const y = 1.3 + i * (h + 0.12), hot = i === 1, ink = hot ? 'FFFFFF' : C.ink;
+          t.rect(s, 0.6, y, 8.8, h, hot ? C.navy : C.light, { name: 'Band' });
+          head(s, side.h, 0.8, y + 0.1, 2.1, h - 0.2, { color: hot ? 'FFFFFF' : C.navy, max: 18 });
+          side.items.forEach((it, k) => body(s, it, 3.1 + (k % 2) * 3.1, y + 0.1 + Math.floor(k / 2) * 0.78, 2.95, 0.74, { color: ink, max: 13 }));
+        });
+      },
+    ],
+    statement: [
+      async (d) => { // the whole page navy, the note in a narrow column
+        d._pale = true;
+        const s = pres.addSlide(); s.background = { color: C.navy };
+        head(s, d.title, 0.6, 0.45, 8.8, 0.5, { color: C.pale, max: 16 });
+        t.rect(s, 0.6, 1.0, 0.6, 0.05, C.teal, { name: 'Rule' });
+        t.text(s, L.runs(d.text), { x: 0.6, y: 1.25, w: 5.7, h: 3.7, bold: true, color: 'FFFFFF', valign: 'middle', fontSize: L.fit(d.text, 5.7, 3.6, 36, 17, F.head, true) });
+        if (d.caption) body(s, d.caption, 6.7, 1.3, 2.7, 3.65, { color: C.pale, valign: 'middle', max: 14 });
+      },
+      async (d) => { // a block of blue with the mark, the thought beside it, the note below a rule
+        const s = page(d);
+        t.rect(s, 0.6, 1.3, 1.5, 3.68, C.blue, { name: 'Block' }); t.rect(s, 1.1, 2.75, 0.5, 0.5, 'FFFFFF', { name: 'Mark' });
+        t.text(s, L.runs(d.text), { x: 2.4, y: 1.3, w: 7.0, h: 2.1, bold: true, color: C.navy, valign: 'middle', fontSize: L.fit(d.text, 7.0, 2.0, 32, 16, F.head, true) });
+        t.line(s, 2.4, 3.45, 7.0, 0, C.line, 1);
+        if (d.caption) body(s, d.caption, 2.4, 3.55, 7.0, 1.42, { color: C.muted, max: 13 });
+      },
+    ],
+    timeline: [
+      async (d) => { // years on a row of chevrons
+        const s = page(d), n = d.items.length, cw = 8.8 / n;
+        d.items.forEach((it, i) => {
+          const x = 0.6 + i * cw;
+          t.shape(s, 'CHEVRON', { x, y: 1.3, w: cw + 0.1, h: 0.72, fill: { color: shade[i] }, objectName: 'Chevron' });
+          t.text(s, it.year, { x: x + 0.28, y: 1.3, w: cw - 0.4, h: 0.72, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', fontSize: L.fit(it.year, cw - 0.5, 0.6, 18, 9, F.head, true) });
+          head(s, it.h, x + 0.05, 2.15, cw - 0.2, 0.5, { max: 14 });
+          body(s, it.t, x + 0.05, 2.68, cw - 0.2, 2.3, { max: 13, color: C.muted });
+        });
+      },
+      async (d) => { // a register with a year chip on every row
+        const s = page(d), n = d.items.length, h = 3.65 / n;
+        d.items.forEach((it, i) => {
+          const y = 1.32 + i * h;
+          t.rect(s, 0.6, y + 0.06, 1.5, h - 0.2, i === n - 1 ? C.blue : C.light, { r: 0.05, name: 'Chip' });
+          t.text(s, it.year, { x: 0.65, y: y + 0.06, w: 1.4, h: h - 0.2, bold: true, color: i === n - 1 ? 'FFFFFF' : C.navy, align: 'center', valign: 'middle', fontSize: L.fit(it.year, 1.3, h - 0.3, 18, 9, F.head, true) });
+          head(s, it.h, 2.3, y, 2.3, h - 0.08, { max: 14 });
+          body(s, it.t, 4.7, y + 0.03, 4.7, h - 0.14, { valign: 'middle', max: 12.5, color: C.muted });
+          t.line(s, 2.3, y + h - 0.06, 7.1, 0, C.line, 0.75);
+        });
+      },
+    ],
+  };
+  R.image = V.image.shift(); // the first picture page must not mirror the introduction
+  const draw = L.pages(R, V);
+  for (const d of content.slides) await draw(d);
+  L.stamp(SL, content, (type, _s, d) => (['cover', 'closing', 'quote'].includes(type) || d._pale ? { x: 0.6, y: 5.25, w: 5.2, h: 0.22, color: C.pale } : null));
   return L.save(pres, out, { name: 'SlideAI Corporate', colors: { dk1: C.ink, lt1: C.bg, dk2: C.navy, lt2: C.light, accent1: C.blue, accent2: C.navy, accent3: C.teal, accent4: '8FB3F2', accent5: C.muted, accent6: C.line, hlink: C.blue, folHlink: C.muted } });
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */

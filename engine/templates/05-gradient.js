@@ -128,6 +128,7 @@ async function build(content, out) {
       }
     },
     async statement(d) {
+      d._first = true;
       const s = pres.addSlide(); s.background = { data: await hero('cool') };
       const fs = L.fit(d.text, 8.0, 1.6, 44, 26, F.head, true), th = L.height(d.text, fs, 8.0, F.head, true);
       t.text(s, d.title, { x: 1.0, y: 1.2, w: 8.0, h: 0.4, fontSize: 15, bold: true, color: 'FFFFFF', align: 'center', transparency: 15 });
@@ -190,8 +191,204 @@ async function build(content, out) {
   L.heroPhotos(R, SL, {
     cover: async (s, d) => { t.oval(s, 7.2, 1.15, 2.6, 2.6, null, { line: { color: 'FFFFFF', width: 3 } }); await PH(s, d.image, 7.3, 1.25, 2.4, 2.4, { mask: 'circle' }); },
   });
-  for (const d of content.slides) await R[d.type](d);
-  L.stamp(SL, content, (type) => ({ x: 1.2, y: 5.12, w: 8.2, h: 0.25, color: ['cover', 'statement', 'closing'].includes(type) ? 'FFFFFF' : C.muted }));
+  // ---- further ways to draw a type, in sunset gradients and floating cards: a deck's pages must not look alike (L.pages)
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 14, 10, F.body), color: o.color || C.muted, align: o.align, valign: o.valign || 'top' });
+  const head = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontFace: F.head, bold: true, fontSize: L.fit(v, w, h, o.max || 16, 11, F.head, true), color: o.color || C.ink, align: o.align, valign: o.valign || 'middle' });
+  const para = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 15, 10, F.body, false, 1.2), color: o.color || C.ink, lineSpacingMultiple: 1.2, valign: o.valign || 'top' });
+  const gblock = async (s, x, y, w, h, k = 'main', r = 0.18) => t.img(s, await grad(w, h, k, r), x, y, w, h);
+  const warm = async (d, k = 'cool') => { d._warm = true; const s = pres.addSlide(); s.background = { data: await hero(k) }; t.text(s, d.title, { x: 0.65, y: 0.42, w: 8.7, h: 0.85, fontFace: F.head, bold: true, color: 'FFFFFF', valign: 'middle', fontSize: L.fit(d.title, 8.7, 0.85, 30, 20, F.head, true) }); return s; };
+  const keys = ['main', 'cool', 'main', 'cool'], tones = [C.coral, C.violet, C.blue, C.orange];
+  const iconIn = async (s, x, y, d2, ic, k) => { await badge(s, x, y, d2, k); t.img(s, await L.icon(ic, 'FFFFFF', 2), x + d2 * 0.27, y + d2 * 0.27, d2 * 0.46, d2 * 0.46); };
+  const V = {
+    image: [
+      async (d) => { // a wide rounded picture with a gradient edge, the text under it
+        const s = await page(d);
+        await gblock(s, 0.59, 1.34, 8.82, 1.97, 'main', 0.2);
+        await PH(s, d.image, 0.65, 1.4, 8.7, 1.85, { mask: { r: 0.2 } });
+        para(s, d.text, 0.65, 3.45, 8.7, 1.6, { max: 14 });
+      },
+      async (d) => { // on the gradient: a round picture, white words
+        const s = await warm(d, 'main');
+        t.oval(s, 5.72, 1.28, 3.66, 3.66, null, { line: { color: 'FFFFFF', width: 4 } });
+        t.img(s, await L.photo(L.src(d.image), 3.5, 3.5, { mask: 'circle' }), 5.8, 1.36, 3.5, 3.5, { alt: '' });
+        para(s, d.text, 0.65, 1.4, 4.75, 3.5, { color: 'FFFFFF', valign: 'middle' });
+      },
+      async (d) => { // the picture fills the page, one white card floats on it
+        d._warm = true;
+        const s = pres.addSlide();
+        await PH(s, d.image, 0, 0, W, H);
+        await gblock(s, 0, 5.0, W, 0.625, 'main', 0);
+        card(s, 4.75, 0.45, 4.7, 4.3);
+        head(s, d.title, 5.0, 0.6, 4.2, 0.95, { max: 24 });
+        para(s, d.text, 5.0, 1.6, 4.2, 3.0, { max: 14 });
+      },
+      async (d) => { // a gradient block with the words, the picture overlapping its edge
+        const s = await page(d);
+        await gblock(s, 0.65, 1.5, 6.0, 3.45, 'cool', 0.2);
+        para(s, d.text, 0.9, 1.65, 4.3, 3.15, { color: 'FFFFFF', valign: 'middle', max: 14 });
+        await PH(s, d.image, 5.45, 1.3, 3.9, 3.0, { mask: { r: 0.2 } });
+      },
+    ],
+    cards: [
+      async (d) => { // whole tiles of gradient, white words
+        const s = await page(d), n = d.items.length, gap = 0.2, w = (8.7 - gap * (n - 1)) / n;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.65 + i * (w + gap);
+          await gblock(s, x, 1.45, w, 3.5, keys[i]);
+          t.img(s, await L.icon(it.icon, 'FFFFFF', 2), x + 0.2, 1.65, 0.45, 0.45);
+          head(s, it.h, x + 0.2, 2.2, w - 0.4, 0.6, { color: 'FFFFFF' });
+          body(s, it.t, x + 0.2, 2.85, w - 0.4, 2.0, { color: 'FFFFFF' });
+        }
+      },
+      async (d) => { // long pills, one under another
+        const s = await page(d), n = d.items.length, h = 3.55 / n;
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.42 + i * h;
+          card(s, 0.65, y, 8.7, h - 0.14);
+          await iconIn(s, 0.82, y + (h - 0.14 - 0.54) / 2, 0.54, it.icon, keys[i]);
+          head(s, it.h, 1.55, y, 2.4, h - 0.14, { max: 15 });
+          body(s, it.t, 4.05, y + 0.04, 5.1, h - 0.22, { valign: 'middle', max: 13 });
+        }
+      },
+      async (d) => { // on the gradient: white cards at two heights
+        const s = await warm(d), n = d.items.length, gap = 0.18, w = (8.7 - gap * (n - 1)) / n, h = 2.95;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.65 + i * (w + gap), y = i % 2 ? 2.05 : 1.35;
+          card(s, x, y, w, h);
+          await iconIn(s, x + 0.16, y + 0.16, 0.5, it.icon, keys[i]);
+          head(s, it.h, x + 0.16, y + 0.72, w - 0.32, 0.5, { max: 14 });
+          body(s, it.t, x + 0.16, y + 1.24, w - 0.32, h - 1.32, { max: 12.5 });
+        }
+      },
+      async (d) => { // big open circles of colour, the words under each
+        const s = await page(d), n = d.items.length, cw = 8.7 / n, r = 1.15;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.65 + i * cw, cx = x + cw / 2 - r / 2;
+          await iconIn(s, cx, 1.35, r, it.icon, keys[i]);
+          head(s, it.h, x + 0.1, 2.58, cw - 0.2, 0.5, { align: 'center' });
+          body(s, it.t, x + 0.1, 3.1, cw - 0.2, 1.9, { align: 'center' });
+        }
+      },
+    ],
+    process: [
+      async (d) => { // steps rising to the right, gradient bars under the words
+        const s = await page(d), n = d.steps.length, gap = 0.12, w = (8.7 - gap * (n - 1)) / n;
+        for (const [i, st] of d.steps.entries()) {
+          const x = 0.65 + i * (w + gap), y = 2.15 - i * (n === 4 ? 0.26 : 0.36);
+          await gblock(s, x, y, w, 5.0 - y, keys[i]);
+          t.text(s, String(i + 1), { x: x + 0.15, y: y + 0.06, w: 0.7, h: 0.55, bold: true, fontSize: 26, color: 'FFFFFF', valign: 'middle' });
+          head(s, st.h, x + 0.15, y + 0.62, w - 0.3, 0.5, { color: 'FFFFFF', max: 14 });
+          body(s, st.t, x + 0.15, y + 1.14, w - 0.3, 5.0 - y - 1.22, { color: 'FFFFFF', max: 12.5 });
+        }
+      },
+      async (d) => { // a gradient thread down the left, a card per step
+        const s = await page(d), n = d.steps.length, h = 3.55 / n;
+        await gblock(s, 1.0, 1.5, 0.08, 3.3, 'main', 0.04);
+        for (const [i, st] of d.steps.entries()) {
+          const y = 1.42 + i * h;
+          await badge(s, 0.76, y + (h - 0.14 - 0.56) / 2, 0.56, keys[i]);
+          t.text(s, String(i + 1), { x: 0.76, y: y + (h - 0.14 - 0.56) / 2, w: 0.56, h: 0.56, bold: true, fontSize: 15, color: 'FFFFFF', align: 'center', valign: 'middle' });
+          card(s, 1.55, y, 7.8, h - 0.14);
+          head(s, st.h, 1.75, y + 0.02, 2.3, h - 0.18, { max: 14 });
+          body(s, st.t, 4.1, y + 0.04, 5.1, h - 0.22, { valign: 'middle', max: 13 });
+        }
+      },
+      async (d) => { // on the warm gradient: chevrons, the words beneath in white
+        const s = await warm(d, 'main'), n = d.steps.length, cw = 8.7 / n;
+        d.steps.forEach((st, i) => {
+          const x = 0.65 + i * cw;
+          t.shape(s, 'CHEVRON', { x, y: 1.4, w: cw + 0.1, h: 0.85, fill: { color: 'FFFFFF' }, objectName: 'Chevron' });
+          t.text(s, String(i + 1), { x: x + 0.3, y: 1.4, w: cw - 0.4, h: 0.85, bold: true, fontSize: 22, color: C.coral, align: 'center', valign: 'middle' });
+          head(s, st.h, x + 0.08, 2.4, cw - 0.25, 0.55, { color: 'FFFFFF' });
+          body(s, st.t, x + 0.08, 3.0, cw - 0.25, 2.05, { color: 'FFFFFF' });
+        });
+      },
+    ],
+    stats: [
+      async (d) => { // a great gradient disc for the first figure
+        const s = await page(d), [a, ...rest] = d.stats, r = 3.45;
+        await badge(s, 0.75, 1.45, r, 'main');
+        t.text(s, a.value, { x: 1.05, y: 2.0, w: r - 0.6, h: 1.15, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', fontSize: L.fit(a.value, r - 0.7, 1.05, 50, 22, F.head, true) });
+        body(s, a.label, 1.3, 3.2, r - 1.1, 1.0, { color: 'FFFFFF', align: 'center', max: 13 });
+        rest.forEach((v, i) => { const y = 1.5 + i * 1.08; head(s, v.value, 4.65, y, 4.7, 0.55, { max: 30, color: tones[i + 1] }); body(s, v.label, 4.65, y + 0.55, 4.7, 0.46, { max: 12, color: C.ink }); });
+        if (d.note) body(s, d.note, 4.65, 3.72, 4.7, 1.25, { max: 11 });
+      },
+      async (d) => { // figures on gradient plates, reading across
+        const s = await page(d), rh = d.note ? 0.92 : 1.15;
+        for (const [i, v] of d.stats.entries()) {
+          const y = 1.42 + i * rh;
+          await gblock(s, 0.65, y, 3.2, rh - 0.12, keys[i], 0.14);
+          t.text(s, v.value, { x: 0.75, y, w: 3.0, h: rh - 0.12, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', fontSize: L.fit(v.value, 2.9, rh - 0.2, 34, 16, F.head, true) });
+          body(s, v.label, 4.1, y, 5.25, rh - 0.12, { valign: 'middle', color: C.ink, max: 16 });
+        }
+        if (d.note) body(s, d.note, 0.65, 4.2, 8.7, 0.85, { max: 11 });
+      },
+    ],
+    compare: [
+      async (d) => { // half gradient, half white card
+        const s = await page(d), w = 4.35;
+        await gblock(s, 0.65, 1.45, w, 3.5, 'cool');
+        card(s, 0.65 + w, 1.45, w, 3.5);
+        for (const [i, side] of [d.left, d.right].entries()) {
+          const x = 0.65 + i * w, n = side.items.length, rh = 2.65 / n, ink = i ? C.ink : 'FFFFFF';
+          head(s, side.h, x + 0.25, 1.55, w - 0.5, 0.55, { color: i ? C.coral : 'FFFFFF', max: 18 });
+          side.items.forEach((it, k) => body(s, it, x + 0.25, 2.2 + k * rh, w - 0.5, rh - 0.05, { color: ink }));
+        }
+      },
+      async (d) => { // mirrored about one gradient pill
+        const s = await page(d), w = 3.8, cx = 5;
+        const { rows, fs } = L.rowsFit([d.left.items, d.right.items], 14, w, F.body, 0.22, 2.8);
+        await gblock(s, cx - 0.05, 1.45, 0.1, 3.5, 'main', 0.05);
+        head(s, d.left.h, 0.65, 1.42, w, 0.55, { align: 'right', color: C.coral, max: 19 }); head(s, d.right.h, 5.55, 1.42, w, 0.55, { color: C.violet, max: 19 });
+        let y = 2.1;
+        rows.forEach((rh, k) => {
+          if (d.left.items[k]) t.text(s, d.left.items[k], { x: 0.65, y, w, h: rh, fontSize: fs, color: C.ink, align: 'right' });
+          if (d.right.items[k]) t.text(s, d.right.items[k], { x: 5.55, y, w, h: rh, fontSize: fs, color: C.ink });
+          y += rh;
+        });
+      },
+    ],
+    statement: [
+      async (d) => { // a gradient block fills the left, the note on white to its right
+        const s = await page(d);
+        await gblock(s, 0.65, 1.42, 5.9, 3.55, 'main');
+        t.text(s, L.runs(d.text), { x: 0.95, y: 1.55, w: 5.3, h: 3.3, bold: true, color: 'FFFFFF', valign: 'middle', fontSize: L.fit(d.text, 5.3, 3.2, 34, 16, F.head, true) });
+        if (d.caption) body(s, d.caption, 6.85, 1.5, 2.5, 3.4, { valign: 'middle', max: 14, color: C.ink });
+      },
+      async (d) => { // on the warm gradient, the words at the top, the note on a white card
+        const s = await warm(d, 'main');
+        t.text(s, L.runs(d.text), { x: 0.65, y: 1.3, w: 8.7, h: 2.15, bold: true, color: 'FFFFFF', valign: 'top', fontSize: L.fit(d.text, 8.7, 2.1, 38, 17, F.head, true) });
+        if (d.caption) { card(s, 3.2, 3.55, 6.15, 1.45); body(s, d.caption, 3.4, 3.62, 5.75, 1.3, { valign: 'middle', max: 13, color: C.ink }); }
+      },
+    ],
+    timeline: [
+      async (d) => { // a gradient spine down the middle
+        const s = await page(d), cx = 5;
+        await gblock(s, cx - 0.04, 1.42, 0.08, 3.55, 'main', 0.04);
+        for (const [i, it] of d.items.entries()) {
+          const right = i % 2 === 1, y = 1.38 + Math.floor(i / 2) * 1.85 + (right ? 0.4 : 0), x = right ? cx + 0.4 : 0.65, w = 3.95, a = right ? 'left' : 'right';
+          await badge(s, cx - 0.15, y + 0.06, 0.3, keys[i]);
+          t.text(s, [{ text: it.year + '  ', options: { color: tones[i], bold: true } }, { text: it.h, options: { color: C.ink, bold: true } }], { x, y, w, h: 0.42, fontSize: L.fit(`${it.year}  ${it.h}`, w, 0.4, 15, 10, F.head, true), align: a, valign: 'middle' });
+          body(s, it.t, x, y + 0.44, w, 1.2, { align: a, max: 13 });
+        }
+      },
+      async (d) => { // four cards, each with the year on a coloured head
+        const s = await page(d), w = 4.25, h = 1.72;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.65 + (i % 2) * (w + 0.2), y = 1.4 + Math.floor(i / 2) * (h + 0.1);
+          card(s, x, y, w, h);
+          await gblock(s, x, y, 1.3, h, keys[i]);
+          t.text(s, it.year, { x: x + 0.05, y, w: 1.2, h, bold: true, color: 'FFFFFF', align: 'center', valign: 'middle', fontSize: L.fit(it.year, 1.1, h - 0.3, 22, 10, F.head, true) });
+          head(s, it.h, x + 1.42, y + 0.06, w - 1.54, 0.4, { max: 14 });
+          body(s, it.t, x + 1.42, y + 0.48, w - 1.54, h - 0.54, { max: 12 });
+        }
+      },
+    ],
+  };
+  R.image = V.image.shift(); // the first picture page must not mirror the introduction
+  const draw = L.pages(R, V);
+  for (const d of content.slides) await draw(d);
+  L.stamp(SL, content, (type, _s, d) => ({ x: 1.2, y: 5.12, w: 8.2, h: 0.25, color: ['cover', 'closing'].includes(type) || d._warm || (type === 'statement' && d._first) ? 'FFFFFF' : C.muted }));
   return L.save(pres, out, { name: 'SlideAI Gradient', colors: { dk1: C.ink, lt1: C.bg, dk2: '3B2A6B', lt2: C.soft, accent1: C.coral, accent2: C.violet, accent3: C.blue, accent4: C.orange, accent5: C.muted, accent6: 'D9D2F0', hlink: C.violet, folHlink: C.muted } });
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
