@@ -240,14 +240,14 @@ async function build(content, out) {
           body(s, it.t, x + 0.2, 2.85, w - 0.4, 2.0, { color: 'FFFFFF' });
         }
       },
-      async (d) => { // long pills, one under another
-        const s = await page(d), n = d.items.length, h = 3.55 / n;
+      async (d) => { // pills stepping from side to side
+        const s = await page(d), n = d.items.length, h = 3.55 / n, w = 6.5;
         for (const [i, it] of d.items.entries()) {
-          const y = 1.42 + i * h;
-          card(s, 0.65, y, 8.7, h - 0.14);
-          await iconIn(s, 0.82, y + (h - 0.14 - 0.54) / 2, 0.54, it.icon, keys[i]);
-          head(s, it.h, 1.55, y, 2.4, h - 0.14, { max: 15 });
-          body(s, it.t, 4.05, y + 0.04, 5.1, h - 0.22, { valign: 'middle', max: 13 });
+          const y = 1.42 + i * h, x = i % 2 ? 2.85 : 0.65;
+          card(s, x, y, w, h - 0.14);
+          await iconIn(s, x + 0.14, y + (h - 0.14 - 0.5) / 2, 0.5, it.icon, keys[i]);
+          head(s, it.h, x + 0.78, y + 0.03, w - 0.95, 0.32, { max: 14 });
+          body(s, it.t, x + 0.78, y + 0.35, w - 0.95, h - 0.53, { max: 12 });
         }
       },
       async (d) => { // on the gradient: white cards at two heights
