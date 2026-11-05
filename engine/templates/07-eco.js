@@ -185,8 +185,194 @@ async function build(content, out) {
     cover: async (s, d) => { await PH(s, d.image, 5.75, 0.95, 3.7, 3.7, { mask: { path: blobPath(0.5, 0.5, 0.47, 23) } }); },
     closing: async (s, d) => { await PH(s, d.image, 5.75, 0.95, 3.7, 3.7, { mask: { path: blobPath(0.5, 0.5, 0.47, 23) } }); },
   });
-  for (const d of content.slides) await R[d.type](d);
-  L.stamp(SL, content, (type) => (type === 'quote' ? { x: 0.6, y: 5.15, w: 8.8, h: 0.25, color: 'D7E4D3', align: 'center' } : type === 'cover' || type === 'closing' ? { x: 0.6, y: 5.15, w: 5.0, h: 0.25, color: C.muted } : { x: 1.2, y: 5.12, w: 6.8, h: 0.25, color: C.muted }));
+  // ---- further ways to draw a type, among leaves and water: a deck's pages must not look alike (L.pages)
+  const body = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 14, 10, F.body), color: o.color || C.muted, align: o.align, valign: o.valign || 'top' });
+  const head = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontFace: F.head, bold: true, fontSize: L.fit(v, w, h, o.max || 16, 11, F.head, true), color: o.color || C.forest, align: o.align, valign: o.valign || 'middle' });
+  const para = (s, v, x, y, w, h, o = {}) => t.text(s, v, { x, y, w, h, fontSize: L.fit(v, w, h, o.max || 15, 10, F.body, false, 1.2), color: o.color || C.ink, lineSpacingMultiple: 1.2, valign: o.valign || 'top' });
+  const leaf = async (s, x, y, d, ic, i = 0) => { t.img(s, await blob(400, i % 2 ? C.leaf : C.forest, 3 + i, 1), x, y, d, d); t.img(s, await L.icon(ic, C.white, 2), x + d * 0.29, y + d * 0.29, d * 0.42, d * 0.42); };
+  const forest = (d) => { d._forest = true; const s = pres.addSlide(); s.background = { color: C.forest }; t.text(s, d.title, { x: 0.6, y: 0.4, w: 8.8, h: 0.8, fontFace: F.head, bold: true, color: C.white, valign: 'middle', fontSize: L.fit(d.title, 8.8, 0.8, 28, 20, F.head, true) }); s.slideNumber = { x: 0.6, y: 5.12, w: 0.5, h: 0.25, fontFace: F.body, fontSize: 10, color: C.moss }; return s; };
+  const V = {
+    image: [
+      async (d) => { // a picture whose lower edge is the water line
+        const s = await page(d);
+        t.img(s, await L.photo(L.src(d.image), 8.8, 2.1, { mask: { path: 'M0,0 L1,0 L1,0.82 C0.8,1 0.6,0.68 0.38,0.88 S0.1,0.92 0,0.78 Z' } }), 0.6, 1.25, 8.8, 2.1, { alt: '' });
+        para(s, d.text, 0.6, 3.4, 8.8, 1.65, { max: 14 });
+      },
+      async (d) => { // the picture cut as a leaf, on the dark forest
+        const s = forest(d);
+        t.img(s, await L.photo(L.src(d.image), 4.2, 3.75, { mask: { path: 'M0.5,0 C0.95,0.1 1,0.65 0.82,0.86 C0.68,1 0.32,1 0.18,0.86 C0,0.65 0.05,0.1 0.5,0 Z' } }), 5.3, 1.25, 4.2, 3.75, { alt: '' });
+        para(s, d.text, 0.6, 1.35, 4.4, 3.6, { color: C.white, valign: 'middle' });
+      },
+      async (d) => { // the picture fills the page, a white pebble of text on it
+        const s = pres.addSlide(); d._forest = true;
+        await PH(s, d.image, 0, 0, W, H);
+        t.rect(s, 0, 5.1, W, 0.525, C.forest, { name: 'Footer band' });
+        t.rect(s, 0.45, 0.3, 5.3, 4.6, C.white, { r: 0.35, t: 4, name: 'Pebble' });
+        head(s, d.title, 0.75, 0.42, 4.7, 0.95, { max: 24 });
+        para(s, d.text, 0.75, 1.42, 4.7, 3.35, { max: 14 });
+      },
+      async (d) => { // a tall rounded picture behind a green leaf cluster
+        const s = await page(d);
+        t.img(s, await blob(400, C.moss, 9, 0.7), 5.3, 1.05, 4.3, 4.3);
+        t.img(s, await L.photo(L.src(d.image), 3.0, 3.5, { mask: { r: 0.25 } }), 5.95, 1.45, 3.0, 3.5, { alt: '' });
+        para(s, d.text, 0.6, 1.4, 4.9, 3.55, { valign: 'middle' });
+      },
+    ],
+    cards: [
+      async (d) => { // a stem down the left, leaves growing from it
+        const s = await page(d), n = d.items.length, h = 3.65 / n;
+        t.line(s, 0.98, 1.35, 0, 3.6, C.leaf, 2.5);
+        for (const [i, it] of d.items.entries()) {
+          const y = 1.33 + i * h;
+          await leaf(s, 0.62, y + (h - 0.72) / 2, 0.72, it.icon, i);
+          head(s, it.h, 1.55, y, 2.5, h - 0.05);
+          body(s, it.t, 4.15, y + 0.05, 5.25, h - 0.12, { valign: 'middle', color: C.ink, max: 13 });
+        }
+      },
+      async (d) => { // on the forest: pale rounded cards at two heights
+        const s = forest(d), n = d.items.length, gap = 0.18, w = (8.8 - gap * (n - 1)) / n, h = 2.95;
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.6 + i * (w + gap), y = i % 2 ? 2.05 : 1.3;
+          card(s, x, y, w, h, i % 2 ? C.sand : C.white);
+          t.img(s, await L.icon(it.icon, C.leaf, 2), x + 0.2, y + 0.2, 0.4, 0.4);
+          head(s, it.h, x + 0.2, y + 0.65, w - 0.4, 0.5, { max: 14 });
+          body(s, it.t, x + 0.2, y + 1.18, w - 0.4, h - 1.28, { max: 12.5, color: C.ink });
+        }
+      },
+      async (d) => { // a pond: leaves float round one large blob
+        const s = await page(d), n = d.items.length, spots = n === 4 ? [[0.6, 1.35], [6.1, 1.35], [0.6, 3.25], [6.1, 3.25]] : [[0.6, 1.35], [6.1, 2.3], [0.6, 3.25]];
+        t.img(s, await blob(400, C.moss, 7, 0.8), 3.75, 1.8, 2.5, 2.5);
+        t.img(s, await blob(400, C.forest, 4, 1), 4.4, 2.45, 1.2, 1.2);
+        for (const [i, it] of d.items.entries()) {
+          const [x, y] = spots[i], right = x > 5, a = right ? 'left' : 'right';
+          t.img(s, await L.icon(it.icon, C.leaf, 2), right ? x : x + 2.9, y + 0.05, 0.36, 0.36);
+          head(s, it.h, right ? x + 0.45 : x, y, 2.85, 0.46, { align: a });
+          body(s, it.t, x, y + 0.5, 3.3, 1.25, { align: a, max: 13 });
+        }
+      },
+      async (d) => { // sand-coloured strip with columns, no cards
+        const s = await page(d), n = d.items.length, cw = 8.8 / n;
+        t.rect(s, 0, 1.3, W, 3.65, C.sand, { name: 'Sand' });
+        for (const [i, it] of d.items.entries()) {
+          const x = 0.6 + i * cw;
+          await leaf(s, x + 0.05, 1.45, 0.72, it.icon, i + 1);
+          head(s, it.h, x + 0.05, 2.25, cw - 0.25, 0.55);
+          body(s, it.t, x + 0.05, 2.82, cw - 0.25, 2.1, { color: C.ink });
+        }
+      },
+    ],
+    process: [
+      async (d) => { // a plant growing: each stage taller
+        const s = await page(d), n = d.steps.length, gap = 0.1, w = (8.8 - gap * (n - 1)) / n, col = [C.moss, C.leaf, C.forest, C.forest];
+        d.steps.forEach((st, i) => {
+          const x = 0.6 + i * (w + gap), y = 2.15 - i * (n === 4 ? 0.26 : 0.38), dark = i > 0, ink = dark ? C.white : C.ink;
+          t.rect(s, x, y, w, 5.02 - y, col[i], { r: 0.22, name: 'Stage' });
+          t.text(s, String(i + 1), { x: x + 0.15, y: y + 0.08, w: 0.6, h: 0.5, fontFace: F.head, bold: true, fontSize: 24, color: ink });
+          head(s, st.h, x + 0.15, y + 0.56, w - 0.3, 0.5, { color: ink, max: 14 });
+          body(s, st.t, x + 0.15, y + 1.08, w - 0.3, 5.02 - y - 1.15, { color: ink, max: 12.5 });
+        });
+      },
+      async (d) => { // a stream winding down the page
+        const s = await page(d), n = d.steps.length, h = 3.65 / n;
+        d.steps.forEach((st, i) => {
+          const y = 1.33 + i * h, right = i % 2 === 1, x = right ? 1.6 : 0.6;
+          t.oval(s, x, y + 0.04, 0.58, 0.58, i % 2 ? C.leaf : C.forest);
+          t.text(s, String(i + 1), { x, y: y + 0.04, w: 0.58, h: 0.58, fontFace: F.head, bold: true, fontSize: 16, color: C.white, align: 'center', valign: 'middle' });
+          head(s, st.h, x + 0.75, y + 0.02, 7.0 - (right ? 1 : 0) + 1, 0.36, { max: 15 });
+          body(s, st.t, x + 0.75, y + 0.38, 8.05 - (right ? 1 : 0), h - 0.44, { max: 13, color: C.ink });
+        });
+      },
+      async (d) => { // on the forest, a loop of pale tiles
+        const s = forest(d), n = d.steps.length, w = 4.3, h = 1.72;
+        d.steps.forEach((st, i) => {
+          const wide = n === 3 && i === 2, ww = wide ? 8.8 : w, x = wide ? 0.6 : 0.6 + (i < 2 ? i : 3 - i) * (w + 0.2), y = 1.32 + (i < 2 ? 0 : h + 0.14);
+          card(s, x, y, ww, h, i === n - 1 ? C.moss : C.bg);
+          head(s, `${i + 1}. ${st.h}`, x + 0.22, y + 0.1, ww - 0.44, 0.48, { max: 15 });
+          body(s, st.t, x + 0.22, y + 0.6, ww - 0.44, h - 0.7, { color: C.ink, max: 13 });
+        });
+      },
+    ],
+    stats: [
+      async (d) => { // one number on a great leaf, others beside it
+        const s = await page(d), [a, ...rest] = d.stats;
+        t.img(s, await blob(400, C.forest, 11, 1), 0.4, 1.15, 4.3, 3.9);
+        t.text(s, a.value, { x: 0.9, y: 1.75, w: 3.3, h: 1.2, fontFace: F.head, bold: true, color: C.white, align: 'center', valign: 'middle', fontSize: L.fit(a.value, 3.2, 1.1, 50, 22, F.head, true) });
+        body(s, a.label, 1.15, 3.0, 2.8, 1.2, { color: C.moss, align: 'center', max: 13 });
+        rest.forEach((v, i) => { const y = 1.4 + i * 1.1; head(s, v.value, 4.95, y, 4.45, 0.56, { max: 30, color: C.leaf }); body(s, v.label, 4.95, y + 0.56, 4.45, 0.46, { color: C.ink, max: 12 }); });
+        if (d.note) body(s, d.note, 4.95, 3.65, 4.45, 1.3, { max: 11 });
+      },
+      async (d) => { // rings of a tree trunk: figures read across on long sand rows
+        const s = await page(d), rh = d.note ? 0.92 : 1.15;
+        d.stats.forEach((v, i) => {
+          const y = 1.35 + i * rh;
+          t.rect(s, 0.6, y, 8.8, rh - 0.1, C.sand, { r: 0.3, name: 'Row' });
+          head(s, v.value, 0.85, y, 2.9, rh - 0.1, { max: 34, color: C.forest });
+          body(s, v.label, 3.9, y, 5.3, rh - 0.1, { valign: 'middle', color: C.ink, max: 15 });
+        });
+        if (d.note) body(s, d.note, 0.6, 4.15, 7.6, 0.9, { max: 11 });
+      },
+    ],
+    compare: [
+      async (d) => { // a green field and a sand field, side by side and meeting
+        const s = await page(d), w = 4.4;
+        [d.left, d.right].forEach((side, i) => {
+          const x = 0.6 + i * w, n = side.items.length, rh = 2.75 / n, dark = i === 1, ink = dark ? C.white : C.ink;
+          t.rect(s, x, 1.3, w, 3.7, dark ? C.forest : C.sand, { name: 'Field' });
+          head(s, side.h, x + 0.25, 1.38, w - 0.5, 0.55, { color: dark ? C.moss : C.forest, max: 18 });
+          side.items.forEach((it, k) => body(s, it, x + 0.25, 2.02 + k * rh, w - 0.5, rh - 0.05, { color: ink }));
+        });
+      },
+      async (d) => { // two bands, rounded, one under the other
+        const s = await page(d), h = 1.74;
+        [d.left, d.right].forEach((side, i) => {
+          const y = 1.32 + i * (h + 0.14), dark = i === 1, ink = dark ? C.white : C.ink;
+          card(s, 0.6, y, 8.8, h, dark ? C.leaf : C.white);
+          head(s, side.h, 0.85, y + 0.1, 2.05, h - 0.2, { color: dark ? C.white : C.forest, max: 17 });
+          side.items.forEach((it, k) => body(s, it, 3.05 + (k % 2) * 3.15, y + 0.1 + Math.floor(k / 2) * 0.78, 3.0, 0.74, { color: ink, max: 13 }));
+        });
+      },
+    ],
+    statement: [
+      async (d) => { // the forest page: words large and left, the note beside them
+        const s = forest(d);
+        t.text(s, L.runs(d.text), { x: 0.6, y: 1.35, w: 5.6, h: 3.6, fontFace: F.head, bold: true, color: C.white, valign: 'middle', fontSize: L.fit(d.text, 5.6, 3.5, 34, 16, F.head, true) });
+        t.rect(s, 6.5, 1.55, 0.07, 3.2, C.leaf, { r: 0.03, name: 'Stem' });
+        if (d.caption) body(s, d.caption, 6.75, 1.55, 2.65, 3.2, { color: C.moss, valign: 'middle', max: 14 });
+      },
+      async (d) => { // a leaf holds the note, the thought runs across the top
+        const s = await page(d);
+        t.text(s, L.runs(d.text), { x: 0.6, y: 1.25, w: 8.8, h: 1.95, fontFace: F.head, bold: true, color: C.forest, valign: 'middle', fontSize: L.fit(d.text, 8.8, 1.9, 34, 16, F.head, true) });
+        t.img(s, await blob(400, C.leaf, 6, 1), 0.5, 3.2, 1.8, 1.8);
+        if (d.caption) body(s, d.caption, 2.5, 3.3, 5.9, 1.65, { valign: 'middle', color: C.ink, max: 14 });
+      },
+    ],
+    timeline: [
+      async (d) => { // a trunk down the middle, years as leaves to either side
+        const s = await page(d), cx = 5;
+        t.line(s, cx, 1.35, 0, 3.62, C.forest, 3);
+        for (const [i, it] of d.items.entries()) {
+          const right = i % 2 === 1, y = 1.32 + Math.floor(i / 2) * 1.85 + (right ? 0.4 : 0), x = right ? cx + 0.42 : 0.6, w = 3.98, a = right ? 'left' : 'right';
+          t.img(s, await blob(400, right ? C.leaf : C.forest, 3 + i, 1), cx - 0.2, y + 0.04, 0.4, 0.4);
+          t.text(s, [{ text: it.year + '  ', options: { color: C.leaf, bold: true } }, { text: it.h, options: { color: C.forest, bold: true } }], { x, y, w, h: 0.44, fontFace: F.head, fontSize: L.fit(`${it.year}  ${it.h}`, w, 0.42, 16, 10, F.head, true), align: a, valign: 'middle' });
+          body(s, it.t, x, y + 0.46, w, 1.2, { align: a, color: C.ink, max: 13 });
+        }
+      },
+      async (d) => { // four rounded plots, the year growing in each
+        const s = await page(d), w = 4.3, h = 1.72;
+        d.items.forEach((it, i) => {
+          const x = 0.6 + (i % 2) * (w + 0.2), y = 1.32 + Math.floor(i / 2) * (h + 0.14), dark = i === 0 || i === 3, ink = dark ? C.white : C.ink;
+          card(s, x, y, w, h, dark ? C.forest : C.sand);
+          t.text(s, it.year, { x: x + 0.1, y, w: 1.35, h, fontFace: F.head, bold: true, color: dark ? C.moss : C.forest, align: 'center', valign: 'middle', fontSize: L.fit(it.year, 1.25, h - 0.3, 24, 10, F.head, true) });
+          head(s, it.h, x + 1.5, y + 0.08, w - 1.65, 0.42, { max: 14, color: dark ? C.white : C.forest });
+          body(s, it.t, x + 1.5, y + 0.52, w - 1.65, h - 0.6, { color: ink, max: 12 });
+        });
+      },
+    ],
+  };
+  R.image = V.image.shift(); // the first picture page must not mirror the introduction
+  const draw = L.pages(R, V);
+  for (const d of content.slides) await draw(d);
+  L.stamp(SL, content, (type, _s, d) => (type === 'quote' || d._forest ? { x: 0.6, y: 5.15, w: 8.8, h: 0.25, color: 'D7E4D3', align: 'center' } : type === 'cover' || type === 'closing' ? { x: 0.6, y: 5.15, w: 5.0, h: 0.25, color: C.muted } : { x: 1.2, y: 5.12, w: 6.8, h: 0.25, color: C.muted }));
   return L.save(pres, out, { name: 'SlideAI Eco', colors: { dk1: C.ink, lt1: C.white, dk2: C.forest, lt2: C.bg, accent1: C.leaf, accent2: C.forest, accent3: C.moss, accent4: C.sand, accent5: C.muted, accent6: 'D7E4D3', hlink: C.leaf, folHlink: C.muted } });
 }
 /** Uslub pasporti: AI shu shablon uchun matnni qanday ohang va uzunlikda yozishi kerak. */
