@@ -16,13 +16,81 @@ def test_a_long_deck_ends_with_conclusions_and_no_quote():
     for tid in (1, 4, 50, 200):
         for n in range(11, 31):
             plan = catalog.plan_for(n, tid)
-            assert plan[-3:] == ["summary", "sources", "closing"] and "quote" not in plan
+            assert plan[-3:] == ["summary", "sources", "closing"] and "quote" not in plan and len(plan) == n
     assert "summary" not in catalog.plan_for(10, 1) and "quote" not in catalog.plan_for(10, 1)
 
 
 def test_the_prompt_asks_for_conclusions_not_for_a_proverb():
     prompt = content.build_prompt("Mavzu", catalog.plan_for(12, 1), "ru", True, 1)
     assert 'summary: title = "Выводы"' in prompt and "maqol" not in prompt and "quote" not in prompt
+
+
+def test_the_main_part_is_the_topics_own():
+    plan = catalog.plan_for(10, 1)
+    assert plan == ["cover", "intro", "agenda", *[catalog.ANY] * 5, "sources", "closing"]
+    prompt = content.build_prompt("Mavzu", plan, "uz", True, 1)
+    assert "O'ZING tanla" in prompt and "imtihon oluvchi" in prompt and "stats (faqat mazmunli raqamlar" in prompt
+    slides = [{"type": t} for t in ("cover", "intro", "agenda", "stats", "stats", "process", "image", "timeline", "sources", "closing")]
+    assert content.follows(slides, plan)
+    assert not content.follows([*slides[:3], {"type": "closing"}, *slides[4:]], plan) and not content.follows(slides[:-1], plan)
+    assert not content.follows([{"type": "image"}, *slides[1:]], plan)
+
+
+def test_an_approved_title_lets_the_model_pick_the_type():
+    p = content.build_prompt("Mavzu", ["cover", catalog.ANY], "uz", True, 3, outline=["Bosh", "Ikkinchi"])
+    assert "1. (cover) Bosh" in p and "2. Ikkinchi" in p
+
+
+async def test_only_the_wrong_slide_is_asked_again_and_the_rest_stays():
+    plan = catalog.plan_for(8, 3)
+    first = json.loads(answer_for(plan))
+    first["slides"][3]["title"] = "x" * 200
+    photo = first["slides"][1]["image"]
+    good_title = "Yordamchi turkumlar"
+    asked = []
+
+    async def model(messages):
+        asked.append(messages)
+        if len(asked) == 1:
+            return json.dumps(first, ensure_ascii=False)
+        sent = json.loads(messages[0]["content"].rsplit("\n", 1)[1])
+        assert len(sent) == 1 and len(messages) == 1  # one slide, without the whole deck and conversation
+        return json.dumps({"slides": [{**sent[0], "title": good_title, "type": "nope"}]}, ensure_ascii=False)
+    out = await content.until_valid([{"role": "user", "content": "yoz"}], plan, True, catalog.check_limits(3), model)
+    assert len(asked) == 2 and "1-slayd: title: 200 belgi, ko'pi bilan" in asked[1][0]["content"]
+    assert out["slides"][3]["title"] == good_title and out["slides"][3]["type"] == "cards"  # the type stays
+    assert out["slides"][1]["image"] == photo and len(out["slides"]) == 8
+
+
+async def test_a_useless_repair_is_asked_again_and_a_whole_answer_when_the_slides_are_wrong():
+    plan = catalog.plan_for(8, 3)
+    good, long = json.loads(answer_for(plan)), json.loads(answer_for(plan))
+    long["slides"][3]["title"] = "x" * 200
+    fixed = json.dumps({"slides": [good["slides"][3]]}, ensure_ascii=False)
+    replies = iter([json.dumps({"slides": []}), json.dumps(long, ensure_ascii=False), "not json", fixed])
+    seen = []
+
+    async def model(messages):
+        seen.append(messages)
+        return next(replies)
+    out = await content.until_valid([{"role": "user", "content": "yoz"}], plan, True, catalog.check_limits(3), model, retries=3)
+    assert out["slides"][3] == good["slides"][3]
+    assert "BUTUN JSON" in seen[1][-1]["content"]              # no slides: asked whole
+    assert "faqat shu xatolarni" in seen[2][0]["content"].lower() and seen[3] == seen[2]  # a bad repair: the same again
+
+
+async def test_a_slightly_long_slide_still_delivers_a_paid_deck_after_the_repairs():
+    plan = catalog.plan_for(8, 3)
+    lim = catalog.check_limits(3)
+    answer = json.loads(answer_for(plan))
+    answer["slides"][3]["title"] = "x" * (lim["title"] + 2)
+    calls = []
+
+    async def model(messages):
+        calls.append(messages)
+        return json.dumps(answer if len(calls) == 1 else {"slides": [answer["slides"][3]]}, ensure_ascii=False)
+    out = await content.until_valid([{"role": "user", "content": "yoz"}], plan, True, lim, model)
+    assert len(calls) == 3 and out["slides"][3]["title"] == answer["slides"][3]["title"]
 
 
 def test_a_summary_is_checked_like_cards():
@@ -171,7 +239,8 @@ def answer_for(plan: list[str]) -> str:
     """What a well-behaved model answers: one slide of each requested type (from the sample deck), photos as queries."""
     slides = []
     for tp in plan:
-        s = json.loads(json.dumps(BY_TYPE[tp]))
+        s = json.loads(json.dumps(BY_TYPE["cards" if tp in (catalog.ANY, "summary") else tp]))
+        s["type"] = "cards" if tp == catalog.ANY else tp
         if "image" in s:
             s["image"] = {"query": "office documents"}
         slides.append(s)

@@ -36,22 +36,14 @@ CLASSIC = {
     20: ["cover", "agenda", "statement", "cards", "process", "stats", "compare", "timeline", "cards", "statement",
          "process", "stats", "compare", "cards", "timeline", "stats", "compare", "statement", "summary", "closing"],
 }
-MIDDLE_POOL = ["image", "cards", "stats", "process", "compare", "image", "timeline", "statement",
-               "cards", "image", "process", "stats", "compare", "timeline", "cards", "statement"]
-POOLS = {  # template "prefer" -> order in which middle slides are picked
-    None: MIDDLE_POOL,
-    "data": ["image", "stats", "cards", "compare", "process", "image", "stats", "timeline",
-             "cards", "image", "stats", "compare", "process", "statement", "timeline", "cards"],
-    "text": ["image", "cards", "statement", "process", "timeline", "image", "compare", "statement",
-             "cards", "image", "stats", "process", "timeline", "compare", "statement", "cards"],
-    "visual": ["image", "cards", "image", "stats", "process", "image", "compare", "timeline",
-               "statement", "cards", "process", "stats", "compare", "timeline", "cards", "statement"],
-}
+ANY = "any"  # a slide of the deck's main part: the model picks the type that fits what it says
+FREE_TYPES = ("image", "cards", "process", "stats", "compare", "statement", "timeline")
 
 
 def plan_for(n: int, template_id: int) -> list[str]:
-    """Slide-type order for n slides. Photo templates: any n in 6..30, always with
-    cover, intro (Kirish), agenda (Reja), sources (Manbalar) and closing, and 3–6 photos."""
+    """Slide-type order for n slides. Photo templates: any n in 6..30, always with cover, intro (Kirish), agenda (Reja),
+    sources (Manbalar) and closing; the slides between are the topic's own: a fixed mix made the text fit the form
+    (a stats slide about nothing, a whole process squeezed into one)."""
     if template_id not in PHOTO_TEMPLATES:
         if n not in CLASSIC:
             raise ValueError("1–20 shablonlar uchun slaydlar soni 5, 10, 15 yoki 20 bo'lishi kerak")
@@ -59,16 +51,8 @@ def plan_for(n: int, template_id: int) -> list[str]:
     if not 6 <= n <= 30:
         raise ValueError("slaydlar soni 6 dan 30 gacha bo'lishi kerak")
     m = n - 5
-    pool = POOLS.get(style_of(template_id).get("prefer"), MIDDLE_POOL)
-    middle: list[str] = []
-    k = 0
-    while len(middle) < m:
-        tp = pool[k % len(pool)]; k += 1
-        if tp == "image" and middle.count("image") >= 3:   # cover+intro+closing = 3 photos, max 6 in total
-            continue
-        middle.append(tp)
-    if m >= 6:                                             # the conclusions near the end when there is room
-        middle[-1] = "summary"
+    # the conclusions near the end when there is room
+    middle = [ANY] * (m - 1) + ["summary"] if m >= 6 else [ANY] * m
     return ["cover", "intro", "agenda", *middle, "sources", "closing"]
 
 
