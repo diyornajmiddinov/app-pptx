@@ -241,8 +241,8 @@ async function build(content, out) {
       },
       async (d) => { // a pond: leaves float round one large blob
         const s = await page(d), n = d.items.length, spots = n === 4 ? [[0.6, 1.35], [6.1, 1.35], [0.6, 3.25], [6.1, 3.25]] : [[0.6, 1.35], [6.1, 2.3], [0.6, 3.25]];
-        t.img(s, await blob(400, C.moss, 7, 0.8), 3.75, 1.8, 2.5, 2.5);
-        t.img(s, await blob(400, C.forest, 4, 1), 4.4, 2.45, 1.2, 1.2);
+        t.img(s, await blob(400, C.moss, 7, 0.8), 4.0, 2.2, 2.0, 2.0);
+        t.img(s, await blob(400, C.forest, 4, 1), 4.5, 2.7, 1.0, 1.0);
         for (const [i, it] of d.items.entries()) {
           const [x, y] = spots[i], right = x > 5, a = right ? 'left' : 'right';
           t.img(s, await L.icon(it.icon, C.leaf, 2), right ? x : x + 2.9, y + 0.05, 0.36, 0.36);
