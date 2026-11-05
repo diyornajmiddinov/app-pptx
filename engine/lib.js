@@ -369,6 +369,12 @@ function stamp(list, content, place) {
     s.addText(out, { isTextBox: true, margin: 0, valign: 'middle', fontSize: fs, fontFace: font, ...opt });
   });
 }
+/** Pages of a deck must not look alike: the nth slide of a type takes the nth way this template draws that type
+ *  (R[type] first, then V[type]). A template draws each of them itself, in its own design. */
+function pages(R, V = {}) {
+  const seen = {};
+  return (d) => { const ways = [R[d.type], ...(V[d.type] || [])], k = (seen[d.type] = (seen[d.type] ?? -1) + 1); return ways[k % ways.length](d); };
+}
 function heroPhotos(R, list, spots) {
   for (const k of ['cover', 'closing']) {
     const orig = R[k], spot = spots[k];
@@ -379,6 +385,7 @@ function heroPhotos(R, list, spots) {
 module.exports.track = track;
 module.exports.stamp = stamp;
 module.exports.heroPhotos = heroPhotos;
+module.exports.pages = pages;
 
 // ======================================================================
 // Fixed labels printed by templates, in the presentation language (content.language)

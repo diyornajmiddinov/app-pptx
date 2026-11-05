@@ -40,9 +40,17 @@ ANY = "any"  # a slide of the deck's main part: the model picks the type that fi
 FREE_TYPES = ("image", "cards", "process", "stats", "compare", "statement", "timeline")
 
 
+WAYS = {"image": 4, "cards": 5, "process": 4, "stats": 3, "compare": 3, "statement": 3, "timeline": 3}  # how many ways a template draws a type
+
+
 def most_of_a_type(m: int) -> int:
-    """How many of m main slides may share a type (a template draws a type one way): none in a short deck."""
+    """How many of m main slides may share a type: none in a short deck."""
     return 1 if m <= 5 else (m + 4) // 5
+
+
+def most_of(slide_type: str, m: int) -> int:
+    """The share of one type: beyond the ways a template draws it, a page would come back."""
+    return min(most_of_a_type(m), WAYS[slide_type])
 
 
 def plan_for(n: int, template_id: int) -> list[str]:

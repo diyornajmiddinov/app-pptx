@@ -176,7 +176,9 @@ async function run(content, out, K) {
     },
   };
   if (K.R) for (const [k, f] of Object.entries(K.R)) R[k] = (d) => f(ctx, d, { page, newSlide, panel, marker, photo, head, para, A, pad, onP, subP });
-  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await R[d.type](d); }
+  // a template's own further ways to draw a type: a deck's pages must not look alike (L.pages)
+  const draw = L.pages(R, K.ways ? K.ways(ctx, { page, newSlide, panel, marker, photo, head, para, A, pad, onP, subP }, R) : {});
+  for (const d of content.slides) { if (!R[d.type]) throw new Error('unknown type ' + d.type); await draw(d); }
   return L.save(pres, out, K.theme);
 }
 

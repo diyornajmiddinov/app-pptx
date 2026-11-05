@@ -46,6 +46,9 @@ def test_repeating_pages_are_found():
     assert catalog.most_of_a_type(5) == 1 and catalog.most_of_a_type(9) == 2 and catalog.most_of_a_type(24) == 5
     assert content.over_used(slides("cards", "image", "cards", "stats", "process", "compare", "statement", "timeline", "image"), long) == []
     assert content.over_used(slides("cards", "image", "cards", "stats", "cards", "compare", "statement", "timeline", "image"), long) == [5]
+    assert catalog.most_of("cards", 24) == 5 and catalog.most_of("stats", 24) == 3 and catalog.most_of("stats", 9) == 2
+    many = ["cover", *[catalog.ANY] * 24, "closing"]  # a type no more often than the template has ways to draw it
+    assert content.over_used(slides(*["stats", "cards"] * 3 + ["stats", "image"] + ["image", "process"] * 8), many)[0] == 7
 
 
 async def test_only_repeating_slides_change_type_and_a_paid_deck_never_fails_over_it():

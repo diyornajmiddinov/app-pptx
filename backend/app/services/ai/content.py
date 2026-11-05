@@ -17,7 +17,7 @@ from app.services.ai.catalog import (
     TEMPLATE_INFO,
     check_limits,
     limits_for,
-    most_of_a_type,
+    most_of,
     plan_for,
     style_of,
 )
@@ -173,10 +173,11 @@ def _free_types(plan: list[str]) -> str:
     m = plan.count(ANY)
     if not m:
         return ""
-    return (f'\n"{ANY}" o\'rnidagi {m} ta slaydning turini mazmuniga qarab O\'ZING tanla: image (matnli tushuntirish, ko\'pi bilan 3 ta), '
+    limits = ", ".join(f"{t} ko'pi bilan {most_of(t, m)} marta" for t in FREE_TYPES)
+    return (f'\n"{ANY}" o\'rnidagi {m} ta slaydning turini mazmuniga qarab O\'ZING tanla: image (matnli tushuntirish), '
             "cards (parallel tushunchalar), process (ketma-ket qadamlar), compare (faqat haqiqiy taqqoslash), "
             "timeline (faqat mavzu tarixiy bo'lsa), stats (faqat mazmunli raqamlar bo'lsa; tartib raqami yoki sanoq emas), "
-            f"statement (bitta muhim g'oya). Sahifalar bir-biriga o'xshamasin: bir tur ko'pi bilan {most_of_a_type(m)} marta, ketma-ket ikki bir xil tur bo'lmasin.")
+            f"statement (bitta muhim g'oya). Sahifalar bir-biriga o'xshamasin: {limits}; ketma-ket ikki bir xil tur bo'lmasin.")
 
 
 def build_prompt(topic: str, plan: list[str], language: str, photos: bool, template_id: int = 1,
@@ -240,12 +241,12 @@ def only_slightly_long(errors: list[str], slack: float = 1.25) -> bool:
 
 def over_used(slides: list[dict], plan: list[str]) -> list[int]:
     """Main slides that repeat the page before them or go over their type's share: their pages would look alike."""
-    most, out = most_of_a_type(plan.count(ANY)), []
+    m, out = plan.count(ANY), []
     seen: dict[str, int] = {}
     for i, (s, p) in enumerate(zip(slides, plan, strict=True)):
         if p == ANY:
             seen[s["type"]] = seen.get(s["type"], 0) + 1
-            if seen[s["type"]] > most or s["type"] == slides[i - 1]["type"]:
+            if seen[s["type"]] > most_of(s["type"], m) or s["type"] == slides[i - 1]["type"]:
                 out.append(i)
     return out
 
@@ -256,7 +257,7 @@ async def _varied(data: dict, plan: list[str], photos: bool, Lm: dict, ask: Ask)
     slides = data["slides"]
     bad = over_used(slides, plan)
     types = [s["type"] for s in slides]
-    free = [t for t in FREE_TYPES if types.count(t) < most_of_a_type(plan.count(ANY))]
+    free = [t for t in FREE_TYPES if types.count(t) < most_of(t, plan.count(ANY))]
     if not bad or not free:
         return data
     spec = {"image": f"image: title, text ≤{Lm['image_text']}, image {{\"query\": \"3–5 so'zli INGLIZCHA qidiruv\"}}",

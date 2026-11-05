@@ -11,6 +11,7 @@ from pptx import Presentation
 
 from app.core.config import ENGINE_DIR
 from app.core.locks import machine_lock, machine_lock_async
+from app.services.ai.catalog import WAYS
 
 TIMEOUT = 180  # s
 # templates with an animated copy (engine/animated/templates/NN-*.js): drawn by engine/animated/fill.js when asked
@@ -39,15 +40,15 @@ def add_notes(path: Path, content: dict) -> Path:
 
 def _summary_page(s: dict, slides: list[dict]) -> dict:
     types = [x.get("type") for x in slides]
-    if "cards" in types and "process" not in types and 3 <= len(s["items"]) <= 4:
+    if WAYS["process"] - types.count("process") >= WAYS["cards"] - types.count("cards") and 3 <= len(s["items"]) <= 4:
         return {k: v for k, v in s.items() if k != "items"} | {"type": "process", "steps": [{"h": x["h"], "t": x["t"]} for x in s["items"]]}
     return {**s, "type": "cards"}
 
 
 def _content_file(content: dict) -> str:
-    """What the engine reads. A summary slide is drawn as cards (every template has them), or as steps when the deck
-    has cards already and no steps: pages must not look alike."""
-    slides = [_summary_page(s, content["slides"]) if s.get("type") == "summary" else s for s in content.get("slides", [])]
+    """What the engine reads. A summary slide is drawn as cards (every template has them) or as steps: whichever the
+    template has more ways left to draw, since pages must not look alike."""
+    slides = [_summary_page(s, content["slides"]) if isinstance(s, dict) and s.get("type") == "summary" else s for s in content.get("slides", [])]
     with tempfile.NamedTemporaryFile("w", suffix=".json", delete=False, encoding="utf-8") as f:
         json.dump({**content, "slides": slides}, f, ensure_ascii=False)
     return f.name

@@ -63,7 +63,9 @@ async function run(content, out, K) {
     async sources(d) { const s = await page(d); rows(s, d.items.map((it, i) => ({ n: `${i + 1}.`, h: it })), { hmax: 12.5, nw: 0.45 }); },
   };
   R.closing = R.cover;
-  for (const d of content.slides) await R[d.type](d);
+  // a template's own further ways to draw a type: a deck's pages must not look alike (L.pages)
+  const draw = L.pages(R, K.ways ? K.ways({ k, t, L, C, F, TI, slide, page, num, hair }, R) : {});
+  for (const d of content.slides) await draw(d);
   return L.save(k.pres, out, { name: 'SlideAI ' + K.name, colors: { dk1: C.ink, lt1: 'FFFFFF', dk2: C.ink, lt2: 'F5F5F5', accent1: C.accent, accent2: C.muted, accent3: C.accent, accent4: C.muted, accent5: C.accent, accent6: C.muted, hlink: C.accent, folHlink: C.muted } });
 }
 const rowsFit = L.rowsFit;

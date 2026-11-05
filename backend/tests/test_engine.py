@@ -1,4 +1,5 @@
 """Every template draws the sample deck into a .pptx that opens, with every slide (node + the engine)."""
+import itertools
 import json
 import shutil
 
@@ -6,9 +7,11 @@ import pytest
 from pptx import Presentation
 
 from app.core.config import ENGINE_DIR
+from app.services.ai.catalog import WAYS
 from app.services.ai.render import render, render_sync
 
 pytestmark = pytest.mark.slow
+DRAWN = (4, 16, 68, 72, 161)  # templates with their own further pages; the rest follow
 SAMPLE = json.loads((ENGINE_DIR / "content" / "soliq.json").read_text(encoding="utf-8"))
 
 
@@ -71,3 +74,31 @@ def test_every_picture_is_named_by_what_it_holds(template_id, animated, sample, 
         head = z.read(n)[:4]
         assert n.endswith((".jpeg", ".jpg")) == head.startswith(b"\xff\xd8\xff"), n
         assert n.endswith(".png") == head.startswith(b"\x89PNG"), n
+
+
+def _body_boxes(prs):
+    """Each page's shapes, without what stands on many pages (the template's frame)."""
+    pages = [{(round(s.left / 91440), round(s.top / 91440), round(s.width / 91440), round(s.height / 91440)) for s in sl.shapes if s.left is not None} for sl in prs.slides]
+    return [{b for b in p if sum(b in q for q in pages) < 4} for p in pages]
+
+
+@pytest.mark.parametrize("template_id", DRAWN)
+@pytest.mark.parametrize("animated", [False, True])
+def test_a_type_coming_back_gets_another_page(template_id, animated, sample, tmp_path):
+    by_type = {s["type"]: s for s in sample["slides"]}
+    kinds = [t for t, n in WAYS.items() for _ in range(n)]
+    c = {**sample, "slides": [by_type["cover"], *[json.loads(json.dumps(by_type[t])) for t in kinds], by_type["closing"]]}
+    prs = Presentation(render_sync(c, template_id, tmp_path / "t.pptx", animated=animated))
+    pages = _body_boxes(prs)[1:-1]
+    assert len(pages) == len(kinds)
+    for t in WAYS:
+        same = [p for p, k in zip(pages, kinds, strict=True) if k == t]
+        assert all(a != b for a, b in itertools.combinations(same, 2)), t
+
+
+def test_animated_copies_draw_what_the_templates_draw():
+    for src in (ENGINE_DIR / "templates").glob("*.js"):
+        copy = (ENGINE_DIR / "animated" / "templates" / src.name).read_text(encoding="utf-8")
+        assert copy.split("\n// animated copy:")[0].rstrip("\n") == src.read_text(encoding="utf-8").rstrip("\n"), src.name
+    for f in ("skin.js", "minimal.js"):
+        assert (ENGINE_DIR / "animated" / f).read_text(encoding="utf-8") == (ENGINE_DIR / f).read_text(encoding="utf-8")
