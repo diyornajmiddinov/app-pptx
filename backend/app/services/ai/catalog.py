@@ -40,6 +40,11 @@ ANY = "any"  # a slide of the deck's main part: the model picks the type that fi
 FREE_TYPES = ("image", "cards", "process", "stats", "compare", "statement", "timeline")
 
 
+def most_of_a_type(m: int) -> int:
+    """How many of m main slides may share a type (a template draws a type one way): none in a short deck."""
+    return 1 if m <= 5 else (m + 4) // 5
+
+
 def plan_for(n: int, template_id: int) -> list[str]:
     """Slide-type order for n slides. Photo templates: any n in 6..30, always with cover, intro (Kirish), agenda (Reja),
     sources (Manbalar) and closing; the slides between are the topic's own: a fixed mix made the text fit the form

@@ -17,6 +17,7 @@ from app.services.ai.catalog import (
     TEMPLATE_INFO,
     check_limits,
     limits_for,
+    most_of_a_type,
     plan_for,
     style_of,
 )
@@ -175,7 +176,7 @@ def _free_types(plan: list[str]) -> str:
     return (f'\n"{ANY}" o\'rnidagi {m} ta slaydning turini mazmuniga qarab O\'ZING tanla: image (matnli tushuntirish, ko\'pi bilan 3 ta), '
             "cards (parallel tushunchalar), process (ketma-ket qadamlar), compare (faqat haqiqiy taqqoslash), "
             "timeline (faqat mavzu tarixiy bo'lsa), stats (faqat mazmunli raqamlar bo'lsa; tartib raqami yoki sanoq emas), "
-            f"statement (bitta muhim g'oya). Bir tur ko'pi bilan {max(2, (m + 2) // 3)} marta, ketma-ket ikki bir xil tur bo'lmasin.")
+            f"statement (bitta muhim g'oya). Sahifalar bir-biriga o'xshamasin: bir tur ko'pi bilan {most_of_a_type(m)} marta, ketma-ket ikki bir xil tur bo'lmasin.")
 
 
 def build_prompt(topic: str, plan: list[str], language: str, photos: bool, template_id: int = 1,
@@ -237,6 +238,50 @@ def only_slightly_long(errors: list[str], slack: float = 1.25) -> bool:
     return bool(errors)
 
 
+def over_used(slides: list[dict], plan: list[str]) -> list[int]:
+    """Main slides that repeat the page before them or go over their type's share: their pages would look alike."""
+    most, out = most_of_a_type(plan.count(ANY)), []
+    seen: dict[str, int] = {}
+    for i, (s, p) in enumerate(zip(slides, plan, strict=True)):
+        if p == ANY:
+            seen[s["type"]] = seen.get(s["type"], 0) + 1
+            if seen[s["type"]] > most or s["type"] == slides[i - 1]["type"]:
+                out.append(i)
+    return out
+
+
+async def _varied(data: dict, plan: list[str], photos: bool, Lm: dict, ask: Ask) -> dict:
+    """Once, and only the repeating slides: the same content on another type. Never fails a paid deck: an unusable
+    answer leaves the slides as they were."""
+    slides = data["slides"]
+    bad = over_used(slides, plan)
+    types = [s["type"] for s in slides]
+    free = [t for t in FREE_TYPES if types.count(t) < most_of_a_type(plan.count(ANY))]
+    if not bad or not free:
+        return data
+    spec = {"image": f"image: title, text ≤{Lm['image_text']}, image {{\"query\": \"3–5 so'zli INGLIZCHA qidiruv\"}}",
+            "cards": f"cards: title, items 3–4 ta {{icon, h ≤{Lm['card_h']}, t ≤{Lm['card_t4']}}}, icon faqat: {', '.join(ICONS)}",
+            "process": f"process: title, steps 3–4 ta {{h ≤{Lm['step_h']}, t ≤{Lm['step_t']}}}",
+            "stats": f"stats: title, stats aynan 3 ta {{value ≤{Lm['stat_v']}, label ≤{Lm['stat_l']}}}, note ≤{Lm['note']}",
+            "compare": f"compare: title, left/right {{h ≤{Lm['side_h']}, items 3–4 ta, har biri ≤{Lm['side_item']}}}",
+            "statement": f"statement: title, text ≤{Lm['stmt']}, caption ≤{Lm['caption']}",
+            "timeline": f"timeline: title, items aynan 4 ta {{year ≤{Lm['year']}, h ≤{Lm['event_h']}, t ≤{Lm['event_t']}}}"}
+    prompt = ("Taqdimotda quyidagi slaydlarning sahifa ko'rinishi takrorlanyapti. Har birini MAZMUNINI, faktlarini va TILINI saqlab boshqa turga o'tkaz. "
+              "Har tur bir martadan: ketma-ket ikki slayd bir xil turda bo'lmasin. Mumkin turlar:\n- " + "\n- ".join(spec[t] for t in free) +
+              f"\nJavob: FAQAT JSON: {{\"slides\": [...]}}, aynan {len(bad)} ta slayd, shu tartibda:\n" +
+              json.dumps([slides[i] for i in bad], ensure_ascii=False))
+    try:
+        new = parse_json(await ask([{"role": "user", "content": prompt}])).get("slides")
+        if not isinstance(new, list) or len(new) != len(bad) or any(s.get("type") not in free or check_slide(s, photos, Lm) for s in new):
+            return data
+    except (json.JSONDecodeError, ValueError, AttributeError, TypeError, RuntimeError):
+        return data
+    out = list(slides)
+    for i, s in zip(bad, new, strict=True):
+        out[i] = {**s, **({"notes": slides[i]["notes"]} if "notes" in slides[i] else {})}
+    return {**data, "slides": out}
+
+
 def _repair_prompt(slides: list[dict], bad: dict[int, list[str]]) -> str:
     """Only the slides with errors: asking for the whole deck again costs more tokens than the deck itself."""
     rows = [f"{n + 1}-slayd: {e}" for n, i in enumerate(bad) for e in bad[i]]
@@ -273,7 +318,7 @@ async def until_valid(messages: Messages, plan: list[str], photos: bool, Lm: dic
                 continue
             data, parsed, errs = None, None, ["javob to'g'ri JSON emas"]
         errors = errs
-        if data: return data
+        if data: return await _varied(data, plan, photos, Lm, ask)
         slides = parsed.get("slides") if isinstance(parsed, dict) else None
         if isinstance(slides, list) and follows(slides, plan):
             last = parsed

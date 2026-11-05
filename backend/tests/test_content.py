@@ -30,10 +30,53 @@ def test_the_main_part_is_the_topics_own():
     assert plan == ["cover", "intro", "agenda", *[catalog.ANY] * 5, "sources", "closing"]
     prompt = content.build_prompt("Mavzu", plan, "uz", True, 1)
     assert "O'ZING tanla" in prompt and "imtihon oluvchi" in prompt and "stats (faqat mazmunli raqamlar" in prompt
-    slides = [{"type": t} for t in ("cover", "intro", "agenda", "stats", "stats", "process", "image", "timeline", "sources", "closing")]
+    slides = [{"type": t} for t in ("cover", "intro", "agenda", "stats", "cards", "process", "image", "timeline", "sources", "closing")]
     assert content.follows(slides, plan)
     assert not content.follows([*slides[:3], {"type": "closing"}, *slides[4:]], plan) and not content.follows(slides[:-1], plan)
     assert not content.follows([{"type": "image"}, *slides[1:]], plan)
+
+
+def test_repeating_pages_are_found():
+    plan = ["cover", catalog.ANY, catalog.ANY, catalog.ANY, "closing"]
+    slides = lambda *t: [{"type": x} for x in ("cover", *t, "closing")]
+    assert content.over_used(slides("cards", "process", "image"), plan) == []
+    assert content.over_used(slides("cards", "cards", "image"), plan) == [2]
+    assert content.over_used(slides("cards", "process", "cards"), plan) == [3]
+    long = ["cover", *[catalog.ANY] * 9, "closing"]  # 9 main slides: a type twice at most, never side by side
+    assert catalog.most_of_a_type(5) == 1 and catalog.most_of_a_type(9) == 2 and catalog.most_of_a_type(24) == 5
+    assert content.over_used(slides("cards", "image", "cards", "stats", "process", "compare", "statement", "timeline", "image"), long) == []
+    assert content.over_used(slides("cards", "image", "cards", "stats", "cards", "compare", "statement", "timeline", "image"), long) == [5]
+
+
+async def test_only_repeating_slides_change_type_and_a_paid_deck_never_fails_over_it():
+    plan = catalog.plan_for(8, 3)
+    good = json.loads(answer_for(plan))
+    good["slides"][4] = json.loads(json.dumps(good["slides"][3]))  # the same type side by side
+    other = next(t for t in catalog.FREE_TYPES if t not in [s["type"] for s in good["slides"]])
+    calls = []
+
+    async def model(messages):
+        calls.append(messages[0]["content"])
+        if len(calls) == 1:
+            return json.dumps(good, ensure_ascii=False)
+        new = json.loads(answer_for([other])) if other != "image" else json.loads(answer_for(["image"]))
+        return json.dumps(new, ensure_ascii=False)
+    out = await content.until_valid([{"role": "user", "content": "yoz"}], plan, True, catalog.check_limits(3), model)
+    assert len(calls) == 2 and out["slides"][4]["type"] == other and out["slides"][3] == good["slides"][3]
+
+    async def broken(messages):
+        return "not json" if "takrorlanyapti" in messages[0]["content"] else json.dumps(good, ensure_ascii=False)
+    same = await content.until_valid([{"role": "user", "content": "yoz"}], plan, True, catalog.check_limits(3), broken)
+    assert same["slides"][4]["type"] == good["slides"][4]["type"]  # delivered as it was
+
+
+def test_the_conclusions_avoid_a_page_the_deck_already_has():
+    from app.services.ai.render import _summary_page
+    items = [{"icon": "FiStar", "h": "A", "t": "B"}] * 3
+    s = {"type": "summary", "title": "Xulosa", "items": items}
+    assert _summary_page(s, [{"type": "cards"}, s])["type"] == "process" and _summary_page(s, [{"type": "cards"}, s])["steps"][0] == {"h": "A", "t": "B"}
+    assert _summary_page(s, [{"type": "image"}, s])["type"] == "cards"
+    assert _summary_page(s, [{"type": "cards"}, {"type": "process"}, s])["type"] == "cards"
 
 
 def test_an_approved_title_lets_the_model_pick_the_type():
@@ -58,7 +101,7 @@ async def test_only_the_wrong_slide_is_asked_again_and_the_rest_stays():
         return json.dumps({"slides": [{**sent[0], "title": good_title, "type": "nope"}]}, ensure_ascii=False)
     out = await content.until_valid([{"role": "user", "content": "yoz"}], plan, True, catalog.check_limits(3), model)
     assert len(asked) == 2 and "1-slayd: title: 200 belgi, ko'pi bilan" in asked[1][0]["content"]
-    assert out["slides"][3]["title"] == good_title and out["slides"][3]["type"] == "cards"  # the type stays
+    assert out["slides"][3]["title"] == good_title and out["slides"][3]["type"] == first["slides"][3]["type"]  # the type stays
     assert out["slides"][1]["image"] == photo and len(out["slides"]) == 8
 
 
@@ -239,8 +282,9 @@ def answer_for(plan: list[str]) -> str:
     """What a well-behaved model answers: one slide of each requested type (from the sample deck), photos as queries."""
     slides = []
     for tp in plan:
-        s = json.loads(json.dumps(BY_TYPE["cards" if tp in (catalog.ANY, "summary") else tp]))
-        s["type"] = "cards" if tp == catalog.ANY else tp
+        tp = catalog.FREE_TYPES[len(slides) % len(catalog.FREE_TYPES)] if tp == catalog.ANY else tp
+        s = json.loads(json.dumps(BY_TYPE["cards" if tp == "summary" else tp]))
+        s["type"] = tp
         if "image" in s:
             s["image"] = {"query": "office documents"}
         slides.append(s)
